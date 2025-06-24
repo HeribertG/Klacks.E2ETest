@@ -2788,6 +2788,7 @@
       "Microsoft.Extensions.Configuration.Abstractions >= 9.0.5",
       "Microsoft.Extensions.Configuration.UserSecrets >= 9.0.5",
       "Microsoft.NET.Test.Sdk >= 17.14.0",
+      "Microsoft.Playwright >= 1.52.0",
       "Microsoft.Playwright.NUnit >= 1.52.0",
       "NUnit >= 4.3.2",
       "NUnit.Analyzers >= 4.8.1",
@@ -2859,6 +2860,10 @@
           "Microsoft.NET.Test.Sdk": {
             "target": "Package",
             "version": "[17.14.0, )"
+          },
+          "Microsoft.Playwright": {
+            "target": "Package",
+            "version": "[1.52.0, )"
           },
           "Microsoft.Playwright.NUnit": {
             "target": "Package",

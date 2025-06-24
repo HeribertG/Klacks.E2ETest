@@ -11,10 +11,8 @@ namespace E2ETest.CalendarGantt
         [SetUp]
         public void SetupInternal()
         {
-
             _listener = new Listener(Page);
             _listener.RecognizeApiErrors();
-
         }
 
         [TearDown]
@@ -27,11 +25,11 @@ namespace E2ETest.CalendarGantt
                 {
                     TestContext.WriteLine(_listener.GetLastErrorMessage());
                 }
+
                 _listener?.ResetErrors();
             }
 
             _listener = null;
-
         }
 
         [Test]
@@ -45,6 +43,7 @@ namespace E2ETest.CalendarGantt
             if (navAbsence != null)
             {
                 var pageTracker = new PageUrlTracker(Page);
+
                 await Actions.ClickButtonById(MainNavIds.OpenAbsenceId);
                 await Actions.WaitForSpinnerToDisappear();
                 await Actions.Wait3500();
@@ -59,6 +58,7 @@ namespace E2ETest.CalendarGantt
             Assert.That(_listener!.HasApiErrors(), Is.False, $"API errors occurred during test execution /n{_listener!.GetLastErrorMessage}");
 
             await Actions.Wait3500();
+
             await Actions.Wait3500();
 
             Assert.Pass();
