@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/obj/Debug/net9.0/E2ETest.AssemblyInfo.cs
+/obj/Debug/net9.0/E2ETest.AssemblyInfoInputs.cache
+/obj/E2ETest.csproj.nuget.dgspec.json
+/obj/project.assets.json
+/obj/project.nuget.cache
