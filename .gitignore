@@ -16,3 +16,4 @@
 /obj/Debug/net9.0/E2ETest.pdb
 /obj/Debug/net9.0/E2ETest.sourcelink.json
 /bin/Debug/net9.0/nunit_random_seed.tmp
+/bin/Debug/net9.0/.playwright/package/bin/install_media_pack.ps1
