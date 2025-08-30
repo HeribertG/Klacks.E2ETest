@@ -9,9 +9,13 @@ namespace E2ETest.Helpers;
 public class PlaywrightSetup : PageTest
 {
     public string BaseUrl { get; }
+
     public string UserName { get; }
+
     public string Password { get; }
+
     public string CurrentDate { get; }
+
     public string TimeStamp { get; }
 
     private Wrapper? _wrapper;
@@ -24,7 +28,6 @@ public class PlaywrightSetup : PageTest
     private readonly bool _recordVideo;
     private readonly bool _recordAllTests;
     private readonly bool _windowsMaximized = false;
-
 
     public PlaywrightSetup()
     {
@@ -75,7 +78,7 @@ public class PlaywrightSetup : PageTest
         TestContext.Out.WriteLine("Logging successfully");
     }
 
-    // <summary>
+    /// <summary>
     /// Saves recorded video in case of failure and then cleans up all resources.
     /// </summary>
     [OneTimeTearDown]
@@ -92,7 +95,6 @@ public class PlaywrightSetup : PageTest
     }
 
     public new IPage Page => _page ?? throw new InvalidOperationException("Page is not initialized");
-
 
     public async Task Login()
     {
@@ -124,14 +126,12 @@ public class PlaywrightSetup : PageTest
         var ButtonSumit = await Actions.FindElementById(LogInIds.ButtonSumitId);
         if (ButtonSumit != null)
         {
-
             await Actions.ClickButtonById(LogInIds.ButtonSumitId);
             await Actions.WaitForSpinnerToDisappear();
         }
-
     }
 
-    // <summary>
+    /// <summary>
     /// Copies the WebM video to the project directory and appends it if tests fail.
     /// </summary>
     private async Task SaveAndProcessVideo()
@@ -206,7 +206,7 @@ public class PlaywrightSetup : PageTest
         }
     }
 
-    // <summary>
+    /// <summary>
     /// Safely closes and disposes the Playwright page, context, and browser.
     /// </summary>
     private async Task CleanupResources()
@@ -267,7 +267,6 @@ public class PlaywrightSetup : PageTest
         {
             Width = 1280,   // Statt 1920
             Height = 720    // Statt 1080
-
         };
 
         if (_recordVideo)
@@ -296,5 +295,4 @@ public class PlaywrightSetup : PageTest
         _context = await _browser.NewContextAsync(contextOptions);
         _page = await _context.NewPageAsync();
     }
-
 }
