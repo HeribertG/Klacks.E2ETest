@@ -18,3 +18,4 @@
 /bin/Debug/net9.0/nunit_random_seed.tmp
 /bin/Debug/net9.0/.playwright/package/bin/install_media_pack.ps1
 *.webm
+/obj/Debug/net9.0/E2ETest.csproj.AssemblyReference.cache
