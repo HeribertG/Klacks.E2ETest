@@ -75,6 +75,8 @@ public class PlaywrightSetup : PageTest
 
         await Login();
 
+        await Page.WaitForURLAsync(url => !url.Contains("login"), new() { Timeout = 10000 });
+
         TestContext.Out.WriteLine("Logging successfully");
     }
 
@@ -294,5 +296,7 @@ public class PlaywrightSetup : PageTest
 
         _context = await _browser.NewContextAsync(contextOptions);
         _page = await _context.NewPageAsync();
+
+        await _context.GrantPermissionsAsync(Array.Empty<string>());
     }
 }

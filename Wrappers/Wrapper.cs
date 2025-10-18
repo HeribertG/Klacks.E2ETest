@@ -258,6 +258,60 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Ensures an element with the specified ID is visible in the viewport by checking visibility and scrolling if needed.
+    /// </summary>
+    public async Task EnsureElementVisibleById(string elementId)
+    {
+        try
+        {
+            var isVisible = await IsElementVisibleById(elementId);
+            if (!isVisible)
+            {
+                await ScrollIntoViewById(elementId);
+                await Wait100();
+            }
+        }
+        catch (Exception ex)
+        {
+            TestContext.Out.WriteLine($"Error ensuring element '{elementId}' is visible: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Scrolls an element into view within its scrollable container.
+    /// </summary>
+    public async Task ScrollElementIntoViewInContainer(string elementId, string containerSelector)
+    {
+        try
+        {
+            await _page.EvaluateAsync(@"
+                (params) => {
+                    const element = document.getElementById(params.elementId);
+                    const container = document.querySelector(params.containerSelector);
+
+                    if (!element || !container) {
+                        return;
+                    }
+
+                    const elementRect = element.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+
+                    if (elementRect.top < containerRect.top) {
+                        container.scrollTop -= (containerRect.top - elementRect.top);
+                    } else if (elementRect.bottom > containerRect.bottom) {
+                        container.scrollTop += (elementRect.bottom - containerRect.bottom);
+                    }
+                }
+            ", new { elementId, containerSelector });
+            await Wait100();
+        }
+        catch (Exception ex)
+        {
+            TestContext.Out.WriteLine($"Error scrolling element '{elementId}' in container '{containerSelector}': {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Scrolls down a specific container on the page
     /// </summary>
     /// <param name="containerSelector">CSS selector for the container to be scrolledr</param>
