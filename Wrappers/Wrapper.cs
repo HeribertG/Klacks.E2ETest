@@ -9,7 +9,6 @@ namespace E2ETest.Wrappers;
 /// </summary>
 public sealed class Wrapper
 {
-
     private readonly IPage _page;
 
     public Wrapper(IPage page)
@@ -89,6 +88,7 @@ public sealed class Wrapper
         {
             TestContext.Out.WriteLine($"Cannot find element {id}: {ex.Message}");
         }
+
         return null;
     }
 
@@ -117,6 +117,7 @@ public sealed class Wrapper
         {
             TestContext.Out.WriteLine($"Cannot find element {id}: {ex.Message}");
         }
+
         return null;
     }
 
@@ -142,6 +143,7 @@ public sealed class Wrapper
         {
             TestContext.Out.WriteLine($"Error finding nested element {parentId}.{childClass}: {ex.Message}");
         }
+
         return null;
     }
 
@@ -326,7 +328,9 @@ public sealed class Wrapper
                 if (scrollToBottom)
                     await _page.EvaluateAsync(@"window.scrollTo(0, document.body.scrollHeight)");
                 else
+                {
                     await _page.EvaluateAsync($"window.scrollBy(0, {pixels})");
+                }
 
                 await Wait500();
                 return;
