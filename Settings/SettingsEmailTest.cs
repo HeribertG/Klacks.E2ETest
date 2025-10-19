@@ -28,6 +28,14 @@ namespace E2ETest.Settings
                 await Actions.WaitForSpinnerToDisappear();
                 await Actions.Wait500();
             }
+
+            // Scroll container into viewport
+            var container = await Page.QuerySelectorAsync(".container-dashboard");
+            if (container != null)
+            {
+                await container.ScrollIntoViewIfNeededAsync();
+                await Actions.Wait500();
+            }
         }
 
         [TearDown]
@@ -48,7 +56,7 @@ namespace E2ETest.Settings
             TestContext.Out.WriteLine("=== Step 1: Verify Email Settings Page Loaded ===");
 
             // Assert
-            var smtpServerInput = await Actions.FindElementByCssSelector("input[name*='server'], input[name*='smtp']");
+            var smtpServerInput = await Actions.FindElementById("outgoingServer");
             Assert.That(smtpServerInput, Is.Not.Null, "SMTP server input should be visible");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
@@ -64,10 +72,10 @@ namespace E2ETest.Settings
             TestContext.Out.WriteLine("=== Step 2: View Email Configuration ===");
 
             // Act & Assert - Check all email config fields exist
-            var smtpServer = await Actions.FindElementByCssSelector("input[name*='server'], #server");
-            var smtpPort = await Actions.FindElementByCssSelector("input[name*='port'], #port");
-            var smtpUsername = await Actions.FindElementByCssSelector("input[name*='username'], #username");
-            var smtpPassword = await Actions.FindElementByCssSelector("input[name*='password'], #password");
+            var smtpServer = await Actions.FindElementById("outgoingServer");
+            var smtpPort = await Actions.FindElementById("outgoingServerPort");
+            var smtpUsername = await Actions.FindElementById("outgoingServerAuthUser");
+            var smtpPassword = await Actions.FindElementById("outgoingServerAuthKey");
 
             Assert.That(smtpServer, Is.Not.Null, "SMTP server field should exist");
             Assert.That(smtpPort, Is.Not.Null, "SMTP port field should exist");
@@ -84,18 +92,18 @@ namespace E2ETest.Settings
             TestContext.Out.WriteLine("=== Step 3: Toggle Password Visibility ===");
 
             // Act - Find password field
-            var passwordInput = await Actions.FindElementByCssSelector("input[name*='password'], #password");
+            var passwordInput = await Actions.FindElementById("outgoingServerAuthKey");
             Assert.That(passwordInput, Is.Not.Null, "Password field should exist");
 
             var initialType = await passwordInput!.GetAttributeAsync("type");
             TestContext.Out.WriteLine($"Initial password field type: {initialType}");
 
             // Find toggle button (eye icon)
-            var toggleButton = await Actions.FindElementByCssSelector("button[class*='eye'], fa-eye, [class*='toggle-password']");
+            var toggleButton = await Actions.FindElementById("setting-email-password-toggle");
             if (toggleButton != null)
             {
                 await toggleButton.ClickAsync();
-                await Actions.Wait200();
+                await Actions.Wait100();
 
                 var newType = await passwordInput.GetAttributeAsync("type");
                 Assert.That(newType, Is.Not.EqualTo(initialType), "Password field type should change");
@@ -115,7 +123,7 @@ namespace E2ETest.Settings
             TestContext.Out.WriteLine("=== Step 4: Test Email Configuration ===");
 
             // Act - Find test button
-            var testButton = await Actions.FindElementByCssSelector("button:has-text('Test'), button:has-text('Testen'), [class*='btn-test']");
+            var testButton = await Actions.FindElementById("setting-email-test-btn");
             if (testButton != null)
             {
                 await testButton.ClickAsync();

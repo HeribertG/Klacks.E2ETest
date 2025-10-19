@@ -29,6 +29,14 @@ namespace E2ETest.Settings
                 await Actions.WaitForSpinnerToDisappear();
                 await Actions.Wait500();
             }
+
+            // Scroll container into viewport
+            var container = await Page.QuerySelectorAsync(".container-dashboard");
+            if (container != null)
+            {
+                await container.ScrollIntoViewIfNeededAsync();
+                await Actions.Wait500();
+            }
         }
 
         [TearDown]
@@ -49,7 +57,7 @@ namespace E2ETest.Settings
             TestContext.Out.WriteLine("=== Step 1: Verify Owner Address Page Loaded ===");
 
             // Assert
-            var companyNameInput = await Actions.FindElementByCssSelector("input[name='companyName'], #companyName, [formcontrolname='companyName']");
+            var companyNameInput = await Actions.FindElementById("setting-owner-address-name");
             Assert.That(companyNameInput, Is.Not.Null, "Company name input should be visible");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
@@ -66,7 +74,7 @@ namespace E2ETest.Settings
             var newCompanyName = $"Test Company {DateTime.Now.Ticks}";
 
             // Act - Get original value
-            var companyNameInput = await Actions.FindElementByCssSelector("input[name='companyName'], #companyName");
+            var companyNameInput = await Actions.FindElementById("setting-owner-address-name");
             Assert.That(companyNameInput, Is.Not.Null, "Company name input should exist");
 
             _originalCompanyName = await companyNameInput!.InputValueAsync();
@@ -101,21 +109,21 @@ namespace E2ETest.Settings
             // Act
             var fields = new Dictionary<string, string>
             {
-                { "companyName", testAddress.CompanyName },
-                { "street", testAddress.Street },
-                { "zip", testAddress.Zip },
-                { "city", testAddress.City },
-                { "phone", testAddress.Phone },
-                { "email", testAddress.Email }
+                { "setting-owner-address-name", testAddress.CompanyName },
+                { "setting-owner-address-street", testAddress.Street },
+                { "setting-owner-address-zip", testAddress.Zip },
+                { "setting-owner-address-city", testAddress.City },
+                { "setting-owner-address-tel", testAddress.Phone },
+                { "setting-owner-address-email", testAddress.Email }
             };
 
             foreach (var field in fields)
             {
-                var input = await Actions.FindElementByCssSelector($"input[name='{field.Key}'], #{field.Key}");
+                var input = await Actions.FindElementById(field.Key);
                 if (input != null)
                 {
                     await input.FillAsync(field.Value);
-                    await Actions.Wait200();
+                    await Actions.Wait100();
                 }
             }
 
@@ -124,7 +132,7 @@ namespace E2ETest.Settings
             // Assert - Verify all fields
             foreach (var field in fields)
             {
-                var input = await Actions.FindElementByCssSelector($"input[name='{field.Key}'], #{field.Key}");
+                var input = await Actions.FindElementById(field.Key);
                 if (input != null)
                 {
                     var value = await input.InputValueAsync();
@@ -142,7 +150,7 @@ namespace E2ETest.Settings
             TestContext.Out.WriteLine("=== Step 4: Save and Reset Address ===");
 
             // Act - Make a change
-            var companyNameInput = await Actions.FindElementByCssSelector("input[name='companyName'], #companyName");
+            var companyNameInput = await Actions.FindElementById("setting-owner-address-name");
             if (companyNameInput != null)
             {
                 var originalValue = await companyNameInput.InputValueAsync();

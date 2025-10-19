@@ -28,6 +28,14 @@ namespace E2ETest.Settings
                 await Actions.WaitForSpinnerToDisappear();
                 await Actions.Wait500();
             }
+
+            // Scroll container into viewport
+            var container = await Actions.FindElementByCssSelector("form");
+            if (container != null)
+            {
+                await container.ScrollIntoViewIfNeededAsync();
+                await Actions.Wait500();
+            }
         }
 
         [TearDown]
@@ -48,7 +56,7 @@ namespace E2ETest.Settings
             TestContext.Out.WriteLine("=== Step 1: Verify General Settings Page Loaded ===");
 
             // Assert
-            var appNameInput = await Actions.FindElementByCssSelector("input[name='appName'], #appName");
+            var appNameInput = await Actions.FindElementById("setting-general-name");
             Assert.That(appNameInput, Is.Not.Null, "App name input should be visible");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
@@ -65,7 +73,7 @@ namespace E2ETest.Settings
             var newAppName = $"Klacks Test {DateTime.Now.Ticks}";
 
             // Act
-            var appNameInput = await Actions.FindElementByCssSelector("input[name='appName'], #appName");
+            var appNameInput = await Actions.FindElementById("setting-general-name");
             Assert.That(appNameInput, Is.Not.Null, "App name input should exist");
 
             var originalAppName = await appNameInput!.InputValueAsync();
@@ -91,11 +99,24 @@ namespace E2ETest.Settings
             // Arrange
             TestContext.Out.WriteLine("=== Step 3: Verify Logo Upload Section ===");
 
-            // Act & Assert
-            var logoUploadButton = await Actions.FindElementByCssSelector("input[type='file'], button:has-text('Upload Logo'), button:has-text('Logo hochladen')");
-            Assert.That(logoUploadButton, Is.Not.Null, "Logo upload option should be available");
+            // Act & Assert - Use QuerySelector for fast lookup
+            var logoUploadArea = await Page.QuerySelectorAsync("#setting-general-logo-upload-area");
+            var deleteLogoButton = await Page.QuerySelectorAsync("#setting-general-delete-logo-btn");
 
-            TestContext.Out.WriteLine("Logo upload section is available");
+            if (logoUploadArea != null)
+            {
+                TestContext.Out.WriteLine("Logo upload area is available - no logo currently uploaded");
+                Assert.Pass("Logo upload area found");
+            }
+            else if (deleteLogoButton != null)
+            {
+                TestContext.Out.WriteLine("Logo already uploaded - delete button visible instead of upload area");
+                Assert.Pass("Logo delete button found - logo exists");
+            }
+            else
+            {
+                Assert.Fail("Neither logo upload area nor delete button found");
+            }
         }
 
         [Test]
@@ -104,11 +125,24 @@ namespace E2ETest.Settings
             // Arrange
             TestContext.Out.WriteLine("=== Step 4: Verify Icon Upload Section ===");
 
-            // Act & Assert
-            var iconUploadButton = await Actions.FindElementByCssSelector("input[type='file']");
-            Assert.That(iconUploadButton, Is.Not.Null, "Icon upload option should be available");
+            // Act & Assert - Use QuerySelector for fast lookup
+            var iconUploadArea = await Page.QuerySelectorAsync("#setting-general-icon-upload-area");
+            var deleteIconButton = await Page.QuerySelectorAsync("#setting-general-delete-icon-btn");
 
-            TestContext.Out.WriteLine("Icon upload section is available");
+            if (iconUploadArea != null)
+            {
+                TestContext.Out.WriteLine("Icon upload area is available - no icon currently uploaded");
+                Assert.Pass("Icon upload area found");
+            }
+            else if (deleteIconButton != null)
+            {
+                TestContext.Out.WriteLine("Icon already uploaded - delete button visible instead of upload area");
+                Assert.Pass("Icon delete button found - icon exists");
+            }
+            else
+            {
+                Assert.Fail("Neither icon upload area nor delete button found");
+            }
 
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
