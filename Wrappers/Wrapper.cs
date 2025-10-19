@@ -1,5 +1,4 @@
-﻿
-using E2ETest.Constants;
+﻿using E2ETest.Constants;
 using Microsoft.Playwright;
 
 namespace E2ETest.Wrappers;
