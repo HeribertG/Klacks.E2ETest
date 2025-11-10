@@ -12,7 +12,6 @@ public static class ShiftIds
     public const string ShiftClientSelect = "shift-client-select";
 
     public const string SealShiftButton = "shift-seal-btn";
-    public const string SaveShiftButton = "shift-save-btn";
     public const string CutShiftButton = "shift-cut-btn";
 
     public const string CutByTimeButton = "cut-by-time-btn";

@@ -115,9 +115,7 @@ public class ShiftOrderCreationTest : PlaywrightSetup
 
         // Speichern
         TestContext.Out.WriteLine("Clicking Save button...");
-        var saveButton = await Page.QuerySelectorAsync("#shift-save-btn");
-        Assert.That(saveButton, Is.Not.Null, "Save button should exist");
-        await saveButton!.ClickAsync();
+        await Actions.ClickButtonById(SaveBarIds.SaveButton);
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1500();
 

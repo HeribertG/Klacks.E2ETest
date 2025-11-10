@@ -36,11 +36,37 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Waits until the browser URL contains the expected text.
+    /// </summary>
+    public async Task WaitUntilUrlContains(string expectedText)
+    {
+        try
+        {
+            await _page.WaitForURLAsync(url => url.Contains(expectedText), new PageWaitForURLOptions
+            {
+                Timeout = WrapperConstants.DEFAULT_TIMEOUT
+            });
+        }
+        catch (Exception)
+        {
+            Assert.Fail($"url with text '{expectedText}' not found! Current: {_page.Url}");
+        }
+    }
+
+    /// <summary>
     /// Returns the current URL of the page.
     /// </summary>
     public string ReadCurrentUrl()
     {
         return _page.Url;
+    }
+
+    /// <summary>
+    /// Navigates to the specified URL.
+    /// </summary>
+    public async Task NavigateTo(string url)
+    {
+        await _page.GotoAsync(url);
     }
 
     /// <summary>
@@ -539,6 +565,35 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Fills a rich text editor by ID.
+    /// </summary>
+    public async Task FillRichTextEditorById(string elementId, string value)
+    {
+        await Wait500();
+        var selector = $"#{elementId}";
+        var editor = await _page.QuerySelectorAsync(selector);
+        if (editor != null)
+        {
+            await editor.FillAsync(value);
+        }
+        await Wait500();
+    }
+
+    /// <summary>
+    /// Uploads a file to a file input by ID.
+    /// </summary>
+    public async Task UploadFileById(string elementId, string filePath)
+    {
+        await Wait500();
+        var selector = $"#{elementId}";
+
+        await _page.SetInputFilesAsync(selector, filePath, new() { Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+
+        await Wait1000();
+        TestContext.Out.WriteLine($"File uploaded to #{elementId}: {filePath}");
+    }
+
+    /// <summary>
     /// Clears the content of an input field.
     /// </summary>
     public async Task ClearInputById(string elementId)
@@ -605,11 +660,42 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Clicks a child element within a parent element using CSS selector.
+    /// </summary>
+    public async Task ClickChildElementById(string parentId, string childSelector)
+    {
+        await Wait500();
+        var parent = await FindElementById(parentId);
+        if (parent != null)
+        {
+            var child = await parent.QuerySelectorAsync(childSelector);
+            if (child != null)
+            {
+                await child.ClickAsync();
+            }
+        }
+        await Wait500();
+    }
+
+    /// <summary>
     /// Clicks on a checkbox element (wrapper for ClickButtonById).
     /// </summary>
     public async Task ClickCheckBoxById(string elementId)
     {
         await ClickButtonById(elementId);
+    }
+
+    /// <summary>
+    /// Clicks a button element identified by its text content.
+    /// </summary>
+    public async Task ClickButtonByText(params string[] texts)
+    {
+        var selector = string.Join(", ", texts.Select(t => $"button:has-text('{t}')"));
+        var element = await FindElementByCssSelector(selector);
+        if (element != null)
+        {
+            await element.ClickAsync(new() { Force = true, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        }
     }
 
     #endregion Button and Control Actions
@@ -698,6 +784,62 @@ public sealed class Wrapper
 
             await element.PressAsync(Keys.Escape);
         }
+    }
+
+    /// <summary>
+    /// Selects an option from a native HTML select element by value.
+    /// </summary>
+    public async Task SelectNativeOptionById(string elementId, string value)
+    {
+        await WaitForElementToBeStable(elementId);
+        var element = await FindElementById(elementId);
+        if (element != null)
+        {
+            await element.SelectOptionAsync(new[] { value });
+        }
+    }
+
+    /// <summary>
+    /// Selects an option from a native HTML select element by index.
+    /// </summary>
+    public async Task SelectNativeOptionByIndex(string elementId, int index)
+    {
+        await WaitForElementToBeStable(elementId);
+        var element = await FindElementById(elementId);
+        if (element != null)
+        {
+            await element.SelectOptionAsync(new SelectOptionValue { Index = index });
+        }
+    }
+
+    /// <summary>
+    /// Expands a group node in the group tree by finding it by name.
+    /// </summary>
+    public async Task ExpandGroupNodeByName(string groupName)
+    {
+        await Wait500();
+        var selector = $"//span[contains(@class, 'group-tree-node-name') and text()='{groupName}']/ancestor::div[contains(@class, 'group-tree-node-item')]//span[contains(@class, 'group-tree-toggle')]";
+        var toggle = await _page.WaitForSelectorAsync(selector, new() { Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        if (toggle != null)
+        {
+            await toggle.ClickAsync();
+        }
+        await Wait500();
+    }
+
+    /// <summary>
+    /// Selects a group in the group tree by finding it by name.
+    /// </summary>
+    public async Task SelectGroupByName(string groupName)
+    {
+        await Wait500();
+        var selector = $"//span[contains(@class, 'group-tree-node-name') and text()='{groupName}']/ancestor::div[contains(@class, 'group-tree-node-item')]//div[contains(@class, 'group-option-button')]";
+        var option = await _page.WaitForSelectorAsync(selector, new() { Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        if (option != null)
+        {
+            await option.ClickAsync();
+        }
+        await Wait500();
     }
 
     #endregion Selection and Dropdown Handling
