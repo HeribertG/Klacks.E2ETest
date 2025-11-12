@@ -904,13 +904,13 @@ public sealed class Wrapper
     /// <summary>
     /// Adds a row with dropdown selection and fills it with values.
     /// </summary>
-    public async Task FillEditTableWithPulldownRow(string addRowId, string saveRowId, int index, string PulldownId, string selectionId, KeyValuePair<string, string>[] items)
+    public async Task FillEditTableWithPulldownRow(string addRowId, string saveRowId, int index, string pulldownId, string selectionId, KeyValuePair<string, string>[] items)
     {
         await ScrollIntoViewById(addRowId);
         await ClickButtonById(addRowId);
         await WaitForElementToBeStable(addRowId);
 
-        await SelectOptionById(PulldownId + index.ToString(), selectionId);
+        await SelectOptionById(pulldownId + index.ToString(), selectionId);
 
         foreach (var item in items)
         {
@@ -1323,4 +1323,55 @@ public sealed class Wrapper
     }
 
     #endregion Key
+
+    #region Element Queries
+
+    /// <summary>
+    /// Counts elements matching a CSS selector.
+    /// </summary>
+    public async Task<int> CountElementsBySelector(string selector)
+    {
+        await Wait500();
+        var elements = await _page.Locator(selector).AllAsync();
+        var count = elements.Count;
+        TestContext.Out.WriteLine($"Found {count} elements matching selector: {selector}");
+        return count;
+    }
+
+    /// <summary>
+    /// Gets text content from an element by selector and index.
+    /// </summary>
+    public async Task<string> GetTextContentBySelector(string selector, int index)
+    {
+        await Wait500();
+        var element = _page.Locator(selector).Nth(index);
+        var text = await element.TextContentAsync();
+        return text?.Trim() ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets all elements matching a CSS selector.
+    /// </summary>
+    public async Task<IReadOnlyList<ILocator>> GetElementsBySelector(string selector)
+    {
+        await Wait500();
+        return await _page.Locator(selector).AllAsync();
+    }
+
+    /// <summary>
+    /// Gets text content from an element by ID.
+    /// </summary>
+    public async Task<string> GetTextContentById(string elementId)
+    {
+        await Wait500();
+        var element = await FindElementById(elementId);
+        if (element != null)
+        {
+            var text = await element.TextContentAsync();
+            return text?.Trim() ?? string.Empty;
+        }
+        return string.Empty;
+    }
+
+    #endregion Element Queries
 }

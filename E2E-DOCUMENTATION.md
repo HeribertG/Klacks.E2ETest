@@ -38,12 +38,15 @@ Die E2E-Tests für Klacks verwenden Playwright mit NUnit als Test-Framework. Die
 ```
 E2ETest/
 ├── Client/
-│   └── ClientCreationTest.cs          # Client-Erstellungs-Tests
+│   ├── ClientCreationTest.cs          # Client-Erstellungs-Tests (3 Clients)
+│   └── ClientSearchTest.cs            # Client-Suche & Filter-Tests
 ├── Constants/
 │   ├── ClientIds.cs                   # IDs für Client-Elemente
+│   ├── ClientTestData.cs              # Test-Daten für Client-Erstellung
 │   ├── ContractIds.cs                 # IDs für Contract-Elemente
 │   ├── GroupIds.cs                    # IDs für Gruppen-Elemente
-│   └── MainNavIds.cs                  # IDs für Haupt-Navigation
+│   ├── MainNavIds.cs                  # IDs für Haupt-Navigation
+│   └── SaveBarIds.cs                  # IDs für SaveBar-Elemente
 ├── Helpers/
 │   └── PlaywrightSetup.cs             # Base-Klasse für Tests
 ├── Wrappers/
@@ -131,6 +134,49 @@ await Actions.SelectGroupByName("Bern");
 await Actions.SelectNativeOptionByIndex(ContractIds.GetContractSelectId(0), 3);
 ```
 
+### 5. Index-basierte IDs für Tabellen
+
+Für Listen/Tabellen verwenden wir Index-basierte IDs statt GUIDs:
+
+```html
+<!-- Frontend (Angular) -->
+<tr [id]="'client-row-' + i">
+  <td [id]="'client-firstname-' + i">{{ data.firstName }}</td>
+  <td [id]="'client-lastname-' + i">{{ data.name }}</td>
+</tr>
+```
+
+```csharp
+// E2E Test - Einfacher Zugriff
+var firstName = await Actions.GetTextContentById("client-firstname-0");
+var lastName = await Actions.GetTextContentById("client-lastname-0");
+var rowCount = await Actions.CountElementsBySelector("tr[id^='client-row-']");
+```
+
+### 6. Test-Daten externalisieren
+
+Test-Daten in separate Klassen auslagern für bessere Wartbarkeit:
+
+```csharp
+// Constants/ClientTestData.cs
+public class ClientData
+{
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Street { get; set; } = string.Empty;
+    // ... weitere Felder
+}
+
+public static class ClientTestData
+{
+    public static readonly ClientData[] Clients = new[]
+    {
+        new ClientData { FirstName = "Heribert", LastName = "Gasparoli", ... },
+        new ClientData { FirstName = "Marie-Anne", LastName = "Gasparoli", ... },
+    };
+}
+```
+
 ---
 
 ## Test-Setup
@@ -185,6 +231,8 @@ dotnet test --filter "FullyQualifiedName~ClientCreationTest.Step1_NavigateToClie
    await Actions.ClickButtonById("my-button");
    await Actions.FillInputById("firstname", "Max");
    await Actions.WaitForSpinnerToDisappear();
+   await Actions.GetTextContentById("client-firstname-0");
+   await Actions.CountElementsBySelector("tr[id^='client-row-']");
    ```
 
 2. **IDs in Constants definieren**
@@ -235,6 +283,24 @@ dotnet test --filter "FullyQualifiedName~ClientCreationTest.Step1_NavigateToClie
        // Speichern
        await Actions.ClickButtonById("save-button");
    }
+   ```
+
+6. **Navigation über MainNav**
+   ```csharp
+   // ✅ RICHTIG - Navigation über MainNav-Button
+   await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
+   await Actions.WaitForSpinnerToDisappear();
+
+   // ❌ FALSCH - Direkte URL-Navigation
+   await Page.GotoAsync($"{BaseUrl}workplace/client");
+   ```
+
+7. **Test-State zurücksetzen**
+   ```csharp
+   // Nach Suche: Zurücksetzen für nächsten Test
+   await Actions.ClearInputById("search");
+   await Actions.ClickButtonById("search-button");
+   await Actions.WaitForSpinnerToDisappear();
    ```
 
 ### ❌ DON'T
@@ -457,6 +523,76 @@ taskkill /F /PID <process-id>
 pkill -f "dotnet test"
 ```
 
+### Client-Suche und Filter-Test
+
+```csharp
+[Test, Order(1)]
+public async Task Step1_SearchForClients()
+{
+    // Arrange
+    TestContext.Out.WriteLine("=== Step 1: Search for Clients with 'gasp' ===");
+    var searchTerm = "gasp";
+
+    // Act
+    await Actions.FillInputById("search", searchTerm);
+    await Actions.Wait500();
+    await Actions.ClickButtonById("search-button");
+    await Actions.WaitForSpinnerToDisappear();
+    await Actions.Wait1000();
+
+    var rowCount = await Actions.CountElementsBySelector("tr[id^='client-row-']");
+
+    // Assert
+    Assert.That(rowCount, Is.EqualTo(3), "Should find 3 clients with 'gasp'");
+
+    // Reset für nächsten Test
+    await Actions.ClearInputById("search");
+    await Actions.ClickButtonById("search-button");
+    await Actions.WaitForSpinnerToDisappear();
+}
+
+[Test, Order(2)]
+public async Task Step2_VerifyClientData()
+{
+    // Arrange
+    await Actions.FillInputById("search", "heri");
+    await Actions.ClickButtonById("search-button");
+    await Actions.WaitForSpinnerToDisappear();
+
+    // Act
+    var firstName = await Actions.GetTextContentById("client-firstname-0");
+    var lastName = await Actions.GetTextContentById("client-lastname-0");
+
+    // Assert
+    Assert.That(firstName, Is.EqualTo("Heribert"));
+    Assert.That(lastName, Is.EqualTo("Gasparoli"));
+}
+
+[Test, Order(6)]
+public async Task Step6_FilterByGroup()
+{
+    // Arrange
+    TestContext.Out.WriteLine("=== Filter by Group 'Bern' ===");
+
+    // Act
+    await Actions.ClickButtonById("group-select-dropdown-toggle");
+    await Actions.Wait1000();
+    await Actions.ExpandGroupNodeByName("Deutschweiz Mitte");
+    await Actions.ExpandGroupNodeByName("BE");
+    await Actions.SelectGroupByName("Bern");
+    await Actions.WaitForSpinnerToDisappear();
+
+    var rowCount = await Actions.CountElementsBySelector("tr[id^='client-row-']");
+
+    // Assert
+    Assert.That(rowCount, Is.EqualTo(3), "All 3 clients are in group Bern");
+
+    // Reset
+    await Actions.ClickButtonById("group-select-dropdown-toggle");
+    await Actions.ClickButtonById("group-select-all-groups");
+}
+```
+
 ---
 
 ## Weiterführende Informationen
@@ -472,6 +608,6 @@ pkill -f "dotnet test"
 
 ---
 
-**Letzte Aktualisierung:** 09.11.2025
-**Version:** 1.0
+**Letzte Aktualisierung:** 10.11.2025
+**Version:** 1.1
 **Autor:** E2E Test Team

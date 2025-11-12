@@ -9,5 +9,4 @@ public static class MainNavIds
     public static readonly string OpenEmployeesId = "open-employees";
     public static readonly string OpenProfileId = "open-profile";
     public static readonly string OpenSettingsId = "open-settings";
-
 }
