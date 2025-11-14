@@ -2,6 +2,7 @@
 
 public static class MainNavIds
 {
+    public static readonly string OpenDashboardId = "header-logo-icon";
     public static readonly string OpenAbsenceId = "open-absences";
     public static readonly string OpenGroupsId = "open-groups";
     public static readonly string OpenShiftsId = "open-shifts";

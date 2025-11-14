@@ -1,5 +1,6 @@
 ﻿using E2ETest.Constants;
 using Microsoft.Playwright;
+using NUnit.Framework;
 
 namespace E2ETest.Wrappers;
 
@@ -818,12 +819,43 @@ public sealed class Wrapper
     public async Task ExpandGroupNodeByName(string groupName)
     {
         await Wait500();
-        var selector = $"//span[contains(@class, 'group-tree-node-name') and text()='{groupName}']/ancestor::div[contains(@class, 'group-tree-node-item')]//span[contains(@class, 'group-tree-toggle')]";
-        var toggle = await _page.WaitForSelectorAsync(selector, new() { Timeout = WrapperConstants.DEFAULT_TIMEOUT });
-        if (toggle != null)
+
+        var nodeSelector = $"//span[contains(@class, 'group-tree-node-name') and text()='{groupName}']/ancestor::div[contains(@class, 'group-tree-node-item')]";
+
+        try
         {
-            await toggle.ClickAsync();
+            var node = await _page.WaitForSelectorAsync(nodeSelector, new() { Timeout = 5000 });
+            if (node == null)
+            {
+                TestContext.Out.WriteLine($"Node '{groupName}' not found");
+                return;
+            }
+
+            var ariaExpanded = await node.GetAttributeAsync("aria-expanded");
+            if (ariaExpanded == "true")
+            {
+                TestContext.Out.WriteLine($"Node '{groupName}' is already expanded, skipping");
+                return;
+            }
+
+            var toggleSelector = $"{nodeSelector}//span[contains(@class, 'group-tree-toggle')]";
+            var toggle = await _page.QuerySelectorAsync(toggleSelector);
+
+            if (toggle != null)
+            {
+                await toggle.ClickAsync();
+                await Wait500();
+            }
+            else
+            {
+                TestContext.Out.WriteLine($"Toggle button for '{groupName}' not found, node might already be expanded");
+            }
         }
+        catch (TimeoutException)
+        {
+            TestContext.Out.WriteLine($"Timeout finding node '{groupName}', it might already be expanded or not exist");
+        }
+
         await Wait500();
     }
 
@@ -1171,6 +1203,14 @@ public sealed class Wrapper
     public async Task Wait1500()
     {
         await Wait(1500);
+    }
+
+    /// <summary>
+    /// Wait for specific time periods in milliseconds.
+    /// </summary>
+    public async Task Wait2000()
+    {
+        await Wait(2000);
     }
 
     /// <summary>

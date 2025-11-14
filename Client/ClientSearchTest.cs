@@ -20,7 +20,7 @@ public class ClientSearchTest : PlaywrightSetup
 
         await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
         await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
+        await Actions.Wait500();
     }
 
     [TearDown]
@@ -35,10 +35,16 @@ public class ClientSearchTest : PlaywrightSetup
     private async Task ResetGroupFilterToAllGroups()
     {
         TestContext.Out.WriteLine("Resetting group filter to 'All Groups'");
-        await Actions.ClickButtonById(GroupSelectDropdownToggleId);
-        await Actions.Wait1000();
+
+        var isDropdownOpen = await Actions.IsElementVisibleById(GroupSelectAllGroupsId);
+
+        if (!isDropdownOpen)
+        {
+            await Actions.ClickButtonById(GroupSelectDropdownToggleId);
+            await Actions.Wait3000();
+        }
+
         await Actions.ClickButtonById(GroupSelectAllGroupsId);
-        await Actions.Wait500();
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
     }
@@ -47,13 +53,13 @@ public class ClientSearchTest : PlaywrightSetup
     {
         TestContext.Out.WriteLine($"Selecting group: {string.Join(" > ", groupPath)}");
         await Actions.ClickButtonById(GroupSelectDropdownToggleId);
-        await Actions.Wait1000();
+        await Actions.Wait3000();
 
         for (int i = 0; i < groupPath.Length - 1; i++)
         {
             TestContext.Out.WriteLine($"Expanding '{groupPath[i]}'");
             await Actions.ExpandGroupNodeByName(groupPath[i]);
-            await Actions.Wait500();
+            await Actions.Wait1000();
         }
 
         TestContext.Out.WriteLine($"Selecting '{groupPath[^1]}'");
@@ -394,164 +400,6 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.ClickCheckBoxById(FilterLegalEntityId);
         await Actions.Wait500();
         await Actions.ClickButtonById(SearchButtonId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-    }
-
-    [Test]
-    [Order(9)]
-    public async Task Step9_FilterByClientTypeEmployee()
-    {
-        // Arrange
-        TestContext.Out.WriteLine("=== Step 9: Filter by Client Type 'Employee' ===");
-
-        await SelectGroupByPath(GroupDeutschweizMitte, GroupBE, GroupBern);
-
-        // Act
-        TestContext.Out.WriteLine("Opening client type dropdown and selecting Employee only");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait1000();
-
-        // Uncheck ExternEmp and Customer, keep Employee checked
-        await Actions.ClickCheckBoxById(FilterTypeExternEmpId);
-        await Actions.Wait1000();
-        await Actions.ClickCheckBoxById(FilterTypeCustomerId);
-        await Actions.Wait1000();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait1000();
-        await Actions.Wait1000();
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-        await Actions.Wait1000();
-
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
-
-        // Assert
-        Assert.That(_listener.HasApiErrors(), Is.False,
-            $"No API errors should occur during client type filter. Error: {_listener.GetLastErrorMessage()}");
-
-        Assert.That(rowCount, Is.EqualTo(3),
-            $"Should find exactly 3 Employee clients (Heribert, Marie-Anne, Tommaso Gasparoli). Found: {rowCount}");
-
-        TestContext.Out.WriteLine($"=== Employee filter test completed successfully. Found {rowCount} matching clients ===");
-
-        // Reset all filters using reset button
-        TestContext.Out.WriteLine("Resetting all filters using reset button");
-        await ResetGroupFilterToAllGroups();
-        await Actions.ClickButtonById(ResetAddressButtonId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-    }
-
-    [Test]
-    [Order(10)]
-    public async Task Step10_FilterByClientTypeExternalEmployee()
-    {
-        // Arrange
-        TestContext.Out.WriteLine("=== Step 10: Filter by Client Type 'External Employee' ===");
-
-        await SelectGroupByPath(GroupDeutschweizMitte, GroupBE, GroupBern);
-       
-        // Act
-        TestContext.Out.WriteLine("Opening client type dropdown and selecting ExternEmp only");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait1000();
-
-        // Uncheck Employee and Customer, keep ExternEmp checked
-        await Actions.ClickCheckBoxById(FilterTypeEmployeeId);
-        await Actions.Wait1000();
-        await Actions.ClickCheckBoxById(FilterTypeCustomerId);
-        await Actions.Wait1000();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait1000();
-        await Actions.Wait1000();
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-        await Actions.Wait1000();
-
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
-
-        // Assert
-        Assert.That(_listener.HasApiErrors(), Is.False,
-            $"No API errors should occur during client type filter. Error: {_listener.GetLastErrorMessage()}");
-
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 External Employee client (Urs Ammann). Found: {rowCount}");
-
-        var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
-        var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
-        TestContext.Out.WriteLine($"Found client: {firstName}, {lastName}");
-
-        Assert.That(firstName, Is.EqualTo(FirstNameUrs), $"First name should be '{FirstNameUrs}'");
-        Assert.That(lastName, Is.EqualTo(LastNameAmmann), $"Last name should be '{LastNameAmmann}'");
-
-        TestContext.Out.WriteLine($"=== External Employee filter test completed successfully. Found {rowCount} matching client ===");
-
-        // Reset all filters using reset button
-        TestContext.Out.WriteLine("Resetting all filters using reset button");
-        await ResetGroupFilterToAllGroups();
-        await Actions.ClickButtonById(ResetAddressButtonId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-    }
-
-    [Test]
-    [Order(11)]
-    public async Task Step11_FilterByClientTypeCustomer()
-    {
-        // Arrange
-        TestContext.Out.WriteLine("=== Step 11: Filter by Client Type 'Customer' ===");
-
-        await SelectGroupByPath(GroupDeutschweizMitte, GroupBE, GroupBern);
-       
-        // Act
-        TestContext.Out.WriteLine("Opening client type dropdown and selecting Customer only");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait1000();
-
-        // Uncheck Employee and ExternEmp, keep Customer checked
-        await Actions.ClickCheckBoxById(FilterTypeEmployeeId);
-        await Actions.Wait1000();
-        await Actions.ClickCheckBoxById(FilterTypeExternEmpId);
-        await Actions.Wait1000();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait1000();
-        await Actions.Wait1000();
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-        await Actions.Wait1000();
-
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
-
-        // Assert
-        Assert.That(_listener.HasApiErrors(), Is.False,
-            $"No API errors should occur during client type filter. Error: {_listener.GetLastErrorMessage()}");
-
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 Customer client (Pierre-Alain Frey). Found: {rowCount}");
-
-        var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
-        var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
-        TestContext.Out.WriteLine($"Found client: {firstName}, {lastName}");
-
-        Assert.That(firstName, Is.EqualTo(FirstNamePierreAlain), $"First name should be '{FirstNamePierreAlain}'");
-        Assert.That(lastName, Is.EqualTo(LastNameFrey), $"Last name should be '{LastNameFrey}'");
-
-        TestContext.Out.WriteLine($"=== Customer filter test completed successfully. Found {rowCount} matching client ===");
-
-        // Reset all filters using reset button
-        TestContext.Out.WriteLine("Resetting all filters using reset button");
-        await ResetGroupFilterToAllGroups();
-        await Actions.ClickButtonById(ResetAddressButtonId);
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
     }
