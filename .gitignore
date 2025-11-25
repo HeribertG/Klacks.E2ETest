@@ -19,3 +19,5 @@
 /bin/Debug/net9.0/.playwright/package/bin/install_media_pack.ps1
 *.webm
 /obj/Debug/net9.0/E2ETest.csproj.AssemblyReference.cache
+/obj/Debug/net10.0/E2ETest.AssemblyInfoInputs.cache
+/obj/Debug/net10.0/E2ETest.AssemblyInfo.cs
