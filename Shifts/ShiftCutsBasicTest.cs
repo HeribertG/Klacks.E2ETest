@@ -3,9 +3,10 @@ using E2ETest.Helpers;
 using E2ETest.Wrappers;
 using Microsoft.Playwright;
 
-namespace E2ETest.Shifts;
+namespace E2ETest;
 
 [TestFixture]
+[Order(40)]
 public class ShiftCutsBasicTest : PlaywrightSetup
 {
     private Listener _listener = null!;

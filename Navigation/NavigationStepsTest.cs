@@ -2,10 +2,11 @@ using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 
-namespace E2ETest.Navigation
+namespace E2ETest
 {
     [TestFixture]
-    public class NavigationTest : PlaywrightSetup
+    [Order(2)]
+    public class NavigationStepsTest : PlaywrightSetup
     {
         private Listener _listener;
 

@@ -4,9 +4,10 @@ using E2ETest.Wrappers;
 using static E2ETest.Constants.ClientFilterIds;
 using static E2ETest.Constants.TestClientData;
 
-namespace E2ETest.Client;
+namespace E2ETest;
 
 [TestFixture]
+[Order(12)]
 public class ClientTypeFilterTest : PlaywrightSetup
 {
     private Listener _listener = null!;

@@ -4,9 +4,10 @@ using E2ETest.Wrappers;
 using static E2ETest.Constants.SettingsOwnerAddressIds;
 using static E2ETest.Constants.SettingsOwnerAddressTestData;
 
-namespace E2ETest.Settings
+namespace E2ETest
 {
     [TestFixture]
+    [Order(21)]
     public class SettingsOwnerAddressTest : PlaywrightSetup
     {
         private Listener _listener = null!;

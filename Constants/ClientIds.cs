@@ -11,4 +11,6 @@ public static class ClientIds
     public static readonly string InputCity = "city";
     public static readonly string InputState = "state";
     public static readonly string InputCountry = "country";
+
+    public static readonly string TableRowSelector = "[id^='client-row-']";
 }

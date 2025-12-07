@@ -3,9 +3,10 @@ using E2ETest.Helpers;
 using E2ETest.Wrappers;
 using static E2ETest.Constants.SettingsGeneralIds;
 
-namespace E2ETest.Settings
+namespace E2ETest
 {
     [TestFixture]
+    [Order(20)]
     public class SettingsGeneralTest : PlaywrightSetup
     {
         private Listener _listener;

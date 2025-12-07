@@ -2,9 +2,10 @@ using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 
-namespace E2ETest.Settings
+namespace E2ETest
 {
     [TestFixture]
+    [Order(25)]
     public class SettingsStateTest : PlaywrightSetup
     {
         private Listener _listener;

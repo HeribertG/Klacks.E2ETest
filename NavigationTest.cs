@@ -5,6 +5,7 @@ using E2ETest.Wrappers;
 namespace E2ETest
 {
     [TestFixture]
+    [Order(3)]
     [NonParallelizable]
     public class NavigationTest : PlaywrightSetup
     {

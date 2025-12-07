@@ -3,9 +3,10 @@ using E2ETest.Helpers;
 using E2ETest.Wrappers;
 using Microsoft.Playwright;
 
-namespace E2ETest.Client;
+namespace E2ETest;
 
 [TestFixture]
+[Order(10)]
 public class ClientCreationTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -17,9 +18,88 @@ public class ClientCreationTest : PlaywrightSetup
         _listener = new Listener(Page);
         _listener.RecognizeApiErrors();
 
+        // Navigate through all pages first to ensure all services are initialized
+        await NavigateThroughAllPages();
+
+        // Then navigate to client list and wait for data to load
         await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
+
+        // Wait for the client table rows to appear - this ensures data is loaded
+        await WaitForClientTableData();
+    }
+
+    private async Task NavigateThroughAllPages()
+    {
+        TestContext.Out.WriteLine("Navigating through all pages to initialize services...");
+
+        // Absence
+        await Actions.ClickButtonById(MainNavIds.OpenAbsenceId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait500();
+        TestContext.Out.WriteLine("  - Absence page loaded");
+
+        // Groups (if visible)
+        var groupsButton = await Actions.FindElementById(MainNavIds.OpenGroupsId);
+        if (groupsButton != null)
+        {
+            await Actions.ClickButtonById(MainNavIds.OpenGroupsId);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait500();
+            TestContext.Out.WriteLine("  - Groups page loaded");
+        }
+
+        // Shifts
+        await Actions.ClickButtonById(MainNavIds.OpenShiftsId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait500();
+        TestContext.Out.WriteLine("  - Shifts page loaded");
+
+        // Schedules
+        await Actions.ClickButtonById(MainNavIds.OpenSchedulesId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait500();
+        TestContext.Out.WriteLine("  - Schedules page loaded");
+
+        // Employees (Client list)
+        await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait500();
+        TestContext.Out.WriteLine("  - Employees page loaded");
+
+        // Settings (if visible)
+        var settingsButton = await Actions.FindElementById(MainNavIds.OpenSettingsId);
+        if (settingsButton != null)
+        {
+            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait500();
+            TestContext.Out.WriteLine("  - Settings page loaded");
+        }
+
+        TestContext.Out.WriteLine("All pages visited - services should be initialized");
+    }
+
+    private async Task WaitForClientTableData()
+    {
+        const int maxAttempts = 60;
+        const int delayMs = 500;
+
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            // Look for table rows with specific ID pattern: client-row-0, client-row-1, etc.
+            var tableRows = await Actions.GetElementsBySelector(ClientIds.TableRowSelector);
+            if (tableRows.Count > 0)
+            {
+                TestContext.Out.WriteLine($"Client table loaded after {i * delayMs}ms ({tableRows.Count} rows)");
+                return;
+            }
+
+            await Task.Delay(delayMs);
+        }
+
+        TestContext.Out.WriteLine($"WARNING: Client table not loaded after {maxAttempts * delayMs}ms - continuing anyway");
     }
 
     [TearDown]
@@ -87,6 +167,10 @@ public class ClientCreationTest : PlaywrightSetup
         Assert.That(currentUrl, Does.Contain("workplace/edit-address"), "Should navigate to edit-address page");
         TestContext.Out.WriteLine($"Navigated to: {currentUrl}");
 
+        // Wait for Countries to be loaded in the dropdown
+        await WaitForCountriesToLoad();
+        TestContext.Out.WriteLine("Countries loaded in dropdown");
+
         // Fill First Name
         await Actions.ScrollIntoViewById(ClientIds.InputFirstName);
         await Actions.FillInputById(ClientIds.InputFirstName, clientData.FirstName);
@@ -114,27 +198,38 @@ public class ClientCreationTest : PlaywrightSetup
         await Actions.Wait500();
         TestContext.Out.WriteLine($"Filled street: {clientData.Street}");
 
-        // Fill ZIP
+        // Fill ZIP - this will auto-fill City via API
         await Actions.ScrollIntoViewById(ClientIds.InputZip);
         await Actions.FillInputById(ClientIds.InputZip, clientData.Zip);
+        await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
         TestContext.Out.WriteLine($"Filled ZIP: {clientData.Zip}");
 
-        // Fill City
+        // Check if City was auto-filled, only fill if empty
         await Actions.ScrollIntoViewById(ClientIds.InputCity);
-        await Actions.Wait500();
-        await Actions.FillInputById(ClientIds.InputCity, clientData.City);
-        await Actions.Wait500();
-        TestContext.Out.WriteLine($"Filled city: {clientData.City}");
+        var cityInput = await Page.QuerySelectorAsync($"#{ClientIds.InputCity}");
+        var currentCityValue = cityInput != null ? await cityInput.InputValueAsync() : "";
+        if (string.IsNullOrWhiteSpace(currentCityValue))
+        {
+            await Actions.FillInputById(ClientIds.InputCity, clientData.City);
+            await Actions.Wait500();
+            TestContext.Out.WriteLine($"Filled city: {clientData.City}");
+        }
+        else
+        {
+            TestContext.Out.WriteLine($"City auto-filled: {currentCityValue}");
+        }
 
         // Select Country first - CH (Switzerland) - makes State visible
         await Actions.ScrollIntoViewById(ClientIds.InputCountry);
         await Actions.SelectNativeOptionById(ClientIds.InputCountry, clientData.Country);
-        await Actions.Wait500();
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
         TestContext.Out.WriteLine($"Selected country: {clientData.Country}");
 
-        // Select State - BE (Bern)
+        // Select State - BE (Bern) - wait for states to load after country selection
         await Actions.ScrollIntoViewById(ClientIds.InputState);
+        await Actions.Wait500();
         await Actions.SelectNativeOptionById(ClientIds.InputState, clientData.State);
         await Actions.Wait500();
         TestContext.Out.WriteLine($"Selected state: {clientData.State}");
@@ -284,5 +379,29 @@ public class ClientCreationTest : PlaywrightSetup
         _createdClientIds.Add(finalUrl.Split('/').Last());
         TestContext.Out.WriteLine($"=== Client created successfully: {clientData.FirstName} {clientData.LastName} ===");
         TestContext.Out.WriteLine($"Current URL: {finalUrl}");
+    }
+
+    private async Task WaitForCountriesToLoad()
+    {
+        const int maxAttempts = 20;
+        const int delayMs = 500;
+
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            var countrySelect = await Page.QuerySelectorAsync($"#{ClientIds.InputCountry}");
+            if (countrySelect != null)
+            {
+                var options = await countrySelect.QuerySelectorAllAsync("option");
+                if (options.Count > 1)
+                {
+                    TestContext.Out.WriteLine($"Countries loaded after {i * delayMs}ms ({options.Count} options)");
+                    return;
+                }
+            }
+
+            await Task.Delay(delayMs);
+        }
+
+        TestContext.Out.WriteLine($"WARNING: Countries not loaded after {maxAttempts * delayMs}ms");
     }
 }

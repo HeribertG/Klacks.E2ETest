@@ -5,9 +5,10 @@ using Microsoft.Playwright;
 using static E2ETest.Constants.ClientFilterIds;
 using static E2ETest.Constants.TestClientData;
 
-namespace E2ETest.Client;
+namespace E2ETest;
 
 [TestFixture]
+[Order(11)]
 public class ClientSearchTest : PlaywrightSetup
 {
     private Listener _listener = null!;

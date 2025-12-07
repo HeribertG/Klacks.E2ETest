@@ -2,9 +2,10 @@ using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 
-namespace E2ETest.Login
+namespace E2ETest
 {
     [TestFixture]
+    [Order(1)]
     public class LoginTest : PlaywrightSetup
     {
         private Listener? _listener;

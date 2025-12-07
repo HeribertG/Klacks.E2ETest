@@ -2,9 +2,10 @@ using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 
-namespace E2ETest.Gantt
+namespace E2ETest
 {
     [TestFixture]
+    [Order(30)]
     public class GanttGroupFilterTest : PlaywrightSetup
     {
         private Listener _listener;

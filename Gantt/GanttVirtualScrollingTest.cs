@@ -3,9 +3,10 @@ using E2ETest.Wrappers;
 using Microsoft.Playwright;
 using NUnit.Framework;
 
-namespace E2ETest.Gantt;
+namespace E2ETest;
 
 [TestFixture]
+[Order(31)]
 [Parallelizable(ParallelScope.Self)]
 public class GanttVirtualScrollingTest : PlaywrightSetup
 {

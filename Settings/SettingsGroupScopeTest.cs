@@ -2,12 +2,13 @@ using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 
-namespace E2ETest.Settings
+namespace E2ETest
 {
     // NOTE: Group Scope tests will be marked as Inconclusive when running as Admin user
     // This is expected behavior: Admin users have access to all groups by default,
     // so the group scope buttons are disabled ([disabled]="user?.isAdmin")
     [TestFixture]
+    [Order(23)]
     public class SettingsGroupScopeTest : PlaywrightSetup
     {
         private Listener _listener;
