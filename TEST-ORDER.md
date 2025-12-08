@@ -1,0 +1,47 @@
+# E2E Test-Reihenfolge
+
+## Übersicht
+
+Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert durch das `[Order(n)]` Attribut auf Klassen-Ebene.
+
+## Test-Dateien sortiert nach Order
+
+| Order | Test-Datei | Beschreibung |
+|------:|------------|--------------|
+| 1 | `Login/LoginTest.cs` | Login |
+| 2 | `Navigation/NavigationStepsTest.cs` | Navigation Steps |
+| 3 | `NavigationTest.cs` | Navigation |
+| 10 | `Client/ClientCreationTest.cs` | Client erstellen |
+| 11 | `Client/ClientSearchTest.cs` | Client Suche |
+| 12 | `Client/ClientTypeFilterTest.cs` | Client Type Filter |
+| 13 | `Client/ClientAdvancedFiltersTest.cs` | Client Advanced Filters |
+| 20 | `Settings/SettingsGeneralTest.cs` | Settings General |
+| 21 | `Settings/SettingsOwnerAddressTest.cs` | Settings Owner Address |
+| 22 | `Settings/SettingsUserAdministrationTest.cs` | Settings User Administration |
+| 23 | `Settings/SettingsGroupScopeTest.cs` | Settings Group Scope |
+| 24 | `Settings/SettingsGridColorTest.cs` | Settings Grid Color |
+| 25 | `Settings/SettingsStateTest.cs` | Settings State |
+| 26 | `Settings/SettingsCountriesTest.cs` | Settings Countries |
+| 27 | `Settings/SettingsEmailTest.cs` | Settings Email |
+| 30 | `Gantt/GanttGroupFilterTest.cs` | Gantt Group Filter |
+| 31 | `Gantt/GanttVirtualScrollingTest.cs` | Gantt Virtual Scrolling |
+| 40 | `Shifts/ShiftCutsBasicTest.cs` | Shift Cuts Basic |
+| 41 | `Shifts/ShiftCutsNestedTest.cs` | Shift Cuts Nested |
+| 42 | `Shifts/ShiftCutsBatchTest.cs` | Shift Cuts Batch |
+| 43 | `Shifts/ShiftOrderCreationTest.cs` | Shift Order Creation |
+
+## Gruppierung
+
+| Range | Kategorie | Beschreibung |
+|-------|-----------|--------------|
+| 1-9 | Login & Navigation | Grundlegende Anmeldung und Navigation |
+| 10-19 | Client | Client-Verwaltung (Erstellen, Suche, Filter) |
+| 20-29 | Settings | Einstellungen (General, Owner, Users, etc.) |
+| 30-39 | Gantt | Gantt-Diagramm Tests |
+| 40-49 | Shifts | Dienst-Verwaltung (Cutting, Orders) |
+
+## Hinweise
+
+- Tests innerhalb einer Klasse haben ebenfalls `[Order(n)]` Attribute für die interne Reihenfolge
+- Die Order-Nummern haben Lücken, um später neue Tests einfügen zu können
+- Login muss immer zuerst laufen (Order 1), da alle anderen Tests eine aktive Session benötigen

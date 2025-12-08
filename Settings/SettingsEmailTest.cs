@@ -1,6 +1,7 @@
 using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
+using static E2ETest.Constants.SettingsEmailIds;
 
 namespace E2ETest
 {
@@ -16,48 +17,32 @@ namespace E2ETest
             _listener = new Listener(Page);
             _listener.RecognizeApiErrors();
 
-            // Navigate to Settings
             await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
+            await Actions.Wait500();
 
-            // Navigate to Email Settings tab
-            var emailTab = await Actions.FindElementByCssSelector("[href*='email'], button:has-text('Email'), a:has-text('E-Mail')");
-            if (emailTab != null)
-            {
-                await emailTab.ClickAsync();
-                await Actions.WaitForSpinnerToDisappear();
-                await Actions.Wait500();
-            }
-
-            // Scroll container into viewport
-            var container = await Page.QuerySelectorAsync(".container-dashboard");
-            if (container != null)
-            {
-                await container.ScrollIntoViewIfNeededAsync();
-                await Actions.Wait500();
-            }
+            await Actions.ScrollIntoViewById(EmailSection);
+            await Actions.Wait500();
         }
 
         [TearDown]
-        public async Task TearDown()
+        public void TearDown()
         {
             if (_listener.HasApiErrors())
             {
                 TestContext.Out.WriteLine($"API Error: {_listener.GetLastErrorMessage()}");
             }
-
-            await _listener.WaitForResponseHandlingAsync();
         }
 
         [Test]
+        [Order(1)]
         public async Task Step1_VerifyEmailSettingsPageLoaded()
         {
             // Arrange
             TestContext.Out.WriteLine("=== Step 1: Verify Email Settings Page Loaded ===");
 
             // Assert
-            var smtpServerInput = await Actions.FindElementById("outgoingServer");
+            var smtpServerInput = await Actions.FindElementById(OutgoingServer);
             Assert.That(smtpServerInput, Is.Not.Null, "SMTP server input should be visible");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
@@ -67,86 +52,133 @@ namespace E2ETest
         }
 
         [Test]
-        public async Task Step2_ViewEmailConfiguration()
+        [Order(2)]
+        public async Task Step2_VerifyAllEmailConfigFieldsExist()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 2: View Email Configuration ===");
+            TestContext.Out.WriteLine("=== Step 2: Verify All Email Config Fields Exist ===");
 
-            // Act & Assert - Check all email config fields exist
-            var smtpServer = await Actions.FindElementById("outgoingServer");
-            var smtpPort = await Actions.FindElementById("outgoingServerPort");
-            var smtpUsername = await Actions.FindElementById("outgoingServerAuthUser");
-            var smtpPassword = await Actions.FindElementById("outgoingServerAuthKey");
+            // Assert - Check all email config fields exist
+            var smtpServer = await Actions.FindElementById(OutgoingServer);
+            var smtpPort = await Actions.FindElementById(OutgoingServerPort);
+            var smtpTimeout = await Actions.FindElementById(OutgoingServerTimeout);
+            var enabledSsl = await Actions.FindElementById(EnabledSSL);
+            var authType = await Actions.FindElementById(AuthenticationType);
+            var smtpUsername = await Actions.FindElementById(SmtpAuthUser);
+            var smtpPassword = await Actions.FindElementById(SmtpAuthKey);
 
             Assert.That(smtpServer, Is.Not.Null, "SMTP server field should exist");
             Assert.That(smtpPort, Is.Not.Null, "SMTP port field should exist");
+            Assert.That(smtpTimeout, Is.Not.Null, "SMTP timeout field should exist");
+            Assert.That(enabledSsl, Is.Not.Null, "Enabled SSL field should exist");
+            Assert.That(authType, Is.Not.Null, "Authentication type field should exist");
             Assert.That(smtpUsername, Is.Not.Null, "SMTP username field should exist");
             Assert.That(smtpPassword, Is.Not.Null, "SMTP password field should exist");
+
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
             TestContext.Out.WriteLine("All email configuration fields are present");
         }
 
         [Test]
+        [Order(3)]
         public async Task Step3_TogglePasswordVisibility()
         {
             // Arrange
             TestContext.Out.WriteLine("=== Step 3: Toggle Password Visibility ===");
 
-            // Act - Find password field
-            var passwordInput = await Actions.FindElementById("outgoingServerAuthKey");
+            // Act - Get initial password field type
+            var passwordInput = await Actions.FindElementById(SmtpAuthKey);
             Assert.That(passwordInput, Is.Not.Null, "Password field should exist");
 
             var initialType = await passwordInput!.GetAttributeAsync("type");
             TestContext.Out.WriteLine($"Initial password field type: {initialType}");
+            Assert.That(initialType, Is.EqualTo("password"), "Password field should initially be hidden");
 
-            // Find toggle button (eye icon)
-            var toggleButton = await Actions.FindElementById("setting-email-password-toggle");
-            if (toggleButton != null)
-            {
-                await toggleButton.ClickAsync();
-                await Actions.Wait100();
+            // Click toggle button
+            await Actions.ClickElementById(PasswordToggle);
+            await Actions.Wait100();
 
-                var newType = await passwordInput.GetAttributeAsync("type");
-                Assert.That(newType, Is.Not.EqualTo(initialType), "Password field type should change");
+            // Assert - Password should now be visible
+            var newType = await passwordInput.GetAttributeAsync("type");
+            Assert.That(newType, Is.EqualTo("text"), "Password field should be visible after toggle");
+            TestContext.Out.WriteLine($"Password visibility toggled to: {newType}");
 
-                TestContext.Out.WriteLine($"Password visibility toggled to: {newType}");
-            }
-            else
-            {
-                TestContext.Out.WriteLine("Password toggle button not found - skipping test");
-            }
+            // Toggle back
+            await Actions.ClickElementById(PasswordToggle);
+            await Actions.Wait100();
+
+            var restoredType = await passwordInput.GetAttributeAsync("type");
+            Assert.That(restoredType, Is.EqualTo("password"), "Password field should be hidden again");
+
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+
+            TestContext.Out.WriteLine("Password visibility toggle works correctly");
         }
 
         [Test]
-        public async Task Step4_TestEmailConfiguration()
+        [Order(4)]
+        public async Task Step4_SendTestEmailAndVerifySuccess()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 4: Test Email Configuration ===");
+            TestContext.Out.WriteLine("=== Step 4: Send Test Email and Verify Success ===");
 
-            // Act - Find test button
-            var testButton = await Actions.FindElementById("setting-email-test-btn");
-            if (testButton != null)
+            // Act - Click test email button
+            var testButton = await Actions.FindElementById(TestButton);
+            Assert.That(testButton, Is.Not.Null, "Test email button should exist");
+
+            await Actions.ClickElementById(TestButton);
+            TestContext.Out.WriteLine("Test email button clicked, waiting for result...");
+
+            // Wait for toast to appear (success or error)
+            await Actions.Wait3000();
+
+            // Assert - Check for success toast
+            var successToast = await Page.QuerySelectorAsync("ngb-toast.bg-success");
+            var errorToast = await Page.QuerySelectorAsync("ngb-toast.bg-danger");
+
+            if (successToast != null)
             {
-                await testButton.ClickAsync();
-                await Actions.Wait1000();
-
-                // Wait for test result (success or error message)
-                var resultMessage = await Actions.FindElementByCssSelector(".alert, .toast, [class*='message']");
-                if (resultMessage != null)
-                {
-                    var messageText = await resultMessage.TextContentAsync();
-                    TestContext.Out.WriteLine($"Test result: {messageText}");
-                }
-
-                TestContext.Out.WriteLine("Email configuration test executed");
+                var toastText = await successToast.TextContentAsync();
+                TestContext.Out.WriteLine($"Success toast appeared: {toastText}");
+                Assert.Pass("Test email sent successfully");
+            }
+            else if (errorToast != null)
+            {
+                var toastText = await errorToast.TextContentAsync();
+                TestContext.Out.WriteLine($"Error toast appeared: {toastText}");
+                Assert.Fail($"Test email failed: {toastText}");
             }
             else
             {
-                TestContext.Out.WriteLine("Test button not found - skipping test");
-            }
+                TestContext.Out.WriteLine("No toast appeared - checking if still loading");
 
-            // Note: API error check might be expected here if SMTP is not configured
-            TestContext.Out.WriteLine("Email test completed (errors may be expected if SMTP not configured)");
+                // Check if button is still in loading state
+                var isDisabled = await testButton.IsDisabledAsync();
+                if (isDisabled)
+                {
+                    TestContext.Out.WriteLine("Button still disabled - waiting longer...");
+                    await Actions.Wait3000();
+
+                    successToast = await Page.QuerySelectorAsync("ngb-toast.bg-success");
+                    errorToast = await Page.QuerySelectorAsync("ngb-toast.bg-danger");
+
+                    if (successToast != null)
+                    {
+                        TestContext.Out.WriteLine("Success toast appeared after longer wait");
+                        Assert.Pass("Test email sent successfully");
+                    }
+                    else if (errorToast != null)
+                    {
+                        var toastText = await errorToast.TextContentAsync();
+                        Assert.Fail($"Test email failed: {toastText}");
+                    }
+                }
+
+                Assert.Fail("No response received from test email");
+            }
         }
     }
 }

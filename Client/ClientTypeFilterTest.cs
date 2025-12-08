@@ -1,7 +1,9 @@
+using System.Text.RegularExpressions;
 using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 using static E2ETest.Constants.ClientFilterIds;
+using static E2ETest.Constants.PaginationIds;
 using static E2ETest.Constants.TestClientData;
 
 namespace E2ETest;
@@ -86,6 +88,20 @@ public class ClientTypeFilterTest : PlaywrightSetup
         await Actions.Wait1000();
     }
 
+    private async Task<int> GetPaginationTotalCount()
+    {
+        var labelText = await Actions.GetTextContentById(TotalCountLabel);
+        var match = Regex.Match(labelText, @"\d+");
+        if (match.Success && int.TryParse(match.Value, out int count))
+        {
+            TestContext.Out.WriteLine($"Pagination total count: {count}");
+            return count;
+        }
+
+        TestContext.Out.WriteLine($"Could not parse pagination count from: '{labelText}'");
+        return 0;
+    }
+
     [Test]
     [Order(1)]
     public async Task Step1_FilterByClientTypeEmployee()
@@ -115,16 +131,17 @@ public class ClientTypeFilterTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        // Act
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during client type filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(3),
-            $"Should find exactly 3 Employee clients (Heribert, Marie-Anne, Tommaso Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(3),
+            $"Should find exactly 3 Employee clients (Heribert, Marie-Anne, Tommaso Gasparoli). Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Employee filter test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Employee filter test completed successfully. Found {totalCount} matching clients ===");
     }
 
     [Test]
@@ -151,14 +168,15 @@ public class ClientTypeFilterTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        // Act
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during client type filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 External Employee client (Pierre-Alain Frey). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(1),
+            $"Should find exactly 1 External Employee client (Pierre-Alain Frey). Found: {totalCount}");
 
         var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
         var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
@@ -167,7 +185,7 @@ public class ClientTypeFilterTest : PlaywrightSetup
         Assert.That(firstName, Is.EqualTo(FirstNamePierreAlain), $"First name should be '{FirstNamePierreAlain}'");
         Assert.That(lastName, Is.EqualTo(LastNameFrey), $"Last name should be '{LastNameFrey}'");
 
-        TestContext.Out.WriteLine($"=== External Employee filter test completed successfully. Found {rowCount} matching client ===");
+        TestContext.Out.WriteLine($"=== External Employee filter test completed successfully. Found {totalCount} matching client ===");
     }
 
     [Test]
@@ -194,14 +212,15 @@ public class ClientTypeFilterTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        // Act
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during client type filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 Customer client (Urs Ammann). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(1),
+            $"Should find exactly 1 Customer client (Urs Ammann). Found: {totalCount}");
 
         var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
         var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
@@ -210,7 +229,7 @@ public class ClientTypeFilterTest : PlaywrightSetup
         Assert.That(firstName, Is.EqualTo(FirstNameUrs), $"First name should be '{FirstNameUrs}'");
         Assert.That(lastName, Is.EqualTo(LastNameAmmann), $"Last name should be '{LastNameAmmann}'");
 
-        TestContext.Out.WriteLine($"=== Customer filter test completed successfully. Found {rowCount} matching client ===");
+        TestContext.Out.WriteLine($"=== Customer filter test completed successfully. Found {totalCount} matching client ===");
 
         TestContext.Out.WriteLine("Resetting all filters using reset button");
         await ResetGroupFilterToAllGroups();

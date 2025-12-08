@@ -232,17 +232,19 @@ namespace E2ETest
             const string newAppName = "under Construction";
 
             // Act
-            var appNameInput = await Actions.FindElementById(SettingGeneralName);
-            Assert.That(appNameInput, Is.Not.Null, "App name input should exist");
-
-            var originalAppName = await appNameInput!.InputValueAsync();
+            var originalAppName = await Actions.ReadInput(SettingGeneralName);
             TestContext.Out.WriteLine($"Original app name: {originalAppName}");
 
-            await Actions.FillInputAndEnterById(SettingGeneralName, newAppName);
+            await Actions.FillInputById(SettingGeneralName, newAppName);
+            await Actions.Wait500();
+
+            // Remove focus from input (blur)
+            await Actions.PressKey(Keys.Tab);
             await Actions.Wait1000();
 
             // Assert
-            var currentValue = await appNameInput.InputValueAsync();
+            var currentValue = await Actions.ReadInput(SettingGeneralName);
+            TestContext.Out.WriteLine($"Value after blur: {currentValue}");
             Assert.That(currentValue, Is.EqualTo(newAppName), "App name should be updated to 'under Construction'");
 
             Assert.That(_listener.HasApiErrors(), Is.False,

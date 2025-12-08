@@ -20,14 +20,10 @@ namespace E2ETest
 
             await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
+            await Actions.Wait500();
 
-            var ownerAddressForm = await Page.QuerySelectorAsync("#owner-address-form");
-            if (ownerAddressForm != null)
-            {
-                await ownerAddressForm.ScrollIntoViewIfNeededAsync();
-                await Actions.Wait500();
-            }
+            await Actions.ScrollIntoViewById(OwnerAddressSection);
+            await Actions.Wait500();
         }
 
         [TearDown]
@@ -218,61 +214,44 @@ namespace E2ETest
             // Arrange
             TestContext.Out.WriteLine("=== Step 9: Verify Data Persistence ===");
 
-            // Act
-            TestContext.Out.WriteLine("Navigating to Dashboard...");
-            await Actions.ClickButtonById(MainNavIds.OpenDashboardId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
+            // Act - Reload page to verify data was saved
+            TestContext.Out.WriteLine("Reloading page...");
+            await Page.ReloadAsync();
+            await Actions.Wait2000();
 
-            TestContext.Out.WriteLine("Navigating back to Settings...");
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
-
-            var ownerAddressForm = await Page.QuerySelectorAsync("#owner-address-form");
-            if (ownerAddressForm != null)
-            {
-                await ownerAddressForm.ScrollIntoViewIfNeededAsync();
-                await Actions.Wait500();
-            }
+            await Actions.ScrollIntoViewById(OwnerAddressSection);
+            await Actions.Wait500();
 
             // Assert
             TestContext.Out.WriteLine("Verifying all fields contain expected values...");
 
-            var nameInput = await Actions.FindElementById(SettingOwnerAddressName);
-            var nameValue = await nameInput!.InputValueAsync();
+            var nameValue = await Actions.ReadInput(SettingOwnerAddressName);
             Assert.That(nameValue, Is.EqualTo(ExpectedOwnerName), $"Owner name should be '{ExpectedOwnerName}'");
-            TestContext.Out.WriteLine($"✓ Name: {nameValue}");
+            TestContext.Out.WriteLine($"Name: {nameValue}");
 
-            var phoneInput = await Actions.FindElementById(SettingOwnerAddressTel);
-            var phoneValue = await phoneInput!.InputValueAsync();
+            var phoneValue = await Actions.ReadInput(SettingOwnerAddressTel);
             Assert.That(phoneValue, Is.EqualTo(ExpectedPhone), $"Phone should be '{ExpectedPhone}'");
-            TestContext.Out.WriteLine($"✓ Phone: {phoneValue}");
+            TestContext.Out.WriteLine($"Phone: {phoneValue}");
 
-            var supplementInput = await Actions.FindElementById(SettingOwnerAddressSupplement);
-            var supplementValue = await supplementInput!.InputValueAsync();
+            var supplementValue = await Actions.ReadInput(SettingOwnerAddressSupplement);
             Assert.That(supplementValue, Is.EqualTo(ExpectedSupplement), "Supplement should be empty");
-            TestContext.Out.WriteLine($"✓ Supplement: (empty)");
+            TestContext.Out.WriteLine($"Supplement: (empty)");
 
-            var emailInput = await Actions.FindElementById(SettingOwnerAddressEmail);
-            var emailValue = await emailInput!.InputValueAsync();
+            var emailValue = await Actions.ReadInput(SettingOwnerAddressEmail);
             Assert.That(emailValue, Is.EqualTo(ExpectedEmail), $"Email should be '{ExpectedEmail}'");
-            TestContext.Out.WriteLine($"✓ Email: {emailValue}");
+            TestContext.Out.WriteLine($"Email: {emailValue}");
 
-            var streetInput = await Actions.FindElementById(SettingOwnerAddressStreet);
-            var streetValue = await streetInput!.InputValueAsync();
+            var streetValue = await Actions.ReadInput(SettingOwnerAddressStreet);
             Assert.That(streetValue, Is.EqualTo(ExpectedStreet), $"Street should be '{ExpectedStreet}'");
-            TestContext.Out.WriteLine($"✓ Street: {streetValue}");
+            TestContext.Out.WriteLine($"Street: {streetValue}");
 
-            var zipInput = await Actions.FindElementById(SettingOwnerAddressZip);
-            var zipValue = await zipInput!.InputValueAsync();
+            var zipValue = await Actions.ReadInput(SettingOwnerAddressZip);
             Assert.That(zipValue, Is.EqualTo(ExpectedZip), $"ZIP should be '{ExpectedZip}'");
-            TestContext.Out.WriteLine($"✓ ZIP: {zipValue}");
+            TestContext.Out.WriteLine($"ZIP: {zipValue}");
 
-            var cityInput = await Actions.FindElementById(SettingOwnerAddressCity);
-            var cityValue = await cityInput!.InputValueAsync();
+            var cityValue = await Actions.ReadInput(SettingOwnerAddressCity);
             Assert.That(cityValue, Is.EqualTo(ExpectedCity), $"City should be '{ExpectedCity}'");
-            TestContext.Out.WriteLine($"✓ City: {cityValue}");
+            TestContext.Out.WriteLine($"City: {cityValue}");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");

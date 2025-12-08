@@ -1,7 +1,9 @@
+using System.Text.RegularExpressions;
 using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 using static E2ETest.Constants.ClientFilterIds;
+using static E2ETest.Constants.PaginationIds;
 using static E2ETest.Constants.TestClientData;
 
 namespace E2ETest;
@@ -86,6 +88,20 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         await Actions.Wait1000();
     }
 
+    private async Task<int> GetPaginationTotalCount()
+    {
+        var labelText = await Actions.GetTextContentById(TotalCountLabel);
+        var match = Regex.Match(labelText, @"\d+");
+        if (match.Success && int.TryParse(match.Value, out int count))
+        {
+            TestContext.Out.WriteLine($"Pagination total count: {count}");
+            return count;
+        }
+
+        TestContext.Out.WriteLine($"Could not parse pagination count from: '{labelText}'");
+        return 0;
+    }
+
     [Test]
     [Order(1)]
     public async Task Step1_FilterByValidityActive()
@@ -115,16 +131,16 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during validity filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(5),
-            $"Should find exactly 5 active clients in group 'Bern'. Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(5),
+            $"Should find exactly 5 active clients in group 'Bern'. Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Active validity filter test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Active validity filter test completed successfully. Found {totalCount} matching clients ===");
     }
 
     [Test]
@@ -151,16 +167,16 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during validity filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(0),
-            $"Should find 0 former clients in group 'Bern'. Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(0),
+            $"Should find 0 former clients in group 'Bern'. Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Former validity filter test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Former validity filter test completed successfully. Found {totalCount} matching clients ===");
     }
 
     [Test]
@@ -187,16 +203,16 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during validity filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(0),
-            $"Should find 0 future clients in group 'Bern'. Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(0),
+            $"Should find 0 future clients in group 'Bern'. Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Future validity filter test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Future validity filter test completed successfully. Found {totalCount} matching clients ===");
 
         TestContext.Out.WriteLine("Resetting validity to Active for next tests");
         await Actions.ClickButtonById(DropdownValidityId);
@@ -233,13 +249,13 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during country filter. Error: {_listener.GetLastErrorMessage()}");
 
-        TestContext.Out.WriteLine($"=== Deselect all countries test completed. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Deselect all countries test completed. Found {totalCount} matching clients ===");
     }
 
     [Test]
@@ -264,16 +280,16 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during country filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(5),
-            $"Should find 5 clients when all countries are selected. Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(5),
+            $"Should find 5 clients when all countries are selected. Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Select all countries test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Select all countries test completed successfully. Found {totalCount} matching clients ===");
     }
 
     [Test]
@@ -304,16 +320,16 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during scope filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.GreaterThanOrEqualTo(1),
-            $"Should find at least 1 client with entry date in range. Found: {rowCount}");
+        Assert.That(totalCount, Is.GreaterThanOrEqualTo(1),
+            $"Should find at least 1 client with entry date in range. Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Scope Entry Date filter test completed. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Scope Entry Date filter test completed. Found {totalCount} matching clients ===");
     }
 
     [Test]
@@ -331,15 +347,15 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
 
         await ResetGroupFilterToAllGroups();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during filter reset. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.GreaterThanOrEqualTo(5),
-            $"After reset, should find all clients. Found: {rowCount}");
+        Assert.That(totalCount, Is.GreaterThanOrEqualTo(5),
+            $"After reset, should find all clients. Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Reset all filters test completed successfully. Found {rowCount} clients ===");
+        TestContext.Out.WriteLine($"=== Reset all filters test completed successfully. Found {totalCount} clients ===");
     }
 }

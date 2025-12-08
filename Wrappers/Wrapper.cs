@@ -566,6 +566,21 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Types into an input field character by character, triggering keyup events.
+    /// Use this when the form has keyup-based validation.
+    /// </summary>
+    public async Task TypeIntoInputById(string elementId, string value)
+    {
+        await WaitForElementToBeStable(elementId);
+        var element = await FindElementById(elementId);
+        if (element != null)
+        {
+            await element.FillAsync("");
+            await element.TypeAsync(value);
+        }
+    }
+
+    /// <summary>
     /// Fills a rich text editor by ID.
     /// </summary>
     public async Task FillRichTextEditorById(string elementId, string value)
@@ -577,6 +592,7 @@ public sealed class Wrapper
         {
             await editor.FillAsync(value);
         }
+
         await Wait500();
     }
 
@@ -624,6 +640,15 @@ public sealed class Wrapper
     #endregion Input Handling
 
     #region Button and Control Actions
+
+    /// <summary>
+    /// Simple click on an element by ID without waiting for stability.
+    /// Use this for elements that may not pass stability checks (like spans, divs with dynamic IDs).
+    /// </summary>
+    public async Task ClickElementById(string elementId)
+    {
+        await _page.ClickAsync($"#{elementId}");
+    }
 
     /// <summary>
     /// Clicks a button element identified by its ID. Makes multiple attempts if initial click fails.
@@ -1365,6 +1390,36 @@ public sealed class Wrapper
     #endregion Key
 
     #region Element Queries
+
+    /// <summary>
+    /// Finds an input element by its ID prefix and value using JavaScript evaluation.
+    /// This is necessary for Angular ngModel bindings, where the value is not set as an HTML attribute.
+    /// </summary>
+    /// <param name="idPrefix">The prefix of the element ID to search for (e.g., "country-row-abbreviation-")</param>
+    /// <param name="value">The value to match against the input's value property</param>
+    /// <returns>The full element ID if found, null otherwise</returns>
+    public async Task<string?> FindInputIdByValue(string idPrefix, string value)
+    {
+        try
+        {
+            return await _page.EvaluateAsync<string?>($@"
+                () => {{
+                    const inputs = document.querySelectorAll('input[id^=""{idPrefix}""]');
+                    for (const input of inputs) {{
+                        if (input.value === '{value}') {{
+                            return input.id;
+                        }}
+                    }}
+                    return null;
+                }}
+            ");
+        }
+        catch (Exception ex)
+        {
+            TestContext.Out.WriteLine($"Error finding input by value: {ex.Message}");
+            return null;
+        }
+    }
 
     /// <summary>
     /// Counts elements matching a CSS selector.

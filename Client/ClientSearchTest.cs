@@ -1,8 +1,9 @@
+using System.Text.RegularExpressions;
 using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
-using Microsoft.Playwright;
 using static E2ETest.Constants.ClientFilterIds;
+using static E2ETest.Constants.PaginationIds;
 using static E2ETest.Constants.TestClientData;
 
 namespace E2ETest;
@@ -71,6 +72,20 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.Wait1000();
     }
 
+    private async Task<int> GetPaginationTotalCount()
+    {
+        var labelText = await Actions.GetTextContentById(TotalCountLabel);
+        var match = Regex.Match(labelText, @"\d+");
+        if (match.Success && int.TryParse(match.Value, out int count))
+        {
+            TestContext.Out.WriteLine($"Pagination total count: {count}");
+            return count;
+        }
+
+        TestContext.Out.WriteLine($"Could not parse pagination count from: '{labelText}'");
+        return 0;
+    }
+
     [Test]
     [Order(1)]
     public async Task Step1_SearchForClients()
@@ -90,16 +105,16 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.Wait1000();
 
         TestContext.Out.WriteLine("Counting visible client rows");
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during search. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(3),
-            $"Should find exactly 3 clients with 'gasp' in their name (Heribert Gasparoli, Marie-Anne Gasparoli, Tommaso Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(3),
+            $"Should find exactly 3 clients with 'gasp' in their name (Heribert Gasparoli, Marie-Anne Gasparoli, Tommaso Gasparoli). Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {totalCount} matching clients ===");
 
         // Reset search
         TestContext.Out.WriteLine("Resetting search to initial state");
@@ -124,14 +139,14 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during search. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 client with 'heri' in their name (Heribert Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(1),
+            $"Should find exactly 1 client with 'heri' in their name (Heribert Gasparoli). Found: {totalCount}");
 
         var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
         var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
@@ -140,7 +155,7 @@ public class ClientSearchTest : PlaywrightSetup
         Assert.That(firstName, Is.EqualTo(FirstNameHeribert), $"First name should be '{FirstNameHeribert}'");
         Assert.That(lastName, Is.EqualTo(LastNameGasparoli), $"Last name should be '{LastNameGasparoli}'");
 
-        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {rowCount} matching client ===");
+        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {totalCount} matching client ===");
 
         // Reset search
         TestContext.Out.WriteLine("Resetting search to initial state");
@@ -165,14 +180,14 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during search. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 client with 'marie-anne' in their name (Marie-Anne Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(1),
+            $"Should find exactly 1 client with 'marie-anne' in their name (Marie-Anne Gasparoli). Found: {totalCount}");
 
         var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
         var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
@@ -181,7 +196,7 @@ public class ClientSearchTest : PlaywrightSetup
         Assert.That(firstName, Is.EqualTo(FirstNameMarieAnne), $"First name should be '{FirstNameMarieAnne}'");
         Assert.That(lastName, Is.EqualTo(LastNameGasparoli), $"Last name should be '{LastNameGasparoli}'");
 
-        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {rowCount} matching client ===");
+        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {totalCount} matching client ===");
 
         // Reset search
         TestContext.Out.WriteLine("Resetting search to initial state");
@@ -206,14 +221,14 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during search. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 client with 'tommaso gasp' in their name (Tommaso Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(1),
+            $"Should find exactly 1 client with 'tommaso gasp' in their name (Tommaso Gasparoli). Found: {totalCount}");
 
         var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
         var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
@@ -222,7 +237,7 @@ public class ClientSearchTest : PlaywrightSetup
         Assert.That(firstName, Is.EqualTo(FirstNameTommaso), $"First name should be '{FirstNameTommaso}'");
         Assert.That(lastName, Is.EqualTo(LastNameGasparoli), $"Last name should be '{LastNameGasparoli}'");
 
-        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {rowCount} matching client ===");
+        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {totalCount} matching client ===");
 
         // Reset search
         TestContext.Out.WriteLine("Resetting search to initial state");
@@ -252,16 +267,16 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during search. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(2),
-            $"Should find exactly 2 clients with address 'Kirchstrasse 52' (Heribert and Marie-Anne Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(2),
+            $"Should find exactly 2 clients with address 'Kirchstrasse 52' (Heribert and Marie-Anne Gasparoli). Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Search test completed successfully. Found {totalCount} matching clients ===");
 
         // Reset search
         TestContext.Out.WriteLine("Resetting search to initial state");
@@ -283,16 +298,16 @@ public class ClientSearchTest : PlaywrightSetup
         // Act
         await SelectGroupByPath(GroupDeutschweizMitte, GroupBE, GroupBern);
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during group filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(5),
-            $"Should find exactly 5 clients in group 'Bern' (all created clients). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(5),
+            $"Should find exactly 5 clients in group 'Bern' (all created clients). Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Group filter test completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Group filter test completed successfully. Found {totalCount} matching clients ===");
 
         // Reset to all groups
         await ResetGroupFilterToAllGroups();
@@ -323,16 +338,16 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during search. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(2),
-            $"Should find exactly 2 male clients with 'gasp' in their name (Heribert and Tommaso Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(2),
+            $"Should find exactly 2 male clients with 'gasp' in their name (Heribert and Tommaso Gasparoli). Found: {totalCount}");
 
-        TestContext.Out.WriteLine($"=== Search with Male filter completed successfully. Found {rowCount} matching clients ===");
+        TestContext.Out.WriteLine($"=== Search with Male filter completed successfully. Found {totalCount} matching clients ===");
 
         // Reset search and filters
         TestContext.Out.WriteLine("Resetting search and filters to initial state");
@@ -373,14 +388,14 @@ public class ClientSearchTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var rowCount = await Actions.CountElementsBySelector(ClientRowSelector);
+        var totalCount = await GetPaginationTotalCount();
 
         // Assert
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during search. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(rowCount, Is.EqualTo(1),
-            $"Should find exactly 1 female client with 'gasp' in their name (Marie-Anne Gasparoli). Found: {rowCount}");
+        Assert.That(totalCount, Is.EqualTo(1),
+            $"Should find exactly 1 female client with 'gasp' in their name (Marie-Anne Gasparoli). Found: {totalCount}");
 
         var firstName = await Actions.GetTextContentById($"{ClientFirstNamePrefix}0");
         var lastName = await Actions.GetTextContentById($"{ClientLastNamePrefix}0");
@@ -389,7 +404,7 @@ public class ClientSearchTest : PlaywrightSetup
         Assert.That(firstName, Is.EqualTo(FirstNameMarieAnne), $"First name should be '{FirstNameMarieAnne}'");
         Assert.That(lastName, Is.EqualTo(LastNameGasparoli), $"Last name should be '{LastNameGasparoli}'");
 
-        TestContext.Out.WriteLine($"=== Search with Female filter completed successfully. Found {rowCount} matching client ===");
+        TestContext.Out.WriteLine($"=== Search with Female filter completed successfully. Found {totalCount} matching client ===");
 
         // Reset search and filters
         TestContext.Out.WriteLine("Resetting search and filters to initial state");

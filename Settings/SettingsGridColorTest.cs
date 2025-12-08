@@ -1,6 +1,7 @@
 using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
+using static E2ETest.Constants.SettingsGridColorIds;
 
 namespace E2ETest
 {
@@ -16,49 +17,36 @@ namespace E2ETest
             _listener = new Listener(Page);
             _listener.RecognizeApiErrors();
 
-            // Navigate to Settings
             await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
+            await Actions.Wait500();
 
-            // Navigate to Grid Color tab
-            var gridColorTab = await Actions.FindElementByCssSelector("[href*='grid-color'], button:has-text('Grid Color'), a:has-text('Rasterfarbe')");
-            if (gridColorTab != null)
-            {
-                await gridColorTab.ClickAsync();
-                await Actions.WaitForSpinnerToDisappear();
-                await Actions.Wait500();
-            }
-
-            // Scroll container into viewport
-            var container = await Page.QuerySelectorAsync(".container-box");
-            if (container != null)
-            {
-                await container.ScrollIntoViewIfNeededAsync();
-                await Actions.Wait500();
-            }
+            await Actions.ScrollIntoViewById(GridColorSection);
+            await Actions.Wait500();
         }
 
         [TearDown]
-        public async Task TearDown()
+        public void TearDown()
         {
             if (_listener.HasApiErrors())
             {
                 TestContext.Out.WriteLine($"API Error: {_listener.GetLastErrorMessage()}");
             }
-
-            await _listener.WaitForResponseHandlingAsync();
         }
 
         [Test]
+        [Order(1)]
         public async Task Step1_VerifyGridColorPageLoaded()
         {
             // Arrange
             TestContext.Out.WriteLine("=== Step 1: Verify Grid Color Page Loaded ===");
 
             // Assert
-            var colorInputs = await Page.QuerySelectorAllAsync("input[id^='grid-color-row-']");
-            Assert.That(colorInputs.Count, Is.GreaterThan(0), "Grid color inputs should be visible");
+            var header = await Actions.FindElementById(GridColorHeader);
+            Assert.That(header, Is.Not.Null, "Grid color header should be visible");
+
+            var colorBox = await Actions.FindElementById(GridColorBox);
+            Assert.That(colorBox, Is.Not.Null, "Grid color box should be visible");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
@@ -67,125 +55,100 @@ namespace E2ETest
         }
 
         [Test]
+        [Order(2)]
         public async Task Step2_VerifyColorInputsExist()
         {
             // Arrange
             TestContext.Out.WriteLine("=== Step 2: Verify Color Inputs Exist ===");
 
-            // Act & Assert
-            var colorInputs = await Page.QuerySelectorAllAsync("input[type='color'][id^='grid-color-row-']");
+            // Assert - Check that key color inputs exist
+            var backgroundColorInput = await Actions.FindElementById($"{RowInputPrefix}{BackgroundColorKey}");
+            var saturdayColorInput = await Actions.FindElementById($"{RowInputPrefix}{BackgroundColorSaturdayKey}");
+            var sundayColorInput = await Actions.FindElementById($"{RowInputPrefix}{BackgroundColorSundayKey}");
+            var holidayColorInput = await Actions.FindElementById($"{RowInputPrefix}{BackgroundColorHolidayKey}");
+
+            Assert.That(backgroundColorInput, Is.Not.Null, "Background color input should exist");
+            Assert.That(saturdayColorInput, Is.Not.Null, "Saturday color input should exist");
+            Assert.That(sundayColorInput, Is.Not.Null, "Sunday color input should exist");
+            Assert.That(holidayColorInput, Is.Not.Null, "Holiday color input should exist");
+
+            TestContext.Out.WriteLine("All key color inputs exist");
+
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+        }
+
+        [Test]
+        [Order(3)]
+        public async Task Step3_ChangeColorAndVerifyAutoSave()
+        {
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 3: Change Color and Verify AutoSave ===");
+            var colorInputId = $"{RowInputPrefix}{BackgroundColorKey}";
+
+            // Act - Get original color
+            var colorInput = await Actions.FindElementById(colorInputId);
+            Assert.That(colorInput, Is.Not.Null, "Color input should exist");
+
+            var originalColor = await colorInput!.InputValueAsync();
+            TestContext.Out.WriteLine($"Original color: {originalColor}");
+
+            // Change to test color
+            await colorInput.FillAsync(TestColor);
+            await Actions.Wait500();
+
+            // Trigger change event
+            await Actions.ClickElementById(GridColorHeader);
+
+            // Wait for autoSave (800ms timeout + buffer)
+            TestContext.Out.WriteLine("Waiting for autoSave (1500ms)...");
+            await Actions.Wait1500();
+
+            // Re-find element after Angular re-render
+            colorInput = await Actions.FindElementById(colorInputId);
+            Assert.That(colorInput, Is.Not.Null, "Color input should still exist after save");
+
+            // Verify change was applied
+            var newColor = await colorInput!.InputValueAsync();
+            Assert.That(newColor, Is.EqualTo(TestColor), "Color should be changed");
+            TestContext.Out.WriteLine($"Color changed to: {newColor}");
+
+            // Restore original color
+            await colorInput.FillAsync(originalColor);
+            await Actions.ClickElementById(GridColorHeader);
+            await Actions.Wait1500();
+
+            // Re-find element again after restore
+            colorInput = await Actions.FindElementById(colorInputId);
+            var restoredColor = await colorInput!.InputValueAsync();
+            Assert.That(restoredColor, Is.EqualTo(originalColor), "Color should be restored");
+            TestContext.Out.WriteLine($"Color restored to: {restoredColor}");
+
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+        }
+
+        [Test]
+        [Order(4)]
+        public async Task Step4_VerifyAllColorInputsHaveValues()
+        {
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 4: Verify All Color Inputs Have Values ===");
+
+            // Act - Find all color inputs
+            var colorInputs = await Page.QuerySelectorAllAsync($"input[type='color'][id^='{RowInputPrefix}']");
             Assert.That(colorInputs.Count, Is.GreaterThan(0), "At least one color input should exist");
+            TestContext.Out.WriteLine($"Found {colorInputs.Count} color inputs");
 
-            TestContext.Out.WriteLine($"Found {colorInputs.Count} color input fields");
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-        }
-
-        [Test]
-        public async Task Step3_ChangeGridColor()
-        {
-            // Arrange
-            TestContext.Out.WriteLine("=== Step 3: Change Grid Color ===");
-
-            // Act - Find first color input
-            var firstColorInput = await Actions.FindElementByCssSelector("input[type='color'][id^='grid-color-row-']");
-            if (firstColorInput != null)
+            // Assert - All inputs should have valid color values
+            foreach (var input in colorInputs)
             {
-                var originalColor = await firstColorInput.InputValueAsync();
-                TestContext.Out.WriteLine($"Original color: {originalColor}");
-
-                var newColor = "#ff5733";
-                await firstColorInput.FillAsync(newColor);
-                await Actions.Wait500();
-
-                // Verify change
-                var currentColor = await firstColorInput.InputValueAsync();
-                Assert.That(currentColor, Is.EqualTo(newColor), "Color should be updated");
-
-                // Restore original color
-                await firstColorInput.FillAsync(originalColor);
-                await Actions.Wait500();
-
-                TestContext.Out.WriteLine("Grid color changed and restored successfully");
-            }
-            else
-            {
-                TestContext.Out.WriteLine("No color input found");
+                var value = await input.InputValueAsync();
+                var id = await input.GetAttributeAsync("id");
+                Assert.That(value, Does.Match(@"^#[0-9A-Fa-f]{6}$"), $"Color input {id} should have valid hex color");
             }
 
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-        }
-
-        [Test]
-        public async Task Step4_VerifyColorPreview()
-        {
-            // Arrange
-            TestContext.Out.WriteLine("=== Step 4: Verify Color Preview ===");
-
-            // Act - Look for color input elements
-            var colorInputs = await Page.QuerySelectorAllAsync("input[type='color'][id^='grid-color-row-']");
-            if (colorInputs.Count > 0)
-            {
-                TestContext.Out.WriteLine($"Found {colorInputs.Count} color inputs with preview capability");
-
-                var firstInput = colorInputs[0];
-                var inputValue = await firstInput.InputValueAsync();
-                TestContext.Out.WriteLine($"First color value: {inputValue}");
-
-                Assert.That(inputValue, Is.Not.Null.And.Not.Empty, "Color input should have a value");
-            }
-            else
-            {
-                TestContext.Out.WriteLine("No color inputs found");
-            }
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-        }
-
-        [Test]
-        public async Task Step5_SaveGridColorSettings()
-        {
-            // Arrange
-            TestContext.Out.WriteLine("=== Step 5: Save Grid Color Settings ===");
-
-            // Act - Make a change
-            var firstColorInput = await Actions.FindElementByCssSelector("input[type='color'][id^='grid-color-row-']");
-            if (firstColorInput != null)
-            {
-                var originalColor = await firstColorInput.InputValueAsync();
-                var tempColor = "#00ff00";
-
-                await firstColorInput.FillAsync(tempColor);
-                await Actions.Wait500();
-
-                // Find and click Save button
-                var saveButton = await Actions.FindElementByCssSelector("button:has-text('Save'), button:has-text('Speichern'), [class*='btn-save']");
-                if (saveButton != null)
-                {
-                    await saveButton.ClickAsync();
-                    await Actions.WaitForSpinnerToDisappear();
-                    await Actions.Wait500();
-
-                    TestContext.Out.WriteLine("Grid color settings saved");
-
-                    // Restore original color
-                    await firstColorInput.FillAsync(originalColor);
-                    await saveButton.ClickAsync();
-                    await Actions.WaitForSpinnerToDisappear();
-                    await Actions.Wait500();
-                }
-                else
-                {
-                    TestContext.Out.WriteLine("Save button not found - changes might be auto-saved");
-
-                    // Restore original color
-                    await firstColorInput.FillAsync(originalColor);
-                    await Actions.Wait500();
-                }
-            }
+            TestContext.Out.WriteLine("All color inputs have valid hex color values");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");

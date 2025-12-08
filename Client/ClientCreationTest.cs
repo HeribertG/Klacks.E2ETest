@@ -18,67 +18,13 @@ public class ClientCreationTest : PlaywrightSetup
         _listener = new Listener(Page);
         _listener.RecognizeApiErrors();
 
-        // Navigate through all pages first to ensure all services are initialized
-        await NavigateThroughAllPages();
-
-        // Then navigate to client list and wait for data to load
+        // Navigate directly to client list
         await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
         // Wait for the client table rows to appear - this ensures data is loaded
         await WaitForClientTableData();
-    }
-
-    private async Task NavigateThroughAllPages()
-    {
-        TestContext.Out.WriteLine("Navigating through all pages to initialize services...");
-
-        // Absence
-        await Actions.ClickButtonById(MainNavIds.OpenAbsenceId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait500();
-        TestContext.Out.WriteLine("  - Absence page loaded");
-
-        // Groups (if visible)
-        var groupsButton = await Actions.FindElementById(MainNavIds.OpenGroupsId);
-        if (groupsButton != null)
-        {
-            await Actions.ClickButtonById(MainNavIds.OpenGroupsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait500();
-            TestContext.Out.WriteLine("  - Groups page loaded");
-        }
-
-        // Shifts
-        await Actions.ClickButtonById(MainNavIds.OpenShiftsId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait500();
-        TestContext.Out.WriteLine("  - Shifts page loaded");
-
-        // Schedules
-        await Actions.ClickButtonById(MainNavIds.OpenSchedulesId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait500();
-        TestContext.Out.WriteLine("  - Schedules page loaded");
-
-        // Employees (Client list)
-        await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait500();
-        TestContext.Out.WriteLine("  - Employees page loaded");
-
-        // Settings (if visible)
-        var settingsButton = await Actions.FindElementById(MainNavIds.OpenSettingsId);
-        if (settingsButton != null)
-        {
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait500();
-            TestContext.Out.WriteLine("  - Settings page loaded");
-        }
-
-        TestContext.Out.WriteLine("All pages visited - services should be initialized");
     }
 
     private async Task WaitForClientTableData()
@@ -205,19 +151,23 @@ public class ClientCreationTest : PlaywrightSetup
         await Actions.Wait1000();
         TestContext.Out.WriteLine($"Filled ZIP: {clientData.Zip}");
 
-        // Check if City was auto-filled, only fill if empty
+        // Check if City has correct value, clear and fill if needed
         await Actions.ScrollIntoViewById(ClientIds.InputCity);
-        var cityInput = await Page.QuerySelectorAsync($"#{ClientIds.InputCity}");
-        var currentCityValue = cityInput != null ? await cityInput.InputValueAsync() : "";
-        if (string.IsNullOrWhiteSpace(currentCityValue))
+        var currentCityValue = await Actions.ReadInput(ClientIds.InputCity);
+        if (currentCityValue != clientData.City)
         {
+            if (!string.IsNullOrWhiteSpace(currentCityValue))
+            {
+                await Actions.ClearInputById(ClientIds.InputCity);
+                TestContext.Out.WriteLine($"Cleared city field (was: {currentCityValue})");
+            }
             await Actions.FillInputById(ClientIds.InputCity, clientData.City);
             await Actions.Wait500();
             TestContext.Out.WriteLine($"Filled city: {clientData.City}");
         }
         else
         {
-            TestContext.Out.WriteLine($"City auto-filled: {currentCityValue}");
+            TestContext.Out.WriteLine($"City already correct: {currentCityValue}");
         }
 
         // Select Country first - CH (Switzerland) - makes State visible
