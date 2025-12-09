@@ -38,15 +38,35 @@ Die E2E-Tests für Klacks verwenden Playwright mit NUnit als Test-Framework. Die
 ```
 E2ETest/
 ├── Client/
-│   ├── ClientCreationTest.cs          # Client-Erstellungs-Tests (3 Clients)
-│   └── ClientSearchTest.cs            # Client-Suche & Filter-Tests
+│   ├── ClientCreationTest.cs          # Order 10: Client-Erstellungs-Tests (5 Clients)
+│   ├── ClientSearchTest.cs            # Order 11: Client-Suche-Tests
+│   ├── ClientTypeFilterTest.cs        # Order 12: Client Type Filter-Tests
+│   ├── ClientAdvancedFiltersTest.cs   # Order 13: Client Advanced Filters-Tests
+│   └── ClientDeletionTest.cs          # Order 14: Client-Löschungs-Tests (⚠️ WIP)
+├── Settings/
+│   ├── SettingsOwnerAddressTest.cs    # Order 21: Owner Address-Tests
+│   ├── SettingsUserAdministrationTest.cs # Order 22: User Administration-Tests
+│   ├── SettingsGroupScopeTest.cs      # Order 23: Group Scope-Tests
+│   ├── SettingsGridColorTest.cs       # Order 24: Grid Color-Tests
+│   ├── SettingsCountriesTest.cs       # Order 25: Countries-Tests
+│   ├── SettingsStateTest.cs           # Order 26: State-Tests
+│   └── SettingsEmailTest.cs           # Order 27: Email-Tests
 ├── Constants/
 │   ├── ClientIds.cs                   # IDs für Client-Elemente
 │   ├── ClientTestData.cs              # Test-Daten für Client-Erstellung
+│   ├── ClientFilterIds.cs             # IDs für Client-Filter
+│   ├── ClientDeletionIds.cs           # IDs für Client-Löschung
 │   ├── ContractIds.cs                 # IDs für Contract-Elemente
 │   ├── GroupIds.cs                    # IDs für Gruppen-Elemente
 │   ├── MainNavIds.cs                  # IDs für Haupt-Navigation
-│   └── SaveBarIds.cs                  # IDs für SaveBar-Elemente
+│   ├── SaveBarIds.cs                  # IDs für SaveBar-Elemente
+│   ├── SettingsOwnerAddressIds.cs     # IDs für Owner Address
+│   ├── SettingsUserAdministrationIds.cs # IDs für User Administration
+│   ├── SettingsGroupScopeIds.cs       # IDs für Group Scope
+│   ├── SettingsGridColorIds.cs        # IDs für Grid Color
+│   ├── SettingsCountriesIds.cs        # IDs für Countries
+│   ├── SettingsStatesIds.cs           # IDs für States
+│   └── SettingsEmailIds.cs            # IDs für Email
 ├── Helpers/
 │   └── PlaywrightSetup.cs             # Base-Klasse für Tests
 ├── Wrappers/
@@ -54,6 +74,23 @@ E2ETest/
 │   └── Listener.cs                    # API-Error-Listener
 └── E2E-DOCUMENTATION.md               # Diese Dokumentation
 ```
+
+## Test-Übersicht
+
+| Order | Test-Datei | Beschreibung | Status |
+|-------|------------|--------------|--------|
+| 10 | `Client/ClientCreationTest.cs` | 5 Clients erstellen | ✅ |
+| 11 | `Client/ClientSearchTest.cs` | Client Suche | ✅ |
+| 12 | `Client/ClientTypeFilterTest.cs` | Client Type Filter | ✅ |
+| 13 | `Client/ClientAdvancedFiltersTest.cs` | Client Advanced Filters | ✅ |
+| 14 | `Client/ClientDeletionTest.cs` | 5 Clients löschen | ⚠️ WIP |
+| 21 | `Settings/SettingsOwnerAddressTest.cs` | Owner Address | ✅ |
+| 22 | `Settings/SettingsUserAdministrationTest.cs` | User Administration | ✅ |
+| 23 | `Settings/SettingsGroupScopeTest.cs` | Group Scope | ✅ |
+| 24 | `Settings/SettingsGridColorTest.cs` | Grid Color | ✅ |
+| 25 | `Settings/SettingsCountriesTest.cs` | Countries | ✅ |
+| 26 | `Settings/SettingsStateTest.cs` | States | ✅ |
+| 27 | `Settings/SettingsEmailTest.cs` | Email Settings | ✅ |
 
 ---
 
@@ -608,6 +645,6 @@ public async Task Step6_FilterByGroup()
 
 ---
 
-**Letzte Aktualisierung:** 10.11.2025
-**Version:** 1.1
+**Letzte Aktualisierung:** 08.12.2025
+**Version:** 1.2
 **Autor:** E2E Test Team
