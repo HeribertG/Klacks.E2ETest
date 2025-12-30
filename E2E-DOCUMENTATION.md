@@ -28,7 +28,7 @@ Die E2E-Tests für Klacks verwenden Playwright mit NUnit als Test-Framework. Die
 | .NET | 10.0 | Test-Runtime |
 | NUnit | 5.0 | Test-Framework |
 | Playwright | Latest | Browser-Automatisierung |
-| Angular Dev Server | 20.3.2 | Frontend (localhost:4200) |
+| Angular Dev Server | 21.x | Frontend (localhost:4200) |
 | .NET API | 10.0 | Backend |
 
 ---
