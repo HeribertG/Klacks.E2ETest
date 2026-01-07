@@ -1,38 +1,34 @@
-﻿################################################################################
+################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/obj/Debug/net9.0/E2ETest.AssemblyInfo.cs
-/obj/Debug/net9.0/E2ETest.AssemblyInfoInputs.cache
-/obj/E2ETest.csproj.nuget.dgspec.json
-/obj/project.assets.json
-/obj/project.nuget.cache
-/bin/Debug/net9.0/E2ETest.dll
-/bin/Debug/net9.0/E2ETest.pdb
-/obj/Debug/net9.0/ref/E2ETest.dll
-/obj/Debug/net9.0/refint/E2ETest.dll
-/obj/Debug/net9.0/E2ETest.csproj.CoreCompileInputs.cache
-/obj/Debug/net9.0/E2ETest.dll
-/obj/Debug/net9.0/E2ETest.pdb
-/obj/Debug/net9.0/E2ETest.sourcelink.json
-/bin/Debug/net9.0/nunit_random_seed.tmp
-/bin/Debug/net9.0/.playwright/package/bin/install_media_pack.ps1
+# Build results
+bin/
+obj/
+
+# Playwright
+.playwright/
+
+# Test artifacts
+screenshots/
 *.webm
-/obj/Debug/net9.0/E2ETest.csproj.AssemblyReference.cache
-/obj/Debug/net10.0/E2ETest.AssemblyInfoInputs.cache
-/obj/Debug/net10.0/E2ETest.AssemblyInfo.cs
-/obj/Debug/net10.0/refint/E2ETest.dll
-/bin/Debug/net10.0/E2ETest.dll
-/bin/Debug/net10.0/E2ETest.pdb
-/obj/Debug/net10.0/ref/E2ETest.dll
-/obj/Debug/net10.0/E2ETest.dll
-/obj/Debug/net10.0/E2ETest.pdb
-/obj/Debug/net10.0/E2ETest.sourcelink.json
-/bin/Debug/net10.0/nunit_random_seed.tmp
+*.png
+nunit_random_seed.tmp
+
+# Build files
 *.cache
 *.dll
-*.tmp
 *.pdb
+*.tmp
+
+# Scripts (generated)
 *.ps1
 *.sh
 
+# IDE
+.vs/
+*.user
+*.suo
+
+# Debug files
+debug_*.png
