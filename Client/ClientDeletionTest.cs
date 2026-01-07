@@ -1,8 +1,11 @@
+using System.Text.RegularExpressions;
 using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
+using Npgsql;
 using static E2ETest.Constants.ClientDeletionIds;
 using static E2ETest.Constants.ClientFilterIds;
+using static E2ETest.Constants.PaginationIds;
 
 namespace E2ETest;
 
@@ -45,6 +48,20 @@ public class ClientDeletionTest : PlaywrightSetup
         TestContext.Out.WriteLine($"WARNING: Client table not loaded after {maxAttempts * delayMs}ms");
     }
 
+    private async Task<int> GetPaginationTotalCount()
+    {
+        var labelText = await Actions.GetTextContentById(TotalCountLabel);
+        var match = Regex.Match(labelText, @"\d+");
+        if (match.Success && int.TryParse(match.Value, out int count))
+        {
+            TestContext.Out.WriteLine($"Pagination total count: {count}");
+            return count;
+        }
+
+        TestContext.Out.WriteLine($"Could not parse pagination count from: '{labelText}'");
+        return 0;
+    }
+
     [TearDown]
     public void TearDown()
     {
@@ -85,6 +102,87 @@ public class ClientDeletionTest : PlaywrightSetup
 
         // Assert
         TestContext.Out.WriteLine($"\n=== Deleted {deletedCount} of {clientsToDelete.Length} clients ===");
+
+        Assert.That(_listener.HasApiErrors(), Is.False,
+            $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+    }
+
+    [Test]
+    [Order(2)]
+    public async Task Step2_VerifyDeletedClientsInFilter()
+    {
+        // Arrange
+        TestContext.Out.WriteLine("=== Step 2: Verify Deleted Clients in 'Gelöschte Adressen' Filter ===");
+
+        // Act
+        TestContext.Out.WriteLine("Clicking 'Gelöschte Adressen' checkbox...");
+        await Actions.ClickCheckBoxById(FilterShowDeletedId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
+
+        var totalCount = await GetPaginationTotalCount();
+        TestContext.Out.WriteLine($"Found {totalCount} deleted addresses");
+
+        // Assert
+        Assert.That(_listener.HasApiErrors(), Is.False,
+            $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+
+        Assert.That(totalCount, Is.GreaterThanOrEqualTo(ClientTestData.Clients.Length),
+            $"Should find at least {ClientTestData.Clients.Length} deleted clients. Found: {totalCount}");
+
+        TestContext.Out.WriteLine($"=== Verified: {totalCount} deleted addresses found (expected at least {ClientTestData.Clients.Length}) ===");
+
+        // Reset filter for clean state
+        TestContext.Out.WriteLine("Resetting 'Gelöschte Adressen' filter...");
+        await Actions.ClickCheckBoxById(FilterShowDeletedId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
+    }
+
+    [Test]
+    [Order(3)]
+    public async Task Step3_PhysicallyDeleteTestClientsFromDatabase()
+    {
+        // Arrange
+        TestContext.Out.WriteLine("=== Step 3: Physically Delete Test Clients from Database ===");
+
+        var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+            ?? "Host=localhost;Port=5434;Database=klacks;Username=postgres;Password=admin";
+
+        var deletedCount = 0;
+
+        // Act
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        TestContext.Out.WriteLine($"Connected to database");
+
+        foreach (var client in ClientTestData.Clients)
+        {
+            var clientName = $"{client.FirstName} {client.LastName}";
+            TestContext.Out.WriteLine($"Physically deleting: {clientName}");
+
+            await using var cmd = new NpgsqlCommand(@"
+                DELETE FROM client
+                WHERE first_name = @firstName
+                AND name = @lastName", connection);
+
+            cmd.Parameters.AddWithValue("firstName", client.FirstName);
+            cmd.Parameters.AddWithValue("lastName", client.LastName);
+
+            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+            if (rowsAffected > 0)
+            {
+                deletedCount += rowsAffected;
+                TestContext.Out.WriteLine($"  -> Deleted {rowsAffected} row(s)");
+            }
+            else
+            {
+                TestContext.Out.WriteLine($"  -> No rows found (already deleted or never existed)");
+            }
+        }
+
+        // Assert
+        TestContext.Out.WriteLine($"\n=== Physically deleted {deletedCount} client(s) from database ===");
 
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
