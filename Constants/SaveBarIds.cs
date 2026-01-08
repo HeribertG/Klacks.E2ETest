@@ -2,5 +2,6 @@ namespace E2ETest.Constants;
 
 public static class SaveBarIds
 {
-    public static readonly string SaveButton = "shift-save-btn";
+    public const string SaveButton = "shift-save-btn";
+    public const string SaveAndCloseButton = "shift-save-and-close-btn";
 }
