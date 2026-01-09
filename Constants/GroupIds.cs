@@ -4,7 +4,12 @@ public static class GroupIds
 {
     // Client Group Section (adding groups to a client)
     public const string AddGroupButton = "add-group-button";
-    public const string DropdownToggle = "group-dropdown-toggle";
+    public const string DropdownTogglePrefix = "group-select-dropdown-toggle-";
+    public const string AllGroupsPrefix = "group-select-all-groups-";
+
+    public static string GetDropdownToggleId(int index) => $"{DropdownTogglePrefix}{index}";
+
+    public static string GetAllGroupsId(int index) => $"{AllGroupsPrefix}{index}";
 
     // Navigation
     public const string AllGroupHomeContainer = "all-group-home-container";

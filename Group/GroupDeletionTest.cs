@@ -2,12 +2,12 @@ using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
 using Npgsql;
-using static E2ETest.Group.GroupTestData;
+using static E2ETest.Constants.GroupTestData;
 
-namespace E2ETest.Group;
+namespace E2ETest;
 
 [TestFixture]
-[Order(17)]
+[Order(37)]
 public class GroupDeletionTest : PlaywrightSetup
 {
     private Listener _listener = null!;

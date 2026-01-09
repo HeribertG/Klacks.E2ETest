@@ -1,12 +1,12 @@
 using E2ETest.Constants;
 using E2ETest.Helpers;
 using E2ETest.Wrappers;
-using static E2ETest.Group.GroupTestData;
+using static E2ETest.Constants.GroupTestData;
 
-namespace E2ETest.Group;
+namespace E2ETest;
 
 [TestFixture]
-[Order(15)]
+[Order(35)]
 public class GroupCreationTest : PlaywrightSetup
 {
     private Listener _listener = null!;

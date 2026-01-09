@@ -265,7 +265,7 @@ public class ClientCreationTest : PlaywrightSetup
         await Actions.Wait500();
         TestContext.Out.WriteLine("Clicked 'Add Group' button");
 
-        await Actions.ClickButtonById(GroupIds.DropdownToggle);
+        await Actions.ClickButtonById(GroupIds.GetDropdownToggleId(0));
         await Actions.Wait1000();
         TestContext.Out.WriteLine("Opened group dropdown");
 

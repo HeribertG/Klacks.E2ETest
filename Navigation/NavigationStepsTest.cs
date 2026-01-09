@@ -29,26 +29,26 @@ namespace E2ETest
         }
 
         [Test]
+        [Order(1)]
         public async Task Step1_VerifyLoginSuccessful()
         {
             // Arrange
             TestContext.Out.WriteLine("=== Step 1: Verify Login ===");
-            TestContext.Out.WriteLine($"Current URL: {Page.Url}");
+            TestContext.Out.WriteLine($"Current URL: {Actions.ReadCurrentUrl()}");
             TestContext.Out.WriteLine($"Logged in as: {UserName}");
 
             // Assert
-            Assert.That(Page.Url, Does.Not.Contain("login"),
+            Assert.That(Actions.ReadCurrentUrl(), Does.Not.Contain("login"),
                 "Login should be successful - URL should not contain 'login'");
-
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur during login. Error: {_listener.GetLastErrorMessage()}");
 
             TestContext.Out.WriteLine("Login verification completed successfully");
-
             await Actions.Wait1000();
         }
 
         [Test]
+        [Order(2)]
         public async Task Step2_NavigateToAbsencePage()
         {
             // Arrange
@@ -60,16 +60,15 @@ namespace E2ETest
             await Actions.Wait1000();
 
             // Assert
-            Assert.That(Page.Url.Contains("absence"), Is.True, "Should be on absence page");
-            TestContext.Out.WriteLine($"Successfully navigated to absence page: {Page.Url}");
-
+            Assert.That(Actions.ReadCurrentUrl().Contains("absence"), Is.True, "Should be on absence page");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Navigation to absence page completed successfully");
+            TestContext.Out.WriteLine($"Successfully navigated to absence page: {Actions.ReadCurrentUrl()}");
         }
 
         [Test]
+        [Order(3)]
         public async Task Step3_NavigateToGroupsPage()
         {
             // Arrange
@@ -81,16 +80,15 @@ namespace E2ETest
             await Actions.Wait1000();
 
             // Assert
-            Assert.That(Page.Url.Contains("group"), Is.True, "Should be on groups page");
-            TestContext.Out.WriteLine($"Successfully navigated to groups page: {Page.Url}");
-
+            Assert.That(Actions.ReadCurrentUrl().Contains("group"), Is.True, "Should be on groups page");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Navigation to groups page completed successfully");
+            TestContext.Out.WriteLine($"Successfully navigated to groups page: {Actions.ReadCurrentUrl()}");
         }
 
         [Test]
+        [Order(4)]
         public async Task Step4_NavigateToShiftsPage()
         {
             // Arrange
@@ -102,16 +100,15 @@ namespace E2ETest
             await Actions.Wait1000();
 
             // Assert
-            Assert.That(Page.Url.Contains("shift"), Is.True, "Should be on shifts page");
-            TestContext.Out.WriteLine($"Successfully navigated to shifts page: {Page.Url}");
-
+            Assert.That(Actions.ReadCurrentUrl().Contains("shift"), Is.True, "Should be on shifts page");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Navigation to shifts page completed successfully");
+            TestContext.Out.WriteLine($"Successfully navigated to shifts page: {Actions.ReadCurrentUrl()}");
         }
 
         [Test]
+        [Order(5)]
         public async Task Step5_NavigateToSchedulesPage()
         {
             // Arrange
@@ -123,16 +120,15 @@ namespace E2ETest
             await Actions.Wait1000();
 
             // Assert
-            Assert.That(Page.Url.Contains("schedule"), Is.True, "Should be on schedules page");
-            TestContext.Out.WriteLine($"Successfully navigated to schedules page: {Page.Url}");
-
+            Assert.That(Actions.ReadCurrentUrl().Contains("schedule"), Is.True, "Should be on schedules page");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Navigation to schedules page completed successfully");
+            TestContext.Out.WriteLine($"Successfully navigated to schedules page: {Actions.ReadCurrentUrl()}");
         }
 
         [Test]
+        [Order(6)]
         public async Task Step6_NavigateToEmployeesPage()
         {
             // Arrange
@@ -144,16 +140,15 @@ namespace E2ETest
             await Actions.Wait1000();
 
             // Assert
-            Assert.That(Page.Url.Contains("client"), Is.True, "Should be on employees/clients page");
-            TestContext.Out.WriteLine($"Successfully navigated to employees page: {Page.Url}");
-
+            Assert.That(Actions.ReadCurrentUrl().Contains("client"), Is.True, "Should be on employees/clients page");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Navigation to employees page completed successfully");
+            TestContext.Out.WriteLine($"Successfully navigated to employees page: {Actions.ReadCurrentUrl()}");
         }
 
         [Test]
+        [Order(7)]
         public async Task Step7_NavigateToProfilePage()
         {
             // Arrange
@@ -165,16 +160,15 @@ namespace E2ETest
             await Actions.Wait1000();
 
             // Assert
-            Assert.That(Page.Url.Contains("profile"), Is.True, "Should be on profile page");
-            TestContext.Out.WriteLine($"Successfully navigated to profile page: {Page.Url}");
-
+            Assert.That(Actions.ReadCurrentUrl().Contains("profile"), Is.True, "Should be on profile page");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Navigation to profile page completed successfully");
+            TestContext.Out.WriteLine($"Successfully navigated to profile page: {Actions.ReadCurrentUrl()}");
         }
 
         [Test]
+        [Order(8)]
         public async Task Step8_NavigateToSettingsPage()
         {
             // Arrange
@@ -186,13 +180,11 @@ namespace E2ETest
             await Actions.Wait1000();
 
             // Assert
-            Assert.That(Page.Url.Contains("settings"), Is.True, "Should be on settings page");
-            TestContext.Out.WriteLine($"Successfully navigated to settings page: {Page.Url}");
-
+            Assert.That(Actions.ReadCurrentUrl().Contains("settings"), Is.True, "Should be on settings page");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Navigation to settings page completed successfully");
+            TestContext.Out.WriteLine($"Successfully navigated to settings page: {Actions.ReadCurrentUrl()}");
         }
     }
 }

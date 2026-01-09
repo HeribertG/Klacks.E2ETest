@@ -35,93 +35,84 @@ namespace E2ETest
         }
 
         [Test]
+        [Order(1)]
         public async Task VerifySuccessfulLogin()
         {
-            // Da PlaywrightSetup bereits den Login in OneTimeSetup durchführt,
-            // überprüfen wir nur, ob wir erfolgreich eingeloggt sind
-            
-            TestContext.Out.WriteLine($"Aktuelle URL: {Page.Url}");
-            TestContext.Out.WriteLine($"Eingeloggt als: {UserName}");
-            
-            // Überprüfe, dass wir nicht mehr auf der Login-Seite sind
-            Assert.That(Page.Url, Does.Not.Contain("login"), 
-                "Login war nicht erfolgreich - URL enthält immer noch 'login'");
-            
-            // Überprüfe auf API-Fehler
-            Assert.That(_listener!.HasApiErrors(), Is.False, 
-                $"API-Fehler nach Login: {_listener!.GetLastErrorMessage()}");
-            
-            // Optional: Navigiere zur Hauptseite um weitere Elemente zu prüfen
+            // Arrange
+            TestContext.Out.WriteLine($"Current URL: {Actions.ReadCurrentUrl()}");
+            TestContext.Out.WriteLine($"Logged in as: {UserName}");
+
+            // Act
             var dashboardElement = await Actions.FindElementByCssSelector("[class*='dashboard'], [class*='main'], nav");
-            Assert.That(dashboardElement, Is.Not.Null, 
-                "Kein Dashboard/Navigation Element gefunden - Login möglicherweise fehlgeschlagen");
-            
-            TestContext.Out.WriteLine("Login Verifikation erfolgreich!");
+
+            // Assert
+            Assert.That(Actions.ReadCurrentUrl(), Does.Not.Contain("login"),
+                "Login failed - URL still contains 'login'");
+            Assert.That(_listener!.HasApiErrors(), Is.False,
+                $"API error after login: {_listener!.GetLastErrorMessage()}");
+            Assert.That(dashboardElement, Is.Not.Null,
+                "No dashboard/navigation element found - login may have failed");
+
+            TestContext.Out.WriteLine("Login verification successful");
         }
 
         [Test]
+        [Order(2)]
         public async Task NavigateToMainPages()
         {
-            // Test Navigation zu verschiedenen Hauptseiten nach erfolgreichem Login
-            TestContext.Out.WriteLine("Teste Navigation zu Hauptseiten...");
-            
-            // Versuche Absence Navigation zu finden
+            // Arrange
+            TestContext.Out.WriteLine("Testing navigation to main pages...");
             var navAbsence = await Actions.FindElementById(MainNavIds.OpenAbsenceId);
-            if (navAbsence != null)
+
+            if (navAbsence == null)
             {
-                var pageTracker = new PageUrlTracker(Page);
-                
-                await Actions.ClickButtonById(MainNavIds.OpenAbsenceId);
-                await Actions.WaitForSpinnerToDisappear();
-                await Actions.Wait1000();
-                
-                Assert.That(pageTracker.HasChanged(Page) && Page.Url.Contains("absence"), 
-                    Is.True, "Konnte nicht zur Absence Seite navigieren");
-                
-                TestContext.Out.WriteLine("Navigation zur Absence Seite erfolgreich");
+                TestContext.Out.WriteLine("Absence navigation button not found - skipping test");
+                return;
             }
-            else
-            {
-                TestContext.Out.WriteLine("Absence Navigation Button nicht gefunden - überspringe diesen Test");
-            }
-            
-            // Überprüfe auf API-Fehler
-            Assert.That(_listener!.HasApiErrors(), Is.False, 
-                $"API-Fehler während der Navigation: {_listener!.GetLastErrorMessage()}");
+
+            var pageTracker = new PageUrlTracker(Page);
+
+            // Act
+            await Actions.ClickButtonById(MainNavIds.OpenAbsenceId);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait1000();
+
+            // Assert
+            Assert.That(pageTracker.HasChanged(Page) && Actions.ReadCurrentUrl().Contains("absence"),
+                Is.True, "Could not navigate to Absence page");
+            Assert.That(_listener!.HasApiErrors(), Is.False,
+                $"API error during navigation: {_listener!.GetLastErrorMessage()}");
+
+            TestContext.Out.WriteLine("Navigation to Absence page successful");
         }
 
         [Test]
+        [Order(3)]
         public async Task VerifyUserIsLoggedIn()
         {
-            // Überprüfe ob Benutzerinformationen sichtbar sind
-            TestContext.Out.WriteLine("Überprüfe Benutzer-Login-Status...");
-            
-            // Suche nach Benutzername oder Profil-Element
+            // Arrange
+            TestContext.Out.WriteLine("Verifying user login status...");
+
+            // Act
             var userElement = await Actions.FindElementByCssSelector(
                 "[class*='user'], [class*='profile'], [class*='account']")
                 ?? await Actions.FindElementByCssSelector("span");
-            
+
             if (userElement != null)
             {
-                TestContext.Out.WriteLine("Benutzer-Element gefunden - Login bestätigt");
+                TestContext.Out.WriteLine("User element found - login confirmed");
             }
             else
             {
-                TestContext.Out.WriteLine("Warnung: Kein spezifisches Benutzer-Element gefunden");
-            }
-            
-            // Die Hauptprüfung ist, dass wir nicht auf der Login-Seite sind
-            Assert.That(Page.Url, Does.Not.Contain("login"), "Benutzer ist nicht eingeloggt");
-            
-            // Alternativ: Suche nach spezifischen Text-Elementen die den Benutzernamen enthalten könnten
-            if (userElement == null)
-            {
-                // Versuche andere Selektoren
-                userElement = await Actions.FindElementByCssSelector("[class*='navbar']") 
+                TestContext.Out.WriteLine("Warning: No specific user element found");
+                userElement = await Actions.FindElementByCssSelector("[class*='navbar']")
                     ?? await Actions.FindElementByCssSelector("[class*='header']");
             }
-            
-            TestContext.Out.WriteLine($"Login-Status überprüft für Benutzer: {UserName}");
+
+            // Assert
+            Assert.That(Actions.ReadCurrentUrl(), Does.Not.Contain("login"), "User is not logged in");
+
+            TestContext.Out.WriteLine($"Login status verified for user: {UserName}");
         }
     }
 }

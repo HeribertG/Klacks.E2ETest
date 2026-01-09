@@ -1468,5 +1468,66 @@ public sealed class Wrapper
         return string.Empty;
     }
 
+    /// <summary>
+    /// Finds all elements whose ID starts with the specified prefix within a container.
+    /// </summary>
+    public async Task<IReadOnlyList<IElementHandle>> FindElementsByIdPrefix(string containerId, string idPrefix)
+    {
+        var container = await FindElementById(containerId);
+        if (container == null)
+        {
+            return new List<IElementHandle>();
+        }
+
+        return await container.QuerySelectorAllAsync($"[id^='{idPrefix}']");
+    }
+
+    /// <summary>
+    /// Gets the text content of an element handle.
+    /// </summary>
+    public async Task<string> GetElementText(IElementHandle element)
+    {
+        return await element.TextContentAsync() ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets an attribute value from an element handle.
+    /// </summary>
+    public async Task<string?> GetElementAttribute(IElementHandle element, string attributeName)
+    {
+        return await element.GetAttributeAsync(attributeName);
+    }
+
+    /// <summary>
+    /// Clicks an element handle, optionally forcing the click (bypassing visibility checks).
+    /// </summary>
+    public async Task ClickElement(IElementHandle element, bool force = false)
+    {
+        await element.ClickAsync(new() { Force = force, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+    }
+
+    /// <summary>
+    /// Checks if an element's text content contains the specified text.
+    /// </summary>
+    public async Task<bool> ElementContainsText(string elementId, string text)
+    {
+        var element = await FindElementById(elementId);
+        if (element == null)
+        {
+            return false;
+        }
+
+        var content = await element.TextContentAsync();
+        return content != null && content.Contains(text);
+    }
+
+    /// <summary>
+    /// Hovers over an element handle.
+    /// </summary>
+    public async Task HoverElement(IElementHandle element)
+    {
+        await element.HoverAsync();
+    }
+
     #endregion Element Queries
 }

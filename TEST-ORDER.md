@@ -10,7 +10,7 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 |------:|------------|--------------|
 | 1 | `Login/LoginTest.cs` | Login |
 | 2 | `Navigation/NavigationStepsTest.cs` | Navigation Steps |
-| 3 | `NavigationTest.cs` | Navigation |
+| 3 | `Navigation/NavigationTest.cs` | Navigation |
 | 10 | `Client/ClientCreationTest.cs` | Client erstellen |
 | 11 | `Client/ClientSearchTest.cs` | Client Suche |
 | 12 | `Client/ClientTypeFilterTest.cs` | Client Type Filter |
@@ -23,8 +23,13 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 | 25 | `Settings/SettingsStateTest.cs` | Settings State |
 | 26 | `Settings/SettingsCountriesTest.cs` | Settings Countries |
 | 27 | `Settings/SettingsEmailTest.cs` | Settings Email |
+| 28 | `Settings/SettingsIdentityProviderTest.cs` | Settings Identity Provider |
 | 30 | `Gantt/GanttGroupFilterTest.cs` | Gantt Group Filter |
 | 31 | `Gantt/GanttVirtualScrollingTest.cs` | Gantt Virtual Scrolling |
+| 35 | `Group/GroupCreationTest.cs` | Group erstellen |
+| 36 | `Group/GroupSearchTest.cs` | Group Suche |
+| 37 | `Group/GroupDeletionTest.cs` | Group löschen |
+| 38 | `Group/GroupTreeCreationTest.cs` | Group Tree erstellen |
 | 40 | `Shifts/ShiftCutsBasicTest.cs` | Shift Cuts Basic |
 | 41 | `Shifts/ShiftCutsNestedTest.cs` | Shift Cuts Nested |
 | 42 | `Shifts/ShiftCutsBatchTest.cs` | Shift Cuts Batch |
@@ -37,7 +42,8 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 | 1-9 | Login & Navigation | Grundlegende Anmeldung und Navigation |
 | 10-19 | Client | Client-Verwaltung (Erstellen, Suche, Filter) |
 | 20-29 | Settings | Einstellungen (General, Owner, Users, etc.) |
-| 30-39 | Gantt | Gantt-Diagramm Tests |
+| 30-34 | Gantt | Gantt-Diagramm Tests |
+| 35-39 | Group | Gruppen-Verwaltung (Erstellen, Suche, Löschen, Tree) |
 | 40-49 | Shifts | Dienst-Verwaltung (Cutting, Orders) |
 
 ## Hinweise

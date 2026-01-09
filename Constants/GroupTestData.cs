@@ -1,4 +1,4 @@
-namespace E2ETest.Group;
+namespace E2ETest.Constants;
 
 public static class GroupTestData
 {

@@ -3,10 +3,10 @@ using E2ETest.Helpers;
 using E2ETest.Wrappers;
 using Npgsql;
 
-namespace E2ETest.Group;
+namespace E2ETest;
 
 [TestFixture]
-[Order(18)]
+[Order(38)]
 public class GroupTreeCreationTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -93,18 +93,26 @@ public class GroupTreeCreationTest : PlaywrightSetup
         TestContext.Out.WriteLine("=== Step 2: Create Root Group via Tree View ===");
 
         // Switch to tree view
+        TestContext.Out.WriteLine("Switching to tree view...");
         await Actions.ClickButtonById(GroupIds.TreeToggleButton);
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
+        TestContext.Out.WriteLine("Switched to tree view");
 
         // Act - Click "Neue Stammgruppe" button
+        TestContext.Out.WriteLine($"Looking for button: {GroupIds.TreeGroupAddRootButton}");
         var addRootButton = await Actions.FindElementById(GroupIds.TreeGroupAddRootButton);
         Assert.That(addRootButton, Is.Not.Null, "Add root button should exist");
+        TestContext.Out.WriteLine("Found 'Neue Stammgruppe' button, clicking...");
 
-        await addRootButton!.ClickAsync();
+        await Actions.ClickButtonById(GroupIds.TreeGroupAddRootButton);
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
         TestContext.Out.WriteLine("Clicked 'Neue Stammgruppe' button");
+
+        // Log current URL
+        var currentUrl = Actions.ReadCurrentUrl();
+        TestContext.Out.WriteLine($"Current URL after click: {currentUrl}");
 
         // Fill the form
         await WaitForGroupForm();
@@ -126,8 +134,7 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
 
-        var treeContainer = await Actions.FindElementById(GroupIds.TreeGroupTreeContainer);
-        var treeText = await treeContainer!.TextContentAsync() ?? "";
+        var treeText = await Actions.GetTextContentById(GroupIds.TreeGroupTreeContainer);
 
         Assert.That(treeText.Contains(TreeRootName), Is.True,
             $"Root group '{TreeRootName}' should be visible in tree");
@@ -161,16 +168,29 @@ public class GroupTreeCreationTest : PlaywrightSetup
         TestContext.Out.WriteLine($"Filled child name: {TreeChild1Name}");
 
         // Verify parent is pre-selected
-        var parentSelect = await Actions.FindElementById(GroupIds.EditGroupParentSelect);
-        if (parentSelect != null)
+        var selectedText = await Actions.ReadSelect(GroupIds.EditGroupParentSelect);
+        if (!string.IsNullOrEmpty(selectedText))
         {
-            var selectedText = await parentSelect.EvaluateAsync<string>("el => el.options[el.selectedIndex]?.text || ''");
             TestContext.Out.WriteLine($"Pre-selected parent: {selectedText}");
         }
 
         // Save
+        TestContext.Out.WriteLine("Attempting to click Save button...");
+        await Actions.EnsureElementVisibleById(SaveBarIds.SaveButton);
+        var saveBtn = await Actions.FindElementById(SaveBarIds.SaveButton);
+        if (await Actions.IsDisabled(saveBtn))
+        {
+            TestContext.Out.WriteLine("WARNING: Save button is disabled!");
+        }
+        else
+        {
+             TestContext.Out.WriteLine("Save button is enabled.");
+        }
+
         await Actions.ClickButtonById(SaveBarIds.SaveButton);
+        TestContext.Out.WriteLine("Clicked Save button. Waiting for spinner...");
         await Actions.WaitForSpinnerToDisappear();
+        TestContext.Out.WriteLine("Spinner disappeared. Waiting 1s...");
         await Actions.Wait1000();
 
         // Assert - Navigate back and verify hierarchy
@@ -183,15 +203,10 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.Wait1000();
 
         // Expand all
-        var expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait1000();
 
-        var treeContainer = await Actions.FindElementById(GroupIds.TreeGroupTreeContainer);
-        var treeText = await treeContainer!.TextContentAsync() ?? "";
+        var treeText = await Actions.GetTextContentById(GroupIds.TreeGroupTreeContainer);
 
         Assert.That(treeText.Contains(TreeChild1Name), Is.True,
             $"Child group '{TreeChild1Name}' should be visible in tree");
@@ -212,12 +227,8 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.Wait1000();
 
         // Expand all
-        var expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait1000();
 
         // Create second child under root
         await ClickAddButtonForGroup(TreeRootName);
@@ -242,12 +253,8 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.Wait1000();
 
         // Expand all
-        expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait1000();
 
         // Create grandchild under Child-1
         await ClickAddButtonForGroup(TreeChild1Name);
@@ -279,12 +286,8 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.Wait1000();
 
         // Expand all
-        var expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait1000();
 
         // Act - Copy Child-1
         var copyButtonClicked = await ClickCopyButtonForGroup(TreeChild1Name);
@@ -295,10 +298,8 @@ public class GroupTreeCreationTest : PlaywrightSetup
 
         // Verify the copy form is loaded with "-copy" suffix
         await WaitForGroupForm();
-        var nameInput = await Actions.FindElementById(GroupIds.EditGroupItemName);
-        Assert.That(nameInput, Is.Not.Null, "Name input should exist");
-
-        var nameValue = await nameInput!.InputValueAsync();
+        var nameValue = await Actions.ReadInput(GroupIds.EditGroupItemName);
+        
         TestContext.Out.WriteLine($"Copy form name: {nameValue}");
         Assert.That(nameValue, Does.Contain("-copy"), "Copy should have '-copy' suffix");
 
@@ -317,15 +318,10 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.Wait1000();
 
         // Expand all
-        expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait1000();
 
-        var treeContainer = await Actions.FindElementById(GroupIds.TreeGroupTreeContainer);
-        var treeText = await treeContainer!.TextContentAsync() ?? "";
+        var treeText = await Actions.GetTextContentById(GroupIds.TreeGroupTreeContainer);
 
         Assert.That(treeText.Contains(TreeChild1CopyName), Is.True,
             $"Copied group '{TreeChild1CopyName}' should be visible in tree");
@@ -346,16 +342,11 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.Wait1000();
 
         // Expand all
-        var expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait1000();
 
         // Act
-        var treeContainer = await Actions.FindElementById(GroupIds.TreeGroupTreeContainer);
-        var treeText = await treeContainer!.TextContentAsync() ?? "";
+        var treeText = await Actions.GetTextContentById(GroupIds.TreeGroupTreeContainer);
 
         // Assert
         Assert.That(treeText.Contains(TreeRootName), Is.True, "Root should be visible");
@@ -385,12 +376,8 @@ public class GroupTreeCreationTest : PlaywrightSetup
         await Actions.Wait1000();
 
         // Expand all
-        var expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait1000();
 
         // Act - Delete in reverse order (children first to avoid FK constraints)
         // 1. Delete Grandchild
@@ -475,20 +462,14 @@ public class GroupTreeCreationTest : PlaywrightSetup
 
     private async Task<bool> ClickDeleteButtonForGroup(string groupName)
     {
-        var treeContainer = await Actions.FindElementById(GroupIds.TreeGroupTreeContainer);
-        if (treeContainer == null)
-        {
-            return false;
-        }
-
-        var treeNodes = await treeContainer.QuerySelectorAllAsync("[id^='tree-node-item-']");
+        var treeNodes = await Actions.FindElementsByIdPrefix(GroupIds.TreeGroupTreeContainer, "tree-node-item-");
 
         foreach (var node in treeNodes)
         {
-            var textContent = await node.TextContentAsync();
+            var textContent = await Actions.GetElementText(node);
             if (textContent?.Contains(groupName) == true)
             {
-                var nodeId = await node.GetAttributeAsync("id");
+                var nodeId = await Actions.GetElementAttribute(node, "id");
                 if (nodeId == null)
                 {
                     continue;
@@ -500,7 +481,8 @@ public class GroupTreeCreationTest : PlaywrightSetup
 
                 if (deleteBtn != null)
                 {
-                    await deleteBtn.ClickAsync();
+                    // Force click because the button might be hidden (visibility: hidden) until hover
+                    await Actions.ClickElement(deleteBtn, force: true);
                     await Actions.Wait500();
                     TestContext.Out.WriteLine($"Clicked Delete button for '{groupName}' (ID: {deleteButtonId})");
 
@@ -520,53 +502,49 @@ public class GroupTreeCreationTest : PlaywrightSetup
 
     private async Task RefreshTreeView()
     {
-        var refreshButton = await Actions.FindElementById(GroupIds.TreeGroupRefreshButton);
-        if (refreshButton != null)
-        {
-            await refreshButton.ClickAsync();
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupRefreshButton);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
 
         // Expand all after refresh
-        var expandButton = await Actions.FindElementById(GroupIds.TreeGroupExpandButton);
-        if (expandButton != null)
-        {
-            await expandButton.ClickAsync();
-            await Actions.Wait500();
-        }
+        await Actions.ClickButtonById(GroupIds.TreeGroupExpandButton);
+        await Actions.Wait500();
     }
 
     private async Task<bool> ClickAddButtonForGroup(string groupName)
     {
-        var treeContainer = await Actions.FindElementById(GroupIds.TreeGroupTreeContainer);
-        if (treeContainer == null)
-        {
-            return false;
-        }
-
-        var treeNodes = await treeContainer.QuerySelectorAllAsync("[id^='tree-node-item-']");
+        var treeNodes = await Actions.FindElementsByIdPrefix(GroupIds.TreeGroupTreeContainer, "tree-node-item-");
+        TestContext.Out.WriteLine($"Found {treeNodes.Count} tree nodes");
 
         foreach (var node in treeNodes)
         {
-            var textContent = await node.TextContentAsync();
+            var textContent = await Actions.GetElementText(node);
             if (textContent?.Contains(groupName) == true)
             {
-                var nodeId = await node.GetAttributeAsync("id");
+                var nodeId = await Actions.GetElementAttribute(node, "id");
                 if (nodeId == null)
                 {
                     continue;
                 }
 
+                TestContext.Out.WriteLine($"Found node for '{groupName}' with ID: {nodeId}");
+
                 var groupId = nodeId.Replace("tree-node-item-", "");
                 var addButtonId = GroupIds.GetTreeNodeAddBtnId(groupId);
+                TestContext.Out.WriteLine($"Looking for Add button: {addButtonId}");
+
                 var addBtn = await Actions.FindElementById(addButtonId);
 
                 if (addBtn != null)
                 {
-                    await addBtn.ClickAsync();
+                    // Force click because the button might be hidden (visibility: hidden) until hover
+                    await Actions.ClickElement(addBtn, force: true);
                     TestContext.Out.WriteLine($"Clicked Add button for '{groupName}' (ID: {addButtonId})");
                     return true;
+                }
+                else
+                {
+                    TestContext.Out.WriteLine($"Add button not found: {addButtonId}");
                 }
             }
         }
@@ -577,20 +555,14 @@ public class GroupTreeCreationTest : PlaywrightSetup
 
     private async Task<bool> ClickCopyButtonForGroup(string groupName)
     {
-        var treeContainer = await Actions.FindElementById(GroupIds.TreeGroupTreeContainer);
-        if (treeContainer == null)
-        {
-            return false;
-        }
-
-        var treeNodes = await treeContainer.QuerySelectorAllAsync("[id^='tree-node-item-']");
+        var treeNodes = await Actions.FindElementsByIdPrefix(GroupIds.TreeGroupTreeContainer, "tree-node-item-");
 
         foreach (var node in treeNodes)
         {
-            var textContent = await node.TextContentAsync();
+            var textContent = await Actions.GetElementText(node);
             if (textContent?.Contains(groupName) == true)
             {
-                var nodeId = await node.GetAttributeAsync("id");
+                var nodeId = await Actions.GetElementAttribute(node, "id");
                 if (nodeId == null)
                 {
                     continue;
@@ -602,7 +574,8 @@ public class GroupTreeCreationTest : PlaywrightSetup
 
                 if (copyBtn != null)
                 {
-                    await copyBtn.ClickAsync();
+                    // Force click because the button might be hidden (visibility: hidden) until hover
+                    await Actions.ClickElement(copyBtn, force: true);
                     TestContext.Out.WriteLine($"Clicked Copy button for '{groupName}' (ID: {copyButtonId})");
                     return true;
                 }
@@ -618,18 +591,27 @@ public class GroupTreeCreationTest : PlaywrightSetup
         const int maxAttempts = 30;
         const int delayMs = 500;
 
+        TestContext.Out.WriteLine($"Waiting for group form (looking for: {GroupIds.EditGroupItemName})...");
+        TestContext.Out.WriteLine($"Current URL: {Actions.ReadCurrentUrl()}");
+
         for (int i = 0; i < maxAttempts; i++)
         {
-            var nameInput = await Actions.FindElementById(GroupIds.EditGroupItemName);
-            if (nameInput != null)
+            var isVisible = await Actions.IsElementVisibleById(GroupIds.EditGroupItemName);
+            if (isVisible)
             {
                 TestContext.Out.WriteLine($"Group form loaded after {i * delayMs}ms");
                 return;
             }
 
+            if (i % 5 == 0)
+            {
+                TestContext.Out.WriteLine($"Still waiting... ({i * delayMs}ms) URL: {Actions.ReadCurrentUrl()}");
+            }
+
             await Task.Delay(delayMs);
         }
 
+        TestContext.Out.WriteLine($"TIMEOUT - Final URL: {Actions.ReadCurrentUrl()}");
         Assert.Fail("Group form did not load within timeout");
     }
 

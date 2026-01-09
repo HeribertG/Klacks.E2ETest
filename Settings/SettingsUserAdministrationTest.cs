@@ -63,10 +63,12 @@ namespace E2ETest
         {
             // Arrange
             TestContext.Out.WriteLine("=== Step 2: Create New User ===");
-            var timestamp = DateTime.Now.Ticks.ToString().Substring(0, 8);
-            _createdUserName = $"{TestFirstName} {TestLastName}";
-            var testUserName = $"test_user_{timestamp}";
+            var timestamp = DateTime.Now.Ticks.ToString().Substring(10, 6);
+            var testFirstName = $"Test{timestamp}";
+            var testLastName = $"User{timestamp}";
+            _createdUserName = $"{testFirstName} {testLastName}";
             var testEmail = $"test.user.{timestamp}@test.com";
+            TestContext.Out.WriteLine($"Creating user: {_createdUserName}");
 
             // Act
             var addButton = await Actions.FindElementById(AddUserBtn);
@@ -81,34 +83,57 @@ namespace E2ETest
             }
 
             await addButton.ClickAsync();
-            await Actions.Wait500();
+            await Actions.Wait1000();
+            TestContext.Out.WriteLine("Clicked Add User button");
 
-            // Fill form
-            await Actions.TypeIntoInputById(InputFirstName, TestFirstName);
-            await Actions.TypeIntoInputById(InputLastName, TestLastName);
-            await Actions.TypeIntoInputById(InputUserName, testUserName);
+            // Fill form (Username is auto-generated and readonly)
+            TestContext.Out.WriteLine($"Filling FirstName: {testFirstName}");
+            await Actions.TypeIntoInputById(InputFirstName, testFirstName);
+
+            TestContext.Out.WriteLine($"Filling LastName: {testLastName}");
+            await Actions.TypeIntoInputById(InputLastName, testLastName);
+
+            TestContext.Out.WriteLine($"Filling Email: {testEmail}");
             await Actions.TypeIntoInputById(InputEmail, testEmail);
             await Actions.Wait500();
 
+            // Check auto-generated username
+            var usernameInput = await Actions.FindElementById(InputUserName);
+            if (usernameInput != null)
+            {
+                var autoUsername = await usernameInput.InputValueAsync();
+                TestContext.Out.WriteLine($"Auto-generated username: {autoUsername}");
+            }
+
             // Save
             var saveButton = await Actions.FindElementById(ModalSaveBtn);
+            TestContext.Out.WriteLine($"Save button found: {saveButton != null}");
             Assert.That(saveButton, Is.Not.Null, "Save button should exist");
+
             var isButtonEnabled = await saveButton!.IsEnabledAsync();
+            TestContext.Out.WriteLine($"Save button enabled: {isButtonEnabled}");
             Assert.That(isButtonEnabled, Is.True, "Save button should be enabled after filling all fields");
 
             await Actions.ClickElementById(ModalSaveBtn);
+            TestContext.Out.WriteLine("Clicked Save button");
+            await Actions.WaitForSpinnerToDisappear();
             await Actions.Wait2000();
 
             // Find the created user's ID by searching for the name
             var nameInputs = await Page.QuerySelectorAllAsync($"input[id^='{RowNamePrefix}']");
+            TestContext.Out.WriteLine($"Found {nameInputs.Count} user name inputs");
+            TestContext.Out.WriteLine($"Looking for: '{_createdUserName}'");
+
             foreach (var input in nameInputs)
             {
                 var value = await input.InputValueAsync();
-                if (value == _createdUserName)
+                var inputId = await input.GetAttributeAsync("id");
+                TestContext.Out.WriteLine($"  User: '{value}' (id: {inputId})");
+
+                if (value.StartsWith(_createdUserName))
                 {
-                    var inputId = await input.GetAttributeAsync("id");
                     _createdUserId = inputId?.Replace(RowNamePrefix, "");
-                    TestContext.Out.WriteLine($"Created user ID: {_createdUserId}");
+                    TestContext.Out.WriteLine($"  -> MATCH! Created user ID: {_createdUserId}");
                     break;
                 }
             }
