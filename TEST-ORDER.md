@@ -24,6 +24,7 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 | 26 | `Settings/SettingsCountriesTest.cs` | Settings Countries |
 | 27 | `Settings/SettingsEmailTest.cs` | Settings Email |
 | 28 | `Settings/SettingsIdentityProviderTest.cs` | Settings Identity Provider |
+| 29 | `Settings/SettingsCalendarRulesTest.cs` | Settings Calendar Rules (CRUD + API Validation) |
 | 30 | `Gantt/GanttGroupFilterTest.cs` | Gantt Group Filter |
 | 31 | `Gantt/GanttVirtualScrollingTest.cs` | Gantt Virtual Scrolling |
 | 35 | `Group/GroupCreationTest.cs` | Group erstellen |

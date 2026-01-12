@@ -50,7 +50,9 @@ E2ETest/
 │   ├── SettingsGridColorTest.cs       # Order 24: Grid Color-Tests
 │   ├── SettingsCountriesTest.cs       # Order 25: Countries-Tests
 │   ├── SettingsStateTest.cs           # Order 26: State-Tests
-│   └── SettingsEmailTest.cs           # Order 27: Email-Tests
+│   ├── SettingsEmailTest.cs           # Order 27: Email-Tests
+│   ├── SettingsIdentityProviderTest.cs # Order 28: Identity Provider-Tests
+│   └── SettingsCalendarRulesTest.cs   # Order 29: Calendar Rules-Tests (CRUD + API)
 ├── Constants/
 │   ├── ClientIds.cs                   # IDs für Client-Elemente
 │   ├── ClientTestData.cs              # Test-Daten für Client-Erstellung
@@ -66,7 +68,9 @@ E2ETest/
 │   ├── SettingsGridColorIds.cs        # IDs für Grid Color
 │   ├── SettingsCountriesIds.cs        # IDs für Countries
 │   ├── SettingsStatesIds.cs           # IDs für States
-│   └── SettingsEmailIds.cs            # IDs für Email
+│   ├── SettingsEmailIds.cs            # IDs für Email
+│   ├── SettingsIdentityProviderIds.cs # IDs für Identity Provider
+│   └── SettingsCalendarRulesIds.cs    # IDs für Calendar Rules
 ├── Helpers/
 │   └── PlaywrightSetup.cs             # Base-Klasse für Tests
 ├── Wrappers/
@@ -91,6 +95,8 @@ E2ETest/
 | 25 | `Settings/SettingsCountriesTest.cs` | Countries | ✅ |
 | 26 | `Settings/SettingsStateTest.cs` | States | ✅ |
 | 27 | `Settings/SettingsEmailTest.cs` | Email Settings | ✅ |
+| 28 | `Settings/SettingsIdentityProviderTest.cs` | Identity Provider | ✅ |
+| 29 | `Settings/SettingsCalendarRulesTest.cs` | Calendar Rules (CRUD + API) | ✅ |
 
 ---
 
