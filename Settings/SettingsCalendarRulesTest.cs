@@ -142,15 +142,23 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
     private async Task<int?> FindRuleInTableByName(string ruleName)
     {
         var rows = await Page.QuerySelectorAllAsync(RowSelector);
-        for (int i = 0; i < rows.Count; i++)
+        foreach (var row in rows)
         {
-            var cellName = await Actions.FindElementById(GetCellNameId(i));
+            var rowId = await row.GetAttributeAsync("id");
+            if (string.IsNullOrEmpty(rowId)) continue;
+
+            var parts = rowId.Split('-');
+            if (parts.Length < 4 || !int.TryParse(parts[^1], out int index))
+                continue;
+
+            var cellName = await Actions.FindElementById(GetCellNameId(index));
             if (cellName != null)
             {
                 var nameText = await cellName.InnerTextAsync();
                 if (nameText.Contains(ruleName))
                 {
-                    return i;
+                    TestContext.Out.WriteLine($"Found '{ruleName}' at actual index {index}");
+                    return index;
                 }
             }
         }
@@ -297,8 +305,8 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
             TestContext.Out.WriteLine($"API Error after create: {_listener.GetLastErrorMessage()}");
         }
 
-        TestContext.Out.WriteLine("Setting filter to show all states...");
-        await SelectAllStatesInFilter();
+        TestContext.Out.WriteLine($"Setting filter to {TestCountry}/{TestState}...");
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         await Actions.Wait1000();
 
         TestContext.Out.WriteLine($"Searching for rule: {_createdRuleName}");
@@ -346,7 +354,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
             return;
         }
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         _createdRuleIndex = await FindRuleWithPagination(_createdRuleName);
 
         if (_createdRuleIndex == null)
@@ -408,7 +416,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
             return;
         }
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         _createdRuleIndex = await FindRuleWithPagination(_createdRuleName);
 
         if (_createdRuleIndex == null)
@@ -455,7 +463,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait2000();
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         _createdRuleIndex = await FindRuleWithPagination(_createdRuleName);
         var foundUpdated = _createdRuleIndex.HasValue;
 
@@ -680,7 +688,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
             return;
         }
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         _createdRuleIndex = await FindRuleWithPagination(_createdRuleName);
 
         if (_createdRuleIndex == null)
@@ -732,7 +740,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
             TestContext.Out.WriteLine($"API Error detected: {_listener.GetLastErrorMessage()}");
         }
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         var copiedRuleIndex = await FindRuleWithPagination(_copiedRuleName);
 
         TestContext.Out.WriteLine($"Copied rule found: {copiedRuleIndex.HasValue}");
@@ -759,7 +767,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
             return;
         }
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         var copiedRuleIndex = await FindRuleWithPagination(_copiedRuleName);
 
         if (copiedRuleIndex == null)
@@ -792,7 +800,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait2000();
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         var ruleStillExists = await FindRuleWithPagination(_copiedRuleName);
 
         // Assert
@@ -818,7 +826,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
             return;
         }
 
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         var ruleToDeleteIndex = await FindRuleWithPagination(_createdRuleName);
 
         if (ruleToDeleteIndex == null)
@@ -858,7 +866,7 @@ public class SettingsCalendarRulesTest : PlaywrightSetup
         }
 
         // Assert
-        await SelectAllStatesInFilter();
+        await SelectSpecificStateInFilter(TestCountry, TestState);
         var ruleStillExists = await FindRuleWithPagination(_createdRuleName);
 
         Assert.That(ruleStillExists, Is.Null, "Created rule should be deleted");
