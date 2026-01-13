@@ -44,15 +44,17 @@ E2ETest/
 │   ├── ClientAdvancedFiltersTest.cs   # Order 13: Client Advanced Filters-Tests
 │   └── ClientDeletionTest.cs          # Order 14: Client-Löschungs-Tests (⚠️ WIP)
 ├── Settings/
+│   ├── SettingsGeneralTest.cs         # Order 20: General-Tests
 │   ├── SettingsOwnerAddressTest.cs    # Order 21: Owner Address-Tests
 │   ├── SettingsUserAdministrationTest.cs # Order 22: User Administration-Tests
 │   ├── SettingsGroupScopeTest.cs      # Order 23: Group Scope-Tests
 │   ├── SettingsGridColorTest.cs       # Order 24: Grid Color-Tests
-│   ├── SettingsCountriesTest.cs       # Order 25: Countries-Tests
-│   ├── SettingsStateTest.cs           # Order 26: State-Tests
+│   ├── SettingsStateTest.cs           # Order 25: State-Tests
+│   ├── SettingsCountriesTest.cs       # Order 26: Countries-Tests
 │   ├── SettingsEmailTest.cs           # Order 27: Email-Tests
 │   ├── SettingsIdentityProviderTest.cs # Order 28: Identity Provider-Tests
-│   └── SettingsCalendarRulesTest.cs   # Order 29: Calendar Rules-Tests (CRUD + API)
+│   ├── SettingsAbsenceTest.cs         # Order 29: Absence-Tests (CRUD)
+│   └── SettingsCalendarRulesTest.cs   # Order 30: Calendar Rules-Tests (CRUD + API)
 ├── Constants/
 │   ├── ClientIds.cs                   # IDs für Client-Elemente
 │   ├── ClientTestData.cs              # Test-Daten für Client-Erstellung
@@ -70,6 +72,7 @@ E2ETest/
 │   ├── SettingsStatesIds.cs           # IDs für States
 │   ├── SettingsEmailIds.cs            # IDs für Email
 │   ├── SettingsIdentityProviderIds.cs # IDs für Identity Provider
+│   ├── SettingsAbsenceIds.cs          # IDs für Absence
 │   └── SettingsCalendarRulesIds.cs    # IDs für Calendar Rules
 ├── Helpers/
 │   └── PlaywrightSetup.cs             # Base-Klasse für Tests
@@ -87,16 +90,18 @@ E2ETest/
 | 11 | `Client/ClientSearchTest.cs` | Client Suche | ✅ |
 | 12 | `Client/ClientTypeFilterTest.cs` | Client Type Filter | ✅ |
 | 13 | `Client/ClientAdvancedFiltersTest.cs` | Client Advanced Filters | ✅ |
-| 14 | `Client/ClientDeletionTest.cs` | 5 Clients löschen | ⚠️ WIP |
+| 14 | `Client/ClientDeletionTest.cs` | 5 Clients löschen | ✅ |
+| 20 | `Settings/SettingsGeneralTest.cs` | General Settings | ✅ |
 | 21 | `Settings/SettingsOwnerAddressTest.cs` | Owner Address | ✅ |
 | 22 | `Settings/SettingsUserAdministrationTest.cs` | User Administration | ✅ |
 | 23 | `Settings/SettingsGroupScopeTest.cs` | Group Scope | ✅ |
 | 24 | `Settings/SettingsGridColorTest.cs` | Grid Color | ✅ |
-| 25 | `Settings/SettingsCountriesTest.cs` | Countries | ✅ |
-| 26 | `Settings/SettingsStateTest.cs` | States | ✅ |
+| 25 | `Settings/SettingsStateTest.cs` | States | ✅ |
+| 26 | `Settings/SettingsCountriesTest.cs` | Countries | ✅ |
 | 27 | `Settings/SettingsEmailTest.cs` | Email Settings | ✅ |
 | 28 | `Settings/SettingsIdentityProviderTest.cs` | Identity Provider | ✅ |
-| 29 | `Settings/SettingsCalendarRulesTest.cs` | Calendar Rules (CRUD + API) | ✅ |
+| 29 | `Settings/SettingsAbsenceTest.cs` | Absence (CRUD) | ✅ |
+| 30 | `Settings/SettingsCalendarRulesTest.cs` | Calendar Rules (CRUD + API) | ✅ |
 
 ---
 
@@ -651,6 +656,6 @@ public async Task Step6_FilterByGroup()
 
 ---
 
-**Letzte Aktualisierung:** 08.12.2025
-**Version:** 1.2
+**Letzte Aktualisierung:** 13.01.2026
+**Version:** 1.3
 **Autor:** E2E Test Team

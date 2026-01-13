@@ -10,7 +10,7 @@ using static E2ETest.Constants.SettingsCalendarRulesTestData;
 namespace E2ETest;
 
 [TestFixture]
-[Order(29)]
+[Order(30)]
 public class SettingsCalendarRulesTest : PlaywrightSetup
 {
     private Listener _listener = null!;
