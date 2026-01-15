@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace E2ETest;
 
 [TestFixture]
-[Order(33)]
+[Order(34)]
 [Parallelizable(ParallelScope.Self)]
 public class GanttVirtualScrollingTest : PlaywrightSetup
 {

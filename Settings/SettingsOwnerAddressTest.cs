@@ -82,12 +82,35 @@ namespace E2ETest
             TestContext.Out.WriteLine("=== Step 3: Set Owner Address Phone ===");
 
             // Act
-            await Actions.FillInputAndEnterById(SettingOwnerAddressTel, ExpectedPhone);
+            var phoneElement = await Actions.FindElementById(SettingOwnerAddressTel);
+            TestContext.Out.WriteLine($"Phone element found: {phoneElement != null}");
+
+            if (phoneElement == null)
+            {
+                Assert.Fail("Phone element not found!");
+                return;
+            }
+
+            var valueBefore = await phoneElement.InputValueAsync();
+            TestContext.Out.WriteLine($"Phone value before: '{valueBefore}'");
+
+            // Use Playwright Locator for better Angular Signal Forms compatibility
+            var locator = Page.Locator($"#{SettingOwnerAddressTel}");
+            await locator.ClickAsync();
+            await locator.ClearAsync();
+            await locator.TypeAsync(ExpectedPhone);
             await Actions.Wait500();
+
+            var valueAfterFill = await phoneElement.InputValueAsync();
+            TestContext.Out.WriteLine($"Phone value after TypeAsync: '{valueAfterFill}'");
+
+            await locator.PressAsync("Tab");
+            await Actions.Wait2000();
 
             // Assert
             var phoneInput = await Actions.FindElementById(SettingOwnerAddressTel);
             var currentValue = await phoneInput!.InputValueAsync();
+            TestContext.Out.WriteLine($"Phone value final: '{currentValue}'");
             Assert.That(currentValue, Is.EqualTo(ExpectedPhone), "Phone should be set");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
@@ -217,21 +240,33 @@ namespace E2ETest
             // Act - Reload page to verify data was saved
             TestContext.Out.WriteLine("Reloading page...");
             await Page.ReloadAsync();
+            await Actions.WaitForSpinnerToDisappear();
             await Actions.Wait2000();
 
             await Actions.ScrollIntoViewById(OwnerAddressSection);
-            await Actions.Wait500();
+            await Actions.Wait1000();
 
             // Assert
             TestContext.Out.WriteLine("Verifying all fields contain expected values...");
 
-            var nameValue = await Actions.ReadInput(SettingOwnerAddressName);
+            var nameInput = await Actions.FindElementById(SettingOwnerAddressName);
+            var nameValue = await nameInput!.InputValueAsync();
             Assert.That(nameValue, Is.EqualTo(ExpectedOwnerName), $"Owner name should be '{ExpectedOwnerName}'");
             TestContext.Out.WriteLine($"Name: {nameValue}");
 
-            var phoneValue = await Actions.ReadInput(SettingOwnerAddressTel);
-            Assert.That(phoneValue, Is.EqualTo(ExpectedPhone), $"Phone should be '{ExpectedPhone}'");
-            TestContext.Out.WriteLine($"Phone: {phoneValue}");
+            var phoneInput = await Actions.FindElementById(SettingOwnerAddressTel);
+            TestContext.Out.WriteLine($"Phone element found: {phoneInput != null}");
+            if (phoneInput != null)
+            {
+                var phoneValue = await phoneInput.InputValueAsync();
+                TestContext.Out.WriteLine($"Phone value: '{phoneValue}'");
+                Assert.That(phoneValue, Is.EqualTo(ExpectedPhone), $"Phone should be '{ExpectedPhone}'");
+                TestContext.Out.WriteLine($"Phone: {phoneValue}");
+            }
+            else
+            {
+                Assert.Fail("Phone input element not found");
+            }
 
             var supplementValue = await Actions.ReadInput(SettingOwnerAddressSupplement);
             Assert.That(supplementValue, Is.EqualTo(ExpectedSupplement), "Supplement should be empty");

@@ -547,7 +547,9 @@ public sealed class Wrapper
         var element = await FindElementById(elementId);
         if (element != null)
         {
-            await element.FillAsync(value);
+            await element.ClickAsync();
+            await element.EvaluateAsync("el => el.select()");
+            await element.TypeAsync(value);
             await element.PressAsync(Keys.Enter);
         }
     }
@@ -561,7 +563,9 @@ public sealed class Wrapper
         var element = await FindElementById(elementId);
         if (element != null)
         {
-            await element.FillAsync(value);
+            await element.ClickAsync();
+            await element.EvaluateAsync("el => el.select()");
+            await element.TypeAsync(value);
         }
     }
 

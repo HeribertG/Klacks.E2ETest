@@ -5,7 +5,7 @@ using E2ETest.Wrappers;
 namespace E2ETest
 {
     [TestFixture]
-    [Order(32)]
+    [Order(33)]
     public class GanttGroupFilterTest : PlaywrightSetup
     {
         private Listener _listener;
