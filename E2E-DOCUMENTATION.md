@@ -245,6 +245,52 @@ dotnet --version
 
 ### 2. Umgebung starten
 
+#### Option A: PowerShell-Skripte (empfohlen)
+
+```powershell
+# Beide Anwendungen starten
+C:\SourceCode\start_klacks.ps1
+
+# Ausgabe:
+# === Starting Klacks Applications ===
+# Starting Klacks.Api...
+# Klacks.Api started (PID: 12345)
+# Starting Klacks.Ui...
+# Klacks.Ui started (PID: 67890)
+# === Both applications started successfully ===
+```
+
+```powershell
+# Beide Anwendungen stoppen
+C:\SourceCode\stop_klacks.ps1
+
+# Oder einzeln stoppen:
+C:\SourceCode\stop-backend.ps1      # Nur API stoppen
+C:\SourceCode\stop-klacks-ui.ps1    # Nur UI stoppen
+```
+
+#### Verfügbare PowerShell-Skripte
+
+| Skript | Beschreibung |
+|--------|-------------|
+| `start_klacks.ps1` | Startet API und UI, speichert PIDs in `%TEMP%` |
+| `stop_klacks.ps1` | Stoppt API und UI anhand der gespeicherten PIDs |
+| `stop-backend.ps1` | Stoppt nur die API (Klacks.Api Prozess) |
+| `stop-klacks-ui.ps1` | Stoppt nur die UI (Port 4200, ng serve Prozesse) |
+
+**Wichtig für WSL:** Skripte über PowerShell aufrufen:
+```bash
+# Start
+powershell.exe -File "C:\SourceCode\start_klacks.ps1"
+
+# Stop
+powershell.exe -File "C:\SourceCode\stop_klacks.ps1"
+powershell.exe -File "C:\SourceCode\stop-backend.ps1"
+powershell.exe -File "C:\SourceCode\stop-klacks-ui.ps1"
+```
+
+#### Option B: Manuell
+
 ```bash
 # Terminal 1: Backend starten
 cd /mnt/c/SourceCode/Klacks.Api
