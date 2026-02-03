@@ -1,10 +1,10 @@
-﻿using E2ETest.Constants;
-using E2ETest.Wrappers;
+﻿using Klacks.E2ETest.Constants;
+using Klacks.E2ETest.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Playwright;
 using NUnit.Framework.Interfaces;
 
-namespace E2ETest.Helpers;
+namespace Klacks.E2ETest.Helpers;
 
 public class PlaywrightSetup : PageTest
 {

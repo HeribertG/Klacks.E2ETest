@@ -1,6 +1,6 @@
 ﻿using Microsoft.Playwright;
 
-namespace E2ETest.Wrappers;
+namespace Klacks.E2ETest.Wrappers;
 
 // <summary>
 /// Tracks and monitors URL changes in a Playwright page session.

@@ -1,9 +1,9 @@
-using E2ETest.Constants;
-using E2ETest.Helpers;
-using E2ETest.Wrappers;
+using Klacks.E2ETest.Constants;
+using Klacks.E2ETest.Helpers;
+using Klacks.E2ETest.Wrappers;
 using System.Text.Json;
 
-namespace E2ETest.WorkSchedule;
+namespace Klacks.E2ETest.WorkSchedule;
 
 [TestFixture]
 [Order(100)]

@@ -1,9 +1,9 @@
-using E2ETest.Constants;
-using E2ETest.Helpers;
-using E2ETest.Wrappers;
+using Klacks.E2ETest.Constants;
+using Klacks.E2ETest.Helpers;
+using Klacks.E2ETest.Wrappers;
 using Microsoft.Playwright;
 
-namespace E2ETest.Login;
+namespace Klacks.E2ETest.Login;
 
 [TestFixture]
 public class OAuth2SsoTest : OAuth2TestSetup

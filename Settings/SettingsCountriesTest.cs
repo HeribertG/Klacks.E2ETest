@@ -1,9 +1,9 @@
-using E2ETest.Constants;
-using E2ETest.Helpers;
-using E2ETest.Wrappers;
-using static E2ETest.Constants.SettingsCountriesIds;
+using Klacks.E2ETest.Constants;
+using Klacks.E2ETest.Helpers;
+using Klacks.E2ETest.Wrappers;
+using static Klacks.E2ETest.Constants.SettingsCountriesIds;
 
-namespace E2ETest
+namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(26)]

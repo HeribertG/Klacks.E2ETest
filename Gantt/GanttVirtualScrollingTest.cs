@@ -1,9 +1,9 @@
-using E2ETest.Helpers;
-using E2ETest.Wrappers;
+using Klacks.E2ETest.Helpers;
+using Klacks.E2ETest.Wrappers;
 using Microsoft.Playwright;
 using NUnit.Framework;
 
-namespace E2ETest;
+namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(34)]

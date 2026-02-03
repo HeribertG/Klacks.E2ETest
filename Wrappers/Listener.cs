@@ -1,6 +1,6 @@
 ﻿using Microsoft.Playwright;
 
-namespace E2ETest.Wrappers;
+namespace Klacks.E2ETest.Wrappers;
 
 /// <summary>
 /// Monitors and handles API responses in Playwright tests, providing error detection and timeout management.

@@ -1,8 +1,8 @@
-﻿using E2ETest.Constants;
+﻿using Klacks.E2ETest.Constants;
 using Microsoft.Playwright;
 using NUnit.Framework;
 
-namespace E2ETest.Wrappers;
+namespace Klacks.E2ETest.Wrappers;
 
 /// <summary>
 /// A wrapper class for Playwright interactions, providing high-level methods for web element manipulation and testing.

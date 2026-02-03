@@ -1,12 +1,12 @@
 using System.Text.RegularExpressions;
-using E2ETest.Constants;
-using E2ETest.Helpers;
-using E2ETest.Wrappers;
-using static E2ETest.Constants.ClientFilterIds;
-using static E2ETest.Constants.PaginationIds;
-using static E2ETest.Constants.TestClientData;
+using Klacks.E2ETest.Constants;
+using Klacks.E2ETest.Helpers;
+using Klacks.E2ETest.Wrappers;
+using static Klacks.E2ETest.Constants.ClientFilterIds;
+using static Klacks.E2ETest.Constants.PaginationIds;
+using static Klacks.E2ETest.Constants.TestClientData;
 
-namespace E2ETest;
+namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(12)]

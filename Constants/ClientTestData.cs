@@ -1,4 +1,4 @@
-namespace E2ETest.Constants;
+namespace Klacks.E2ETest.Constants;
 
 public class ClientData
 {

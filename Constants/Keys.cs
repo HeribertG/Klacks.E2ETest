@@ -1,4 +1,4 @@
-﻿namespace E2ETest.Constants;
+﻿namespace Klacks.E2ETest.Constants;
 public static class Keys
 {
     public static readonly string Null = "Null";

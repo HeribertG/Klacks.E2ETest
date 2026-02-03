@@ -1,4 +1,4 @@
-﻿namespace E2ETest.Wrappers;
+﻿namespace Klacks.E2ETest.Wrappers;
 
 ///<summary> 
 /// Auxiliary methods for creating CSS selectors. 

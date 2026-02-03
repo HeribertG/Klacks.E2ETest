@@ -1,8 +1,8 @@
-using E2ETest.Wrappers;
+using Klacks.E2ETest.Wrappers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Playwright;
 
-namespace E2ETest.Helpers;
+namespace Klacks.E2ETest.Helpers;
 
 public class OAuth2TestSetup : PageTest
 {

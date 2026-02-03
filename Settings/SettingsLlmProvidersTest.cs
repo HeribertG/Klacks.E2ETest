@@ -1,10 +1,10 @@
-using E2ETest.Constants;
-using E2ETest.Helpers;
-using E2ETest.Wrappers;
-using static E2ETest.Constants.SettingsLlmProvidersIds;
-using static E2ETest.Constants.SettingsLlmProvidersTestData;
+using Klacks.E2ETest.Constants;
+using Klacks.E2ETest.Helpers;
+using Klacks.E2ETest.Wrappers;
+using static Klacks.E2ETest.Constants.SettingsLlmProvidersIds;
+using static Klacks.E2ETest.Constants.SettingsLlmProvidersTestData;
 
-namespace E2ETest;
+namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(31)]
