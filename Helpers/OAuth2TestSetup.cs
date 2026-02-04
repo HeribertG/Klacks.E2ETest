@@ -7,6 +7,7 @@ namespace Klacks.E2ETest.Helpers;
 public class OAuth2TestSetup : PageTest
 {
     public string BaseUrl { get; }
+
     public string ApiBaseUrl { get; }
 
     private Wrapper? _wrapper;

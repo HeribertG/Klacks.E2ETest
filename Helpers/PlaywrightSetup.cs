@@ -67,9 +67,7 @@ public class PlaywrightSetup : PageTest
 
         _wrapper = new Wrapper(Page);
 
-
         await Page.GotoAsync(BaseUrl + "login");
-
 
         TestContext.Out.WriteLine("Browser started");
 
@@ -125,8 +123,8 @@ public class PlaywrightSetup : PageTest
             Assert.Fail("input password not found");
         }
 
-        var ButtonSumit = await Actions.FindElementById(LogInIds.ButtonSumitId);
-        if (ButtonSumit != null)
+        var buttonSumit = await Actions.FindElementById(LogInIds.ButtonSumitId);
+        if (buttonSumit != null)
         {
             await Actions.ClickButtonById(LogInIds.ButtonSumitId);
             await Actions.WaitForSpinnerToDisappear();
@@ -172,7 +170,7 @@ public class PlaywrightSetup : PageTest
         }
         catch (Exception ex)
         {
-            TestContext.WriteLine($"Error getting video path: {ex.Message}");
+            TestContext.Out.WriteLine($"Error getting video path: {ex.Message}");
             return;
         }
 
@@ -197,11 +195,11 @@ public class PlaywrightSetup : PageTest
                 catch (IOException) when (retry < 4)
                 {
                     await Task.Delay(5000);
-                    TestContext.WriteLine($"Retry {retry + 1} of 5 copying video file");
+                    TestContext.Out.WriteLine($"Retry {retry + 1} of 5 copying video file");
                 }
                 catch (Exception ex)
                 {
-                    TestContext.WriteLine($"Error copying video file: {ex.Message}");
+                    TestContext.Out.WriteLine($"Error copying video file: {ex.Message}");
                     break;
                 }
             }
@@ -242,11 +240,11 @@ public class PlaywrightSetup : PageTest
             }
 
             _wrapper = null;
-            TestContext.WriteLine("Browser cleanup completed");
+            TestContext.Out.WriteLine("Browser cleanup completed");
         }
         catch (Exception ex)
         {
-            TestContext.WriteLine($"Cleanup error: {ex.Message}");
+            TestContext.Out.WriteLine($"Cleanup error: {ex.Message}");
         }
     }
 

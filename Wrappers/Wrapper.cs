@@ -1213,6 +1213,22 @@ public sealed class Wrapper
     /// <summary>
     /// Wait for specific time periods in milliseconds.
     /// </summary>
+    public async Task Wait200()
+    {
+        await Wait(200);
+    }
+
+    /// <summary>
+    /// Wait for specific time periods in milliseconds.
+    /// </summary>
+    public async Task Wait300()
+    {
+        await Wait(300);
+    }
+
+    /// <summary>
+    /// Wait for specific time periods in milliseconds.
+    /// </summary>
     public async Task Wait500()
     {
         await Wait(500);
