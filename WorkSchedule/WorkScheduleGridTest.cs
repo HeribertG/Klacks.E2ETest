@@ -175,7 +175,7 @@ public class WorkScheduleGridTest : PlaywrightSetup
 
         // Assert
         Assert.That(isAvailable, Is.True, "Window Grid API should be available in test mode");
-        TestContext.Out.WriteLine("Window.klacksScheduleGrid is available");
+        TestContext.Out.WriteLine("Window.klacksGrid is available");
     }
 
     [Test]

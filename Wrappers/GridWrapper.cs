@@ -11,7 +11,7 @@ namespace Klacks.E2ETest.Wrappers;
 /// The Schedule Grid is rendered on HTML5 Canvas, making standard DOM selectors impossible.
 /// This wrapper provides multiple strategies:
 /// 1. Ghost DOM: Interact with invisible HTML overlay (if testMode is enabled)
-/// 2. Window API: Access grid metadata and perform actions via window.klacksScheduleGrid
+/// 2. Window API: Access grid metadata and perform actions via window.klacksGrid
 /// 3. Coordinate-based: Click on specific canvas coordinates
 /// 4. API-based: Direct backend calls for data verification
 /// </remarks>
@@ -76,7 +76,7 @@ public sealed class GridWrapper
     public async Task<GridCellInfo?> FindCellByValueViaApiAsync(string value)
     {
         var result = await _page.EvaluateAsync<JsonElement>(
-            $"() => window.klacksScheduleGrid?.getCellByValue('{value}')");
+            $"() => window.klacksGrid?.getCellByValue('{value}')");
 
         if (result.ValueKind == JsonValueKind.Null || result.ValueKind == JsonValueKind.Undefined)
         {
@@ -176,11 +176,11 @@ public sealed class GridWrapper
     #region Window API Interactions
 
     /// <summary>
-    /// Checks if the Grid Test API is available (window.klacksScheduleGrid).
+    /// Checks if the Grid Test API is available (window.klacksGrid).
     /// </summary>
     public async Task<bool> IsTestApiAvailableAsync()
     {
-        return await _page.EvaluateAsync<bool>("() => typeof window.klacksScheduleGrid !== 'undefined'");
+        return await _page.EvaluateAsync<bool>("() => typeof window.klacksGrid !== 'undefined'");
     }
 
     /// <summary>
@@ -189,7 +189,7 @@ public sealed class GridWrapper
     public async Task<GridCellInfo?> GetCellMetadataAsync(int row, int column)
     {
         var result = await _page.EvaluateAsync<JsonElement>(
-            $"() => window.klacksScheduleGrid?.getCellAt({row}, {column})");
+            $"() => window.klacksGrid?.getCellAt({row}, {column})");
 
         if (result.ValueKind == JsonValueKind.Null || result.ValueKind == JsonValueKind.Undefined)
         {
@@ -205,7 +205,7 @@ public sealed class GridWrapper
     public async Task<GridCellInfo?> FindCellByClientAndDateViaApiAsync(string clientId, string date)
     {
         var result = await _page.EvaluateAsync<JsonElement>(
-            $"() => window.klacksScheduleGrid?.getCellByClientAndDate('{clientId}', '{date}')");
+            $"() => window.klacksGrid?.getCellByClientAndDate('{clientId}', '{date}')");
 
         if (result.ValueKind == JsonValueKind.Null || result.ValueKind == JsonValueKind.Undefined)
         {
@@ -221,7 +221,7 @@ public sealed class GridWrapper
     public async Task<IReadOnlyList<GridCellInfo>> GetAllCellsViaApiAsync()
     {
         var result = await _page.EvaluateAsync<JsonElement>(
-            "() => window.klacksScheduleGrid?.getAllCells() ?? []");
+            "() => window.klacksGrid?.getAllCells() ?? []");
 
         return DeserializeCellList(result);
     }
@@ -232,7 +232,7 @@ public sealed class GridWrapper
     public async Task<CellPosition?> GetSelectedCellAsync()
     {
         var result = await _page.EvaluateAsync<JsonElement>(
-            "() => window.klacksScheduleGrid?.getSelectedCell()");
+            "() => window.klacksGrid?.getSelectedCell()");
 
         if (result.ValueKind == JsonValueKind.Null || result.ValueKind == JsonValueKind.Undefined)
         {
@@ -252,7 +252,7 @@ public sealed class GridWrapper
     public async Task<CellPosition?> GetEditingCellAsync()
     {
         var result = await _page.EvaluateAsync<JsonElement>(
-            "() => window.klacksScheduleGrid?.getEditingCell()");
+            "() => window.klacksGrid?.getEditingCell()");
 
         if (result.ValueKind == JsonValueKind.Null || result.ValueKind == JsonValueKind.Undefined)
         {
@@ -272,7 +272,7 @@ public sealed class GridWrapper
     public async Task SelectCellViaApiAsync(int row, int column)
     {
         await _page.EvaluateAsync($"" +
-            $"window.klacksScheduleGrid?.selectCell({row}, {column})");
+            $"window.klacksGrid?.selectCell({row}, {column})");
     }
 
     /// <summary>
@@ -281,7 +281,7 @@ public sealed class GridWrapper
     public async Task StartEditViaApiAsync(int row, int column)
     {
         await _page.EvaluateAsync($"" +
-            $"window.klacksScheduleGrid?.startEdit({row}, {column})");
+            $"window.klacksGrid?.startEdit({row}, {column})");
     }
 
     /// <summary>
@@ -290,7 +290,7 @@ public sealed class GridWrapper
     public async Task<IReadOnlyList<GridCellInfo>> FindCellsByClientAsync(string clientId)
     {
         var result = await _page.EvaluateAsync<JsonElement>(
-            $"() => window.klacksScheduleGrid?.findCellsByClient('{clientId}') ?? []");
+            $"() => window.klacksGrid?.findCellsByClient('{clientId}') ?? []");
 
         return DeserializeCellList(result);
     }
@@ -385,11 +385,11 @@ public sealed class GridWrapper
     {
         // Try to use API first
         var canScroll = await _page.EvaluateAsync<bool>(
-            "() => typeof window.klacksScheduleGrid?.scrollToRow === 'function'");
+            "() => typeof window.klacksGrid?.scrollToRow === 'function'");
 
         if (canScroll)
         {
-            await _page.EvaluateAsync($"window.klacksScheduleGrid?.scrollToRow({targetRow})");
+            await _page.EvaluateAsync($"window.klacksGrid?.scrollToRow({targetRow})");
         }
         else
         {
