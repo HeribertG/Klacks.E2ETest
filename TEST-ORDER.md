@@ -39,6 +39,7 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 | 41 | `Shifts/ShiftCutsNestedTest.cs` | Shift Cuts Nested |
 | 42 | `Shifts/ShiftCutsBatchTest.cs` | Shift Cuts Batch |
 | 43 | `Shifts/ShiftOrderCreationTest.cs` | Shift Order Creation |
+| 50 | `Settings/LlmSettingsGeneralTest.cs` | LLM Chat: Settings General |
 
 ## Gruppierung
 
@@ -50,6 +51,7 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 | 33-34 | Gantt | Gantt-Diagramm Tests |
 | 35-39 | Group | Gruppen-Verwaltung (Erstellen, Suche, Löschen, Tree) |
 | 40-49 | Shifts | Dienst-Verwaltung (Cutting, Orders) |
+| 50-59 | LLM Integration | LLM-Chat-Tests für Settings |
 
 ## Hinweise
 
@@ -57,3 +59,4 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 - Die Order-Nummern haben Lücken, um später neue Tests einfügen zu können
 - Login muss immer zuerst laufen (Order 1), da alle anderen Tests eine aktive Session benötigen
 - Settings-Tests reichen jetzt bis Order 32 (LLM Models)
+- LLM-Integration-Tests ab Order 50 (Chat-basierte Settings-Interaktion)
