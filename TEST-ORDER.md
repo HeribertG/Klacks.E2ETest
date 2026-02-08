@@ -40,6 +40,7 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert dur
 | 42 | `Shifts/ShiftCutsBatchTest.cs` | Shift Cuts Batch |
 | 43 | `Shifts/ShiftOrderCreationTest.cs` | Shift Order Creation |
 | 50 | `Settings/LlmSettingsGeneralTest.cs` | LLM Chat: Settings General |
+| 60 | `Settings/LlmSoulMemoryTest.cs` | LLM Chat: AI Soul & Memory |
 
 ## Gruppierung
 
