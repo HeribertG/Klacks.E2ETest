@@ -3,6 +3,7 @@ using Klacks.E2ETest.Helpers;
 using Klacks.E2ETest.Wrappers;
 using Microsoft.Playwright;
 using static Klacks.E2ETest.Constants.LlmChatIds;
+using static Klacks.E2ETest.Constants.SettingsGeneralIds;
 
 namespace Klacks.E2ETest
 {
@@ -12,6 +13,8 @@ namespace Klacks.E2ETest
     {
         private Listener _listener;
         private int _messageCountBefore;
+        private const string IconFilePath = @"C:\Users\hgasp\OneDrive\Bilder\Baustelle-mittel.ico";
+        private const string LogoFilePath = @"C:\Users\hgasp\OneDrive\Bilder\Baustelle-mittel.png";
 
         [SetUp]
         public async Task Setup()
@@ -33,11 +36,14 @@ namespace Klacks.E2ETest
         [Order(1)]
         public async Task Step1_OpenChat()
         {
+            // Arrange
             TestContext.Out.WriteLine("=== Step 1: Open Chat Panel ===");
 
+            // Act
             await Actions.ClickButtonById(HeaderAssistantButton);
             await Actions.Wait1000();
 
+            // Assert
             var chatMessages = await Page.QuerySelectorAsync($"#{ChatMessages}");
             Assert.That(chatMessages, Is.Not.Null, "Chat messages container should be visible");
 
@@ -49,18 +55,43 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(2)]
-        public async Task Step2_AskAppName()
+        public async Task Step2_VerifyAdminRights()
         {
-            TestContext.Out.WriteLine("=== Step 2: Ask App Name ===");
-
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 2: Verify Admin Rights ===");
             await EnsureChatOpen();
 
+            // Act
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage("Welche Rechte habe ich?");
+            var response = await WaitForBotResponse(_messageCountBefore);
+
+            // Assert
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond with permissions info");
+            Assert.That(response.Contains("Admin", StringComparison.OrdinalIgnoreCase), Is.True,
+                $"User must have Admin rights for settings tests. Got: {response}");
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+
+            TestContext.Out.WriteLine("Admin rights verified successfully");
+        }
+
+        [Test]
+        [Order(3)]
+        public async Task Step3_AskAppName()
+        {
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 3: Ask App Name ===");
+            await EnsureChatOpen();
+
+            // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Wie heisst die App?");
             var response = await WaitForBotResponse(_messageCountBefore);
 
+            // Assert
             TestContext.Out.WriteLine($"Bot response: {response}");
-
             Assert.That(response, Is.Not.Empty, "Bot should respond with a message");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
@@ -69,19 +100,20 @@ namespace Klacks.E2ETest
         }
 
         [Test]
-        [Order(3)]
-        public async Task Step3_ChangeAppName()
+        [Order(4)]
+        public async Task Step4_ChangeAppName()
         {
-            TestContext.Out.WriteLine("=== Step 3: Change App Name ===");
-
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 4: Change App Name ===");
             await EnsureChatOpen();
 
+            // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Setze den App-Namen auf KlacksTestLLM");
             var response = await WaitForBotResponse(_messageCountBefore);
 
+            // Assert
             TestContext.Out.WriteLine($"Bot response: {response}");
-
             Assert.That(response, Is.Not.Empty, "Bot should respond with a confirmation");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
@@ -90,42 +122,42 @@ namespace Klacks.E2ETest
         }
 
         [Test]
-        [Order(4)]
-        public async Task Step4_VerifyChangedName()
+        [Order(5)]
+        public async Task Step5_VerifyChangedName()
         {
-            TestContext.Out.WriteLine("=== Step 4: Verify Changed App Name ===");
-
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 5: Verify Changed App Name ===");
             await EnsureChatOpen();
 
+            // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Wie heisst die App jetzt?");
             var response = await WaitForBotResponse(_messageCountBefore);
 
+            // Assert
             TestContext.Out.WriteLine($"Bot response: {response}");
-
             Assert.That(response, Is.Not.Empty, "Bot should respond");
-
-            var containsNewName = response.Contains("KlacksTestLLM", StringComparison.OrdinalIgnoreCase);
-            Assert.That(containsNewName, Is.True,
+            Assert.That(response.Contains("KlacksTestLLM", StringComparison.OrdinalIgnoreCase), Is.True,
                 $"Response should contain 'KlacksTestLLM'. Got: {response}");
 
             TestContext.Out.WriteLine("App name verification successful");
         }
 
         [Test]
-        [Order(5)]
-        public async Task Step5_ResetAppName()
+        [Order(6)]
+        public async Task Step6_ResetAppName()
         {
-            TestContext.Out.WriteLine("=== Step 5: Reset App Name ===");
-
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 6: Reset App Name ===");
             await EnsureChatOpen();
 
+            // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Setze den App-Namen auf Klacks");
             var response = await WaitForBotResponse(_messageCountBefore);
 
+            // Assert
             TestContext.Out.WriteLine($"Bot response: {response}");
-
             Assert.That(response, Is.Not.Empty, "Bot should respond with a confirmation");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
@@ -134,24 +166,84 @@ namespace Klacks.E2ETest
         }
 
         [Test]
-        [Order(6)]
-        public async Task Step6_AskPermissions()
+        [Order(7)]
+        public async Task Step7_UploadIcon()
         {
-            TestContext.Out.WriteLine("=== Step 6: Ask Permissions ===");
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 7: Upload Icon ===");
 
-            await EnsureChatOpen();
+            await CloseChatIfOpen();
+            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait1000();
 
-            _messageCountBefore = await GetMessageCount();
-            await SendChatMessage("Welche Rechte habe ich?");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            // Act
+            var deleteIconButton = await Page.QuerySelectorAsync($"#{SettingGeneralDeleteIconBtn}");
+            if (deleteIconButton != null)
+            {
+                TestContext.Out.WriteLine("Icon exists - deleting it first");
+                await deleteIconButton.ClickAsync();
+                await Actions.WaitForSpinnerToDisappear();
+                await Actions.Wait1000();
+            }
 
-            TestContext.Out.WriteLine($"Bot response: {response}");
+            TestContext.Out.WriteLine($"Uploading icon from: {IconFilePath}");
+            var iconFileInput = await Page.QuerySelectorAsync($"#{SettingGeneralIconFileInput}");
+            Assert.That(iconFileInput, Is.Not.Null, "Icon file input should be available");
 
-            Assert.That(response, Is.Not.Empty, "Bot should respond with permissions info");
+            await iconFileInput!.SetInputFilesAsync(IconFilePath);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait2000();
+
+            // Assert
+            deleteIconButton = await Page.QuerySelectorAsync($"#{SettingGeneralDeleteIconBtn}");
+            Assert.That(deleteIconButton, Is.Not.Null, "Delete icon button should be visible after upload");
             Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+                $"No API errors should occur during icon upload. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Permissions query completed");
+            TestContext.Out.WriteLine("Icon uploaded successfully");
+        }
+
+        [Test]
+        [Order(8)]
+        public async Task Step8_UploadLogo()
+        {
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 8: Upload Logo ===");
+
+            var settingsForm = await Page.QuerySelectorAsync("#settings-general-form");
+            if (settingsForm == null)
+            {
+                await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
+                await Actions.WaitForSpinnerToDisappear();
+                await Actions.Wait1000();
+            }
+
+            // Act
+            var deleteLogoButton = await Page.QuerySelectorAsync($"#{SettingGeneralDeleteLogoBtn}");
+            if (deleteLogoButton != null)
+            {
+                TestContext.Out.WriteLine("Logo exists - deleting it first");
+                await deleteLogoButton.ClickAsync();
+                await Actions.WaitForSpinnerToDisappear();
+                await Actions.Wait1000();
+            }
+
+            TestContext.Out.WriteLine($"Uploading logo from: {LogoFilePath}");
+            var logoFileInput = await Page.QuerySelectorAsync($"#{SettingGeneralLogoFileInput}");
+            Assert.That(logoFileInput, Is.Not.Null, "Logo file input should be available");
+
+            await logoFileInput!.SetInputFilesAsync(LogoFilePath);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait2000();
+
+            // Assert
+            deleteLogoButton = await Page.QuerySelectorAsync($"#{SettingGeneralDeleteLogoBtn}");
+            Assert.That(deleteLogoButton, Is.Not.Null, "Delete logo button should be visible after upload");
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur during logo upload. Error: {_listener.GetLastErrorMessage()}");
+
+            TestContext.Out.WriteLine("Logo uploaded successfully");
         }
 
         #region Helper Methods
@@ -166,6 +258,16 @@ namespace Klacks.E2ETest
             }
 
             await WaitForChatInputEnabled();
+        }
+
+        private async Task CloseChatIfOpen()
+        {
+            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            if (chatInput != null)
+            {
+                await Actions.ClickButtonById(HeaderAssistantButton);
+                await Actions.Wait500();
+            }
         }
 
         private async Task WaitForChatInputEnabled()
