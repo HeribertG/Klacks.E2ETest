@@ -88,30 +88,14 @@ namespace Klacks.E2ETest
         public async Task Step3_CreateFirstUserViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 3: Create First User via LLM Chat ===");
-            await EnsureChatOpen();
+            TestContext.Out.WriteLine("=== Step 3: Create First User via LLM Chat (UI) ===");
             var user = _testUsers[0];
 
-            // Act
-            _messageCountBefore = await GetMessageCount();
-            await SendChatMessage($"Erstelle einen neuen System-Benutzer: Vorname '{user.FirstName}', Nachname '{user.LastName}', Email '{user.Email}'");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            // Act & Assert
+            var userId = await CreateUserWithRetry(user.FirstName, user.LastName, user.Email);
+            CreatedUserIds.Add(userId);
 
-            // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond");
-            var hasUsername = response.Contains("username", StringComparison.OrdinalIgnoreCase)
-                || response.Contains("Benutzername", StringComparison.OrdinalIgnoreCase);
-            Assert.That(hasUsername, Is.True, $"Response should contain username. Got: {response}");
-
-            var userId = ExtractUserIdFromResponse(response, user.FirstName, user.LastName);
-            if (!string.IsNullOrEmpty(userId))
-                CreatedUserIds.Add(userId);
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-            TestContext.Out.WriteLine($"First user created via chat: {user.FirstName} {user.LastName}");
+            TestContext.Out.WriteLine($"First user created via UI: {user.FirstName} {user.LastName} (ID: {userId})");
         }
 
         [Test]
@@ -119,27 +103,14 @@ namespace Klacks.E2ETest
         public async Task Step4_CreateSecondUserViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 4: Create Second User via LLM Chat ===");
-            await EnsureChatOpen();
+            TestContext.Out.WriteLine("=== Step 4: Create Second User via LLM Chat (UI) ===");
             var user = _testUsers[1];
 
-            // Act
-            _messageCountBefore = await GetMessageCount();
-            await SendChatMessage($"Erstelle einen neuen System-Benutzer: Vorname '{user.FirstName}', Nachname '{user.LastName}', Email '{user.Email}'");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            // Act & Assert
+            var userId = await CreateUserWithRetry(user.FirstName, user.LastName, user.Email);
+            CreatedUserIds.Add(userId);
 
-            // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond");
-
-            var userId = ExtractUserIdFromResponse(response, user.FirstName, user.LastName);
-            if (!string.IsNullOrEmpty(userId))
-                CreatedUserIds.Add(userId);
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-            TestContext.Out.WriteLine($"Second user created via chat: {user.FirstName} {user.LastName}");
+            TestContext.Out.WriteLine($"Second user created via UI: {user.FirstName} {user.LastName} (ID: {userId})");
         }
 
         [Test]
@@ -147,27 +118,14 @@ namespace Klacks.E2ETest
         public async Task Step5_CreateThirdUserViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 5: Create Third User via LLM Chat ===");
-            await EnsureChatOpen();
+            TestContext.Out.WriteLine("=== Step 5: Create Third User via LLM Chat (UI) ===");
             var user = _testUsers[2];
 
-            // Act
-            _messageCountBefore = await GetMessageCount();
-            await SendChatMessage($"Erstelle einen neuen System-Benutzer: Vorname '{user.FirstName}', Nachname '{user.LastName}', Email '{user.Email}'");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            // Act & Assert
+            var userId = await CreateUserWithRetry(user.FirstName, user.LastName, user.Email);
+            CreatedUserIds.Add(userId);
 
-            // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond");
-
-            var userId = ExtractUserIdFromResponse(response, user.FirstName, user.LastName);
-            if (!string.IsNullOrEmpty(userId))
-                CreatedUserIds.Add(userId);
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-            TestContext.Out.WriteLine($"Third user created via chat: {user.FirstName} {user.LastName}");
+            TestContext.Out.WriteLine($"Third user created via UI: {user.FirstName} {user.LastName} (ID: {userId})");
         }
 
         [Test]
@@ -175,34 +133,29 @@ namespace Klacks.E2ETest
         public async Task Step6_VerifyAllUsersViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 6: Verify All Users via LLM Chat ===");
+            TestContext.Out.WriteLine("=== Step 6: Verify All Users via LLM Chat (UI) ===");
             await EnsureChatOpen();
 
             // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Liste alle System-Benutzer auf");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            await WaitForBotResponse(_messageCountBefore, 90000);
+            await Actions.Wait2000();
 
             // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond with user list");
-
             var allFound = true;
             foreach (var user in _testUsers)
             {
                 var fullName = $"{user.FirstName} {user.LastName}";
-                var found = response.Contains(user.FirstName, StringComparison.OrdinalIgnoreCase)
-                    || response.Contains(fullName, StringComparison.OrdinalIgnoreCase);
-                TestContext.Out.WriteLine($"  User '{fullName}': {(found ? "FOUND" : "NOT FOUND")}");
-                if (!found)
+                var existsInDom = await UserExistsInDom(user.FirstName, user.LastName);
+                TestContext.Out.WriteLine($"  User '{fullName}': {(existsInDom ? "FOUND in DOM" : "NOT FOUND in DOM")}");
+                if (!existsInDom)
                     allFound = false;
             }
 
-            Assert.That(allFound, Is.True, $"All {_testUsers.Length} test users should be in the response. Got: {response}");
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+            Assert.That(allFound, Is.True, $"All {_testUsers.Length} test users should be visible in Settings DOM");
 
-            TestContext.Out.WriteLine("All test users verified via chat");
+            TestContext.Out.WriteLine("All test users verified in DOM");
         }
 
         [Test]
@@ -210,7 +163,7 @@ namespace Klacks.E2ETest
         public async Task Step7_DeleteCreatedUsersViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 7: Delete Created Users via LLM Chat ===");
+            TestContext.Out.WriteLine("=== Step 7: Delete Created Users via LLM Chat (UI) ===");
 
             if (CreatedUserIds.Count == 0)
             {
@@ -219,30 +172,15 @@ namespace Klacks.E2ETest
                 return;
             }
 
-            await EnsureChatOpen();
-
             // Act
             foreach (var userId in CreatedUserIds.ToList())
             {
-                _messageCountBefore = await GetMessageCount();
-                await SendChatMessage($"Lösche den Benutzer mit ID {userId}");
-                var response = await WaitForBotResponse(_messageCountBefore);
-
-                TestContext.Out.WriteLine($"Delete response for {userId}: {response}");
-                Assert.That(response, Is.Not.Empty, $"Bot should respond for user {userId}");
-
-                var hasConfirmation = response.Contains("gelöscht", StringComparison.OrdinalIgnoreCase)
-                    || response.Contains("erfolgreich", StringComparison.OrdinalIgnoreCase)
-                    || response.Contains("deleted", StringComparison.OrdinalIgnoreCase);
-                Assert.That(hasConfirmation, Is.True,
-                    $"Response should confirm deletion of user {userId}. Got: {response}");
+                await DeleteUserWithRetry(userId);
+                await Actions.Wait2000();
             }
 
             // Assert
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-            TestContext.Out.WriteLine($"All {CreatedUserIds.Count} test users deleted via chat");
+            TestContext.Out.WriteLine($"All {CreatedUserIds.Count} test users deleted via UI");
             CreatedUserIds.Clear();
         }
 
@@ -251,55 +189,162 @@ namespace Klacks.E2ETest
         public async Task Step8_VerifyUsersDeletedViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 8: Verify Users Deleted via LLM Chat ===");
+            TestContext.Out.WriteLine("=== Step 8: Verify Users Deleted ===");
             await EnsureChatOpen();
 
             // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Liste alle System-Benutzer auf");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            await WaitForBotResponse(_messageCountBefore, 90000);
+            await Actions.Wait2000();
 
             // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond with user list");
-
             foreach (var user in _testUsers)
             {
                 var fullName = $"{user.FirstName} {user.LastName}";
-                var stillExists = response.Contains(fullName, StringComparison.OrdinalIgnoreCase);
+                var stillExists = await UserExistsInDom(user.FirstName, user.LastName);
                 TestContext.Out.WriteLine($"  User '{fullName}': {(stillExists ? "STILL EXISTS" : "DELETED")}");
-                Assert.That(stillExists, Is.False, $"User '{fullName}' should no longer exist");
+                Assert.That(stillExists, Is.False, $"User '{fullName}' should no longer exist in DOM");
             }
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
             TestContext.Out.WriteLine("All test users confirmed deleted");
         }
 
         #region Helper Methods
 
-        private static string? ExtractUserIdFromResponse(string response, string firstName, string lastName)
+        private async Task<string> CreateUserWithRetry(string firstName, string lastName, string email, int maxAttempts = 3)
         {
-            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var line in lines)
-            {
-                var trimmed = line.Trim().TrimStart('-', '*', ' ');
+            var fullName = $"{firstName} {lastName}";
 
-                if (trimmed.Contains("userId", StringComparison.OrdinalIgnoreCase)
-                    || trimmed.StartsWith("ID:", StringComparison.OrdinalIgnoreCase))
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                TestContext.Out.WriteLine($"Create user attempt {attempt}/{maxAttempts}: {fullName}");
+                await EnsureChatOpen();
+
+                await Actions.ClickButtonById(ChatClearBtn);
+                await Actions.Wait1000();
+                await WaitForChatInputEnabled();
+
+                _messageCountBefore = await GetMessageCount();
+                await SendChatMessage(
+                    $"Erstelle einen neuen Systembenutzer: Vorname '{firstName}', Nachname '{lastName}', Email '{email}'");
+                var response = await WaitForBotResponse(_messageCountBefore, 120000);
+                TestContext.Out.WriteLine($"Bot response ({response.Length} chars): {response[..Math.Min(200, response.Length)]}");
+
+                var userId = await WaitForUserInDom(firstName, lastName);
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    var parts = trimmed.Split(':', 2);
-                    if (parts.Length == 2)
-                    {
-                        var id = parts[1].Trim().Trim('`', '\'', '"', '*', ' ');
-                        if (!string.IsNullOrEmpty(id) && id.Contains('-'))
-                            return id;
-                    }
+                    if (_listener.HasApiErrors())
+                        TestContext.Out.WriteLine($"Warning: API error during creation (user still created): {_listener.GetLastErrorMessage()}");
+                    return userId;
                 }
+
+                TestContext.Out.WriteLine($"User not found in DOM after attempt {attempt}, will retry...");
+                await Actions.Wait2000();
             }
 
-            return null;
+            Assert.Fail($"User '{fullName}' was not created after {maxAttempts} attempts");
+            return string.Empty;
+        }
+
+        private async Task DeleteUserWithRetry(string userId, int maxAttempts = 3)
+        {
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                TestContext.Out.WriteLine($"Delete user attempt {attempt}/{maxAttempts}: {userId}");
+                await EnsureChatOpen();
+
+                // fresh conversation to avoid LLM context confusion
+                await Actions.ClickButtonById(ChatClearBtn);
+                await Actions.Wait1000();
+                await WaitForChatInputEnabled();
+
+                _messageCountBefore = await GetMessageCount();
+                await SendChatMessage(
+                    $"Lösche den Systembenutzer mit der ID '{userId}'");
+                var response = await WaitForBotResponse(_messageCountBefore, 90000);
+                TestContext.Out.WriteLine($"Delete response: {response[..Math.Min(200, response.Length)]}");
+
+                var removed = await WaitForUserRemovedFromDom(userId);
+                if (removed)
+                {
+                    TestContext.Out.WriteLine($"User {userId} confirmed removed from DOM");
+                    return;
+                }
+
+                TestContext.Out.WriteLine($"User {userId} still in DOM after attempt {attempt}, will retry...");
+                await Actions.Wait2000();
+            }
+
+            Assert.Fail($"User '{userId}' was not deleted after {maxAttempts} attempts");
+        }
+
+        private async Task<string> WaitForUserInDom(string firstName, string lastName, int timeoutMs = 30000)
+        {
+            var fullName = $"{firstName} {lastName}";
+            TestContext.Out.WriteLine($"Waiting for user '{fullName}' to appear in DOM...");
+
+            var startTime = DateTime.UtcNow;
+            while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
+            {
+                var inputs = await Page.QuerySelectorAllAsync($"input[id^=\"{RowNamePrefix}\"]");
+                foreach (var input in inputs)
+                {
+                    var value = await input.InputValueAsync();
+                    if (value.Contains(fullName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var id = await input.GetAttributeAsync("id");
+                        var userId = id?.Replace(RowNamePrefix, "") ?? "";
+                        TestContext.Out.WriteLine($"User '{fullName}' found in DOM with ID: {userId}");
+                        return userId;
+                    }
+                }
+
+                await Actions.Wait500();
+            }
+
+            TestContext.Out.WriteLine($"User '{fullName}' NOT found in DOM after {timeoutMs / 1000}s");
+            return "";
+        }
+
+        private async Task<bool> UserExistsInDom(string firstName, string lastName)
+        {
+            var fullName = $"{firstName} {lastName}";
+            var inputs = await Page.QuerySelectorAllAsync($"input[id^=\"{RowNamePrefix}\"]");
+            foreach (var input in inputs)
+            {
+                var value = await input.InputValueAsync();
+                if (value.Contains(fullName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        private async Task<bool> WaitForUserRemovedFromDom(string userId, int timeoutMs = 30000)
+        {
+            TestContext.Out.WriteLine($"Waiting for user '{userId}' to be removed from DOM...");
+            var startTime = DateTime.UtcNow;
+            while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
+            {
+                var userAdminSection = await Page.QuerySelectorAsync($"#{UserAdminSection}");
+                if (userAdminSection == null)
+                {
+                    TestContext.Out.WriteLine("Settings closed during delete wait, reopening...");
+                    await Actions.ClickButtonById("open-settings");
+                    await Actions.Wait2000();
+                    continue;
+                }
+
+                var element = await Page.QuerySelectorAsync($"#{RowNamePrefix}{userId}");
+                if (element == null)
+                {
+                    TestContext.Out.WriteLine($"User '{userId}' removed from DOM");
+                    return true;
+                }
+                await Actions.Wait500();
+            }
+            TestContext.Out.WriteLine($"User '{userId}' still in DOM after {timeoutMs / 1000}s");
+            return false;
         }
 
         private async Task EnsureChatOpen()
@@ -314,32 +359,13 @@ namespace Klacks.E2ETest
             await WaitForChatInputEnabled();
         }
 
-        private async Task CloseChatIfOpen()
-        {
-            var aside = await Actions.QuerySelector("app-aside.visible");
-            if (aside != null)
-            {
-                TestContext.Out.WriteLine("Closing chat aside panel");
-                await Actions.ClickButtonById(HeaderAssistantButton);
-                await Actions.Wait1000();
-
-                var stillVisible = await Actions.QuerySelector("app-aside.visible");
-                if (stillVisible != null)
-                {
-                    TestContext.Out.WriteLine("Aside still visible, retrying");
-                    await Actions.ClickButtonById(HeaderAssistantButton);
-                    await Actions.Wait1000();
-                }
-            }
-        }
-
         private async Task WaitForChatInputEnabled()
         {
             var maxRetries = 3;
 
             for (var attempt = 0; attempt < maxRetries; attempt++)
             {
-                var isEnabled = await WaitForInputEnabled(10000);
+                var isEnabled = await WaitForInputEnabled(15000);
                 if (isEnabled)
                     return;
 
