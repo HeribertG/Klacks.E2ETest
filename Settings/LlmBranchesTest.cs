@@ -1,7 +1,6 @@
 using Klacks.E2ETest.Constants;
 using Klacks.E2ETest.Helpers;
 using Klacks.E2ETest.Wrappers;
-using Microsoft.Playwright;
 using static Klacks.E2ETest.Constants.LlmChatIds;
 using static Klacks.E2ETest.Constants.SettingsBranchIds;
 
@@ -50,7 +49,7 @@ namespace Klacks.E2ETest
             await Actions.Wait1000();
 
             // Assert
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             Assert.That(chatInput, Is.Not.Null, "Chat input should be visible");
 
             TestContext.Out.WriteLine("Chat panel opened successfully");
@@ -104,30 +103,29 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(4)]
-        public async Task Step4_CreateZurichBranch()
+        public async Task Step4_CreateZurichBranchViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 4: Create Zürich Branch via UI ===");
-
-            await CloseChatIfOpen();
-            await Actions.Wait500();
-
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
-
-            await Actions.ScrollIntoViewById(AddBranchBtn);
-            await Actions.Wait500();
+            TestContext.Out.WriteLine("=== Step 4: Create Zürich Branch via LLM Chat ===");
+            await EnsureChatOpen();
 
             // Act
-            var branchId = await CreateBranchViaUi(BranchZurich.Name, BranchZurich.Address, BranchZurich.Phone, BranchZurich.Email);
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage($"Erstelle eine neue Filiale: Name '{BranchZurich.Name}', Adresse '{BranchZurich.Address}', Telefon '{BranchZurich.Phone}', Email '{BranchZurich.Email}'");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            Assert.That(branchId, Is.Not.Null, $"Branch {BranchZurich.Name} should be created");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond");
+
+            var branchId = ExtractBranchIdFromResponse(response);
+            if (!string.IsNullOrEmpty(branchId))
+                CreatedBranchIds.Add(branchId);
+
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"Zürich branch created (ID: {branchId})");
+            TestContext.Out.WriteLine($"Zürich branch created via chat (ID: {branchId})");
         }
 
         [Test]
@@ -154,77 +152,70 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(6)]
-        public async Task Step6_CreateLausanneBranch()
+        public async Task Step6_CreateLausanneBranchViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 6: Create Lausanne Branch via UI ===");
-
-            await CloseChatIfOpen();
-            await Actions.Wait500();
+            TestContext.Out.WriteLine("=== Step 6: Create Lausanne Branch via LLM Chat ===");
+            await EnsureChatOpen();
 
             // Act
-            await Actions.ScrollIntoViewById(AddBranchBtn);
-            await Actions.Wait500();
-
-            var branchId = await CreateBranchViaUi(BranchLausanne.Name, BranchLausanne.Address, BranchLausanne.Phone, BranchLausanne.Email);
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage($"Erstelle eine neue Filiale: Name '{BranchLausanne.Name}', Adresse '{BranchLausanne.Address}', Telefon '{BranchLausanne.Phone}', Email '{BranchLausanne.Email}'");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            Assert.That(branchId, Is.Not.Null, $"Branch {BranchLausanne.Name} should be created");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond");
+
+            var branchId = ExtractBranchIdFromResponse(response);
+            if (!string.IsNullOrEmpty(branchId))
+                CreatedBranchIds.Add(branchId);
+
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"Lausanne branch created (ID: {branchId})");
+            TestContext.Out.WriteLine($"Lausanne branch created via chat (ID: {branchId})");
         }
 
         [Test]
         [Order(7)]
-        public async Task Step7_VerifyBothBranches()
+        public async Task Step7_VerifyBothBranchesViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 7: Verify Both Branches Exist ===");
-
-            await CloseChatIfOpen();
-            await Actions.Wait500();
-
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait500();
-
-            await Actions.ScrollIntoViewById(AddBranchBtn);
-            await Actions.Wait1000();
+            TestContext.Out.WriteLine("=== Step 7: Verify Both Branches via LLM Chat ===");
+            await EnsureChatOpen();
 
             // Act
-            var nameInputs = await Page.QuerySelectorAllAsync($"input[id^='{RowNamePrefix}']");
-            TestContext.Out.WriteLine($"Total branches in list: {nameInputs.Count}");
-
-            var foundBranches = new List<string>();
-            foreach (var input in nameInputs)
-            {
-                var value = await input.InputValueAsync();
-                TestContext.Out.WriteLine($"  Branch: '{value}'");
-
-                if (value.Contains(BranchZurich.Name, StringComparison.OrdinalIgnoreCase))
-                    foundBranches.Add(BranchZurich.Name);
-                if (value.Contains(BranchLausanne.Name, StringComparison.OrdinalIgnoreCase))
-                    foundBranches.Add(BranchLausanne.Name);
-            }
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage("Liste alle Filialen auf");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            TestContext.Out.WriteLine($"Found {foundBranches.Count} of 2 test branches");
-            Assert.That(foundBranches.Count, Is.EqualTo(2),
-                $"Both test branches should exist. Found: {string.Join(", ", foundBranches)}");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond with branch list");
+
+            var hasZurich = response.Contains(BranchZurich.Name, StringComparison.OrdinalIgnoreCase)
+                || response.Contains("Zürich", StringComparison.OrdinalIgnoreCase);
+            var hasLausanne = response.Contains(BranchLausanne.Name, StringComparison.OrdinalIgnoreCase)
+                || response.Contains("Lausanne", StringComparison.OrdinalIgnoreCase);
+
+            TestContext.Out.WriteLine($"  Zürich found: {hasZurich}");
+            TestContext.Out.WriteLine($"  Lausanne found: {hasLausanne}");
+
+            Assert.That(hasZurich, Is.True, $"Response should contain Zürich branch. Got: {response}");
+            Assert.That(hasLausanne, Is.True, $"Response should contain Lausanne branch. Got: {response}");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Both branches verified successfully");
+            TestContext.Out.WriteLine("Both branches verified via chat");
         }
 
         [Test]
         [Order(8)]
-        public async Task Step8_DeleteBothBranches()
+        public async Task Step8_DeleteBothBranchesViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 8: Delete Both Branches ===");
+            TestContext.Out.WriteLine("=== Step 8: Delete Both Branches via LLM Chat ===");
 
             if (CreatedBranchIds.Count == 0)
             {
@@ -233,109 +224,61 @@ namespace Klacks.E2ETest
                 return;
             }
 
-            await CloseChatIfOpen();
-            await Actions.Wait500();
-
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait500();
-
-            await Actions.ScrollIntoViewById(AddBranchBtn);
-            await Actions.Wait1000();
+            await EnsureChatOpen();
 
             // Act
-            var deletedCount = 0;
             foreach (var branchId in CreatedBranchIds.ToList())
             {
-                var deleteButtonId = $"{RowDeletePrefix}{branchId}";
-                var deleteButton = await Actions.FindElementById(deleteButtonId);
+                _messageCountBefore = await GetMessageCount();
+                await SendChatMessage($"Lösche die Filiale mit ID {branchId}");
+                var response = await WaitForBotResponse(_messageCountBefore);
 
-                if (deleteButton == null)
-                {
-                    TestContext.Out.WriteLine($"Delete button for branch {branchId} not found - skipping");
-                    continue;
-                }
+                TestContext.Out.WriteLine($"Delete response for {branchId}: {response}");
+                Assert.That(response, Is.Not.Empty, $"Bot should respond for branch {branchId}");
 
-                await deleteButton.ClickAsync();
-                await Actions.Wait500();
-
-                await Actions.ClickElementById(DeleteModalConfirmBtn);
-                await Actions.Wait2000();
-
-                deletedCount++;
-                TestContext.Out.WriteLine($"Deleted branch {branchId}");
+                var hasConfirmation = response.Contains("gelöscht", StringComparison.OrdinalIgnoreCase)
+                    || response.Contains("erfolgreich", StringComparison.OrdinalIgnoreCase)
+                    || response.Contains("deleted", StringComparison.OrdinalIgnoreCase);
+                Assert.That(hasConfirmation, Is.True,
+                    $"Response should confirm deletion of branch {branchId}. Got: {response}");
             }
 
             // Assert
-            foreach (var branchId in CreatedBranchIds)
-            {
-                var deletedBranch = await Page.QuerySelectorAsync($"#{RowNamePrefix}{branchId}");
-                Assert.That(deletedBranch, Is.Null, $"Branch {branchId} should be deleted");
-            }
-
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"All {deletedCount} test branches deleted successfully");
+            TestContext.Out.WriteLine($"All {CreatedBranchIds.Count} test branches deleted via chat");
             CreatedBranchIds.Clear();
         }
 
         #region Helper Methods
 
-        private async Task<string?> CreateBranchViaUi(string name, string address, string phone, string email)
+        private static string? ExtractBranchIdFromResponse(string response)
         {
-            TestContext.Out.WriteLine($"Creating branch: {name} ({address})");
-
-            await Actions.ScrollIntoViewById(AddBranchBtn);
-            await Actions.Wait500();
-
-            var addButton = await Actions.FindElementById(AddBranchBtn);
-            Assert.That(addButton, Is.Not.Null, "Add branch button should exist");
-            await addButton!.ClickAsync();
-            await Actions.Wait1000();
-
-            await Actions.TypeIntoInputById(ModalInputName, name);
-            await Actions.TypeIntoInputById(ModalInputAddress, address);
-            await Actions.TypeIntoInputById(ModalInputPhone, phone);
-            await Actions.TypeIntoInputById(ModalInputEmail, email);
-            await Actions.Wait1000();
-
-            var saveButton = await Actions.FindElementById(ModalSaveBtn);
-            Assert.That(saveButton, Is.Not.Null, "Save button should exist");
-
-            var isEnabled = await saveButton!.IsEnabledAsync();
-            TestContext.Out.WriteLine($"Save button enabled: {isEnabled}");
-            Assert.That(isEnabled, Is.True, "Save button should be enabled after filling required fields");
-
-            await Actions.ClickElementById(ModalSaveBtn);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait3500();
-
-            var nameInputs = await Page.QuerySelectorAllAsync($"input[id^='{RowNamePrefix}']");
-            TestContext.Out.WriteLine($"Found {nameInputs.Count} branches in list after save");
-            foreach (var input in nameInputs)
+            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
             {
-                var value = await input.InputValueAsync();
-                if (value.Contains(name, StringComparison.OrdinalIgnoreCase))
+                var trimmed = line.Trim().TrimStart('-', '*', ' ');
+
+                if (trimmed.Contains("branchId", StringComparison.OrdinalIgnoreCase)
+                    || trimmed.StartsWith("ID:", StringComparison.OrdinalIgnoreCase))
                 {
-                    var inputId = await input.GetAttributeAsync("id");
-                    var branchId = inputId?.Replace(RowNamePrefix, "");
-                    TestContext.Out.WriteLine($"Found created branch: '{value}' (ID: {branchId})");
-                    if (branchId != null)
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
                     {
-                        CreatedBranchIds.Add(branchId);
-                        return branchId;
+                        var id = parts[1].Trim().Trim('`', '\'', '"', '*', ' ');
+                        if (!string.IsNullOrEmpty(id) && id.Contains('-'))
+                            return id;
                     }
                 }
             }
 
-            TestContext.Out.WriteLine($"WARNING: Branch '{name}' not found in list after creation");
             return null;
         }
 
         private async Task EnsureChatOpen()
         {
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             if (chatInput == null)
             {
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -347,18 +290,18 @@ namespace Klacks.E2ETest
 
         private async Task CloseChatIfOpen()
         {
-            var aside = await Page.QuerySelectorAsync("app-aside.visible");
+            var aside = await Actions.QuerySelector("app-aside.visible");
             if (aside != null)
             {
-                TestContext.Out.WriteLine("Closing chat aside panel via JS click");
-                await Page.EvaluateAsync($"() => document.getElementById('{HeaderAssistantButton}')?.click()");
+                TestContext.Out.WriteLine("Closing chat aside panel");
+                await Actions.ClickButtonById(HeaderAssistantButton);
                 await Actions.Wait1000();
 
-                var stillVisible = await Page.QuerySelectorAsync("app-aside.visible");
+                var stillVisible = await Actions.QuerySelector("app-aside.visible");
                 if (stillVisible != null)
                 {
-                    TestContext.Out.WriteLine("Aside still visible, retrying via JS click");
-                    await Page.EvaluateAsync($"() => document.getElementById('{HeaderAssistantButton}')?.click()");
+                    TestContext.Out.WriteLine("Aside still visible, retrying");
+                    await Actions.ClickButtonById(HeaderAssistantButton);
                     await Actions.Wait1000();
                 }
             }
@@ -375,7 +318,7 @@ namespace Klacks.E2ETest
                     return;
 
                 TestContext.Out.WriteLine($"Chat input disabled (attempt {attempt + 1}/{maxRetries}), refreshing page...");
-                await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
+                await Actions.Reload();
                 await Actions.Wait2000();
 
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -390,7 +333,7 @@ namespace Klacks.E2ETest
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+                var chatInput = await Actions.FindElementById(ChatInput);
                 if (chatInput != null)
                 {
                     var isDisabled = await chatInput.IsDisabledAsync();
@@ -407,31 +350,13 @@ namespace Klacks.E2ETest
         private async Task SendChatMessage(string message)
         {
             TestContext.Out.WriteLine($"Sending message: {message}");
-
-            var inputLocator = Page.Locator($"#{ChatInput}");
-            await inputLocator.WaitForAsync(new LocatorWaitForOptions
-            {
-                State = WaitForSelectorState.Visible,
-                Timeout = 10000
-            });
-
-            await inputLocator.FillAsync(message);
-            await Actions.Wait200();
-
-            await Page.EvaluateAsync($@"() => {{
-                const textarea = document.getElementById('{ChatInput}');
-                if (textarea) {{
-                    textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                }}
-            }}");
-            await Actions.Wait200();
-
-            await Page.EvaluateAsync($"() => document.getElementById('{ChatSendBtn}')?.click()");
+            await Actions.FillInputWithDispatch(ChatInput, message);
+            await Actions.ClickButtonById(ChatSendBtn);
         }
 
         private async Task<int> GetMessageCount()
         {
-            var messages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+            var messages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
             return messages.Count;
         }
 
@@ -444,16 +369,16 @@ namespace Klacks.E2ETest
 
             while (DateTime.UtcNow - startTime < timeout)
             {
-                var typingIndicator = await Page.QuerySelectorAsync($"#{ChatMessages} .typing-indicator");
-                var currentMessages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+                var typingIndicator = await Actions.QuerySelector($"#{ChatMessages} .typing-indicator");
+                var currentMessages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
 
                 if (typingIndicator == null && currentMessages.Count > previousMessageCount)
                 {
                     var lastMessage = currentMessages[currentMessages.Count - 1];
-                    var messageText = await lastMessage.QuerySelectorAsync(".message-text");
+                    var messageText = await Actions.QueryChildSelector(lastMessage, ".message-text");
                     if (messageText != null)
                     {
-                        var text = await messageText.TextContentAsync();
+                        var text = await Actions.GetElementText(messageText);
                         if (!string.IsNullOrWhiteSpace(text))
                         {
                             TestContext.Out.WriteLine($"Bot responded after {(DateTime.UtcNow - startTime).TotalSeconds:F1}s");

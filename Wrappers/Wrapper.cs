@@ -81,6 +81,21 @@ public sealed class Wrapper
         });
     }
 
+    public async Task WaitUntilUrlNotContaining(string text)
+    {
+        try
+        {
+            await _page.WaitForURLAsync(url => !url.Contains(text), new PageWaitForURLOptions
+            {
+                Timeout = WrapperConstants.DEFAULT_TIMEOUT
+            });
+        }
+        catch (Exception)
+        {
+            Assert.Fail($"URL still contains '{text}' after timeout. Current: {_page.Url}");
+        }
+    }
+
     #endregion Navigation
 
     #region Element Finding
@@ -639,6 +654,27 @@ public sealed class Wrapper
     public async Task SetInputFileByCssSelector(string cssSelector, string path)
     {
         await _page.SetInputFilesAsync(cssSelector, path);
+    }
+
+    public async Task FillInputWithDispatch(string elementId, string value)
+    {
+        var locator = _page.Locator($"#{elementId}");
+        await locator.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = WrapperConstants.DEFAULT_TIMEOUT
+        });
+
+        await locator.FillAsync(value);
+        await Wait200();
+
+        await _page.EvaluateAsync($@"() => {{
+            const el = document.getElementById('{elementId}');
+            if (el) {{
+                el.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            }}
+        }}");
+        await Wait200();
     }
 
     #endregion Input Handling
@@ -1410,6 +1446,21 @@ public sealed class Wrapper
     #endregion Key
 
     #region Element Queries
+
+    public async Task<IElementHandle?> QuerySelector(string cssSelector)
+    {
+        return await _page.QuerySelectorAsync(cssSelector);
+    }
+
+    public async Task<IReadOnlyList<IElementHandle>> QuerySelectorAll(string cssSelector)
+    {
+        return await _page.QuerySelectorAllAsync(cssSelector);
+    }
+
+    public async Task<IElementHandle?> QueryChildSelector(IElementHandle parent, string cssSelector)
+    {
+        return await parent.QuerySelectorAsync(cssSelector);
+    }
 
     /// <summary>
     /// Finds an input element by its ID prefix and value using JavaScript evaluation.

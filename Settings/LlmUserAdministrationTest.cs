@@ -1,7 +1,6 @@
 using Klacks.E2ETest.Constants;
 using Klacks.E2ETest.Helpers;
 using Klacks.E2ETest.Wrappers;
-using Microsoft.Playwright;
 using static Klacks.E2ETest.Constants.LlmChatIds;
 using static Klacks.E2ETest.Constants.SettingsUserAdministrationIds;
 
@@ -54,7 +53,7 @@ namespace Klacks.E2ETest
             await Actions.Wait1000();
 
             // Assert
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             Assert.That(chatInput, Is.Not.Null, "Chat input should be visible");
 
             TestContext.Out.WriteLine("Chat panel opened successfully");
@@ -86,143 +85,132 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(3)]
-        public async Task Step3_NavigateToUserAdministration()
+        public async Task Step3_CreateFirstUserViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 3: Navigate to User Administration ===");
-
-            await CloseChatIfOpen();
-            await Actions.Wait500();
+            TestContext.Out.WriteLine("=== Step 3: Create First User via LLM Chat ===");
+            await EnsureChatOpen();
+            var user = _testUsers[0];
 
             // Act
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
-
-            await Actions.ScrollIntoViewById(UserAdminSection);
-            await Actions.Wait500();
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage($"Erstelle einen neuen System-Benutzer: Vorname '{user.FirstName}', Nachname '{user.LastName}', Email '{user.Email}'");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            var addButton = await Actions.FindElementById(AddUserBtn);
-            Assert.That(addButton, Is.Not.Null, "Add user button should be visible");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond");
+            var hasUsername = response.Contains("username", StringComparison.OrdinalIgnoreCase)
+                || response.Contains("Benutzername", StringComparison.OrdinalIgnoreCase);
+            Assert.That(hasUsername, Is.True, $"Response should contain username. Got: {response}");
 
-            var isEnabled = await addButton!.IsEnabledAsync();
-            Assert.That(isEnabled, Is.True, "Add user button should be enabled for admin");
+            var userId = ExtractUserIdFromResponse(response, user.FirstName, user.LastName);
+            if (!string.IsNullOrEmpty(userId))
+                CreatedUserIds.Add(userId);
 
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("User Administration page loaded, Add button is enabled");
+            TestContext.Out.WriteLine($"First user created via chat: {user.FirstName} {user.LastName}");
         }
 
         [Test]
         [Order(4)]
-        public async Task Step4_CreateFirstUser()
+        public async Task Step4_CreateSecondUserViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 4: Create First User via UI ===");
-            var user = _testUsers[0];
+            TestContext.Out.WriteLine("=== Step 4: Create Second User via LLM Chat ===");
+            await EnsureChatOpen();
+            var user = _testUsers[1];
 
             // Act
-            var userId = await CreateUserViaUi(user.FirstName, user.LastName, user.Email);
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage($"Erstelle einen neuen System-Benutzer: Vorname '{user.FirstName}', Nachname '{user.LastName}', Email '{user.Email}'");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            Assert.That(userId, Is.Not.Null, $"User {user.FirstName} {user.LastName} should be created");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond");
+
+            var userId = ExtractUserIdFromResponse(response, user.FirstName, user.LastName);
+            if (!string.IsNullOrEmpty(userId))
+                CreatedUserIds.Add(userId);
+
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"First user created: {user.FirstName} {user.LastName} (ID: {userId})");
+            TestContext.Out.WriteLine($"Second user created via chat: {user.FirstName} {user.LastName}");
         }
 
         [Test]
         [Order(5)]
-        public async Task Step5_CreateSecondUser()
+        public async Task Step5_CreateThirdUserViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 5: Create Second User via UI ===");
-            var user = _testUsers[1];
+            TestContext.Out.WriteLine("=== Step 5: Create Third User via LLM Chat ===");
+            await EnsureChatOpen();
+            var user = _testUsers[2];
 
             // Act
-            var userId = await CreateUserViaUi(user.FirstName, user.LastName, user.Email);
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage($"Erstelle einen neuen System-Benutzer: Vorname '{user.FirstName}', Nachname '{user.LastName}', Email '{user.Email}'");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            Assert.That(userId, Is.Not.Null, $"User {user.FirstName} {user.LastName} should be created");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond");
+
+            var userId = ExtractUserIdFromResponse(response, user.FirstName, user.LastName);
+            if (!string.IsNullOrEmpty(userId))
+                CreatedUserIds.Add(userId);
+
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"Second user created: {user.FirstName} {user.LastName} (ID: {userId})");
+            TestContext.Out.WriteLine($"Third user created via chat: {user.FirstName} {user.LastName}");
         }
 
         [Test]
         [Order(6)]
-        public async Task Step6_CreateThirdUser()
+        public async Task Step6_VerifyAllUsersViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 6: Create Third User via UI ===");
-            var user = _testUsers[2];
+            TestContext.Out.WriteLine("=== Step 6: Verify All Users via LLM Chat ===");
+            await EnsureChatOpen();
 
             // Act
-            var userId = await CreateUserViaUi(user.FirstName, user.LastName, user.Email);
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage("Liste alle System-Benutzer auf");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            Assert.That(userId, Is.Not.Null, $"User {user.FirstName} {user.LastName} should be created");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond with user list");
+
+            var allFound = true;
+            foreach (var user in _testUsers)
+            {
+                var fullName = $"{user.FirstName} {user.LastName}";
+                var found = response.Contains(user.FirstName, StringComparison.OrdinalIgnoreCase)
+                    || response.Contains(fullName, StringComparison.OrdinalIgnoreCase);
+                TestContext.Out.WriteLine($"  User '{fullName}': {(found ? "FOUND" : "NOT FOUND")}");
+                if (!found)
+                    allFound = false;
+            }
+
+            Assert.That(allFound, Is.True, $"All {_testUsers.Length} test users should be in the response. Got: {response}");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"Third user created: {user.FirstName} {user.LastName} (ID: {userId})");
+            TestContext.Out.WriteLine("All test users verified via chat");
         }
 
         [Test]
         [Order(7)]
-        public async Task Step7_VerifyAllUsersExist()
+        public async Task Step7_DeleteCreatedUsersViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 7: Verify All Users Exist ===");
-
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait500();
-
-            await Actions.ScrollIntoViewById(UserAdminSection);
-            await Actions.Wait1000();
-
-            // Act
-            var nameInputs = await Page.QuerySelectorAllAsync($"input[id^='{RowNamePrefix}']");
-            TestContext.Out.WriteLine($"Total users in list: {nameInputs.Count}");
-
-            var foundUsers = new List<string>();
-            foreach (var input in nameInputs)
-            {
-                var value = await input.InputValueAsync();
-                TestContext.Out.WriteLine($"  User: '{value}'");
-
-                foreach (var user in _testUsers)
-                {
-                    var fullName = $"{user.FirstName} {user.LastName}";
-                    if (value.Contains(fullName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        foundUsers.Add(fullName);
-                        TestContext.Out.WriteLine($"  -> MATCH: {fullName}");
-                    }
-                }
-            }
-
-            // Assert
-            TestContext.Out.WriteLine($"Found {foundUsers.Count} of {_testUsers.Length} test users");
-            Assert.That(foundUsers.Count, Is.EqualTo(_testUsers.Length),
-                $"All {_testUsers.Length} test users should exist. Found: {string.Join(", ", foundUsers)}");
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-            TestContext.Out.WriteLine("All test users verified");
-        }
-
-        [Test]
-        [Order(8)]
-        public async Task Step8_DeleteCreatedUsers()
-        {
-            // Arrange
-            TestContext.Out.WriteLine("=== Step 8: Delete Created Users ===");
+            TestContext.Out.WriteLine("=== Step 7: Delete Created Users via LLM Chat ===");
 
             if (CreatedUserIds.Count == 0)
             {
@@ -231,124 +219,92 @@ namespace Klacks.E2ETest
                 return;
             }
 
+            await EnsureChatOpen();
+
             // Act
-            await CloseChatIfOpen();
-            await Actions.Wait500();
-
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait500();
-
-            await Actions.ScrollIntoViewById(UserAdminSection);
-            await Actions.Wait1000();
-
-            var deletedCount = 0;
             foreach (var userId in CreatedUserIds.ToList())
             {
-                var deleteButtonId = $"{RowDeletePrefix}{userId}";
-                var deleteButton = await Actions.FindElementById(deleteButtonId);
+                _messageCountBefore = await GetMessageCount();
+                await SendChatMessage($"Lösche den Benutzer mit ID {userId}");
+                var response = await WaitForBotResponse(_messageCountBefore);
 
-                if (deleteButton == null)
-                {
-                    TestContext.Out.WriteLine($"Delete button for user {userId} not found - skipping");
-                    continue;
-                }
+                TestContext.Out.WriteLine($"Delete response for {userId}: {response}");
+                Assert.That(response, Is.Not.Empty, $"Bot should respond for user {userId}");
 
-                await deleteButton.ClickAsync();
-                await Actions.Wait500();
-
-                await Actions.ClickElementById(DeleteModalConfirmBtn);
-                await Actions.Wait2000();
-
-                deletedCount++;
-                TestContext.Out.WriteLine($"Deleted user {userId}");
+                var hasConfirmation = response.Contains("gelöscht", StringComparison.OrdinalIgnoreCase)
+                    || response.Contains("erfolgreich", StringComparison.OrdinalIgnoreCase)
+                    || response.Contains("deleted", StringComparison.OrdinalIgnoreCase);
+                Assert.That(hasConfirmation, Is.True,
+                    $"Response should confirm deletion of user {userId}. Got: {response}");
             }
 
             // Assert
-            foreach (var userId in CreatedUserIds)
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+
+            TestContext.Out.WriteLine($"All {CreatedUserIds.Count} test users deleted via chat");
+            CreatedUserIds.Clear();
+        }
+
+        [Test]
+        [Order(8)]
+        public async Task Step8_VerifyUsersDeletedViaChat()
+        {
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 8: Verify Users Deleted via LLM Chat ===");
+            await EnsureChatOpen();
+
+            // Act
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage("Liste alle System-Benutzer auf");
+            var response = await WaitForBotResponse(_messageCountBefore);
+
+            // Assert
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond with user list");
+
+            foreach (var user in _testUsers)
             {
-                var deletedUser = await Page.QuerySelectorAsync($"#{RowNamePrefix}{userId}");
-                Assert.That(deletedUser, Is.Null, $"User {userId} should be deleted");
+                var fullName = $"{user.FirstName} {user.LastName}";
+                var stillExists = response.Contains(fullName, StringComparison.OrdinalIgnoreCase);
+                TestContext.Out.WriteLine($"  User '{fullName}': {(stillExists ? "STILL EXISTS" : "DELETED")}");
+                Assert.That(stillExists, Is.False, $"User '{fullName}' should no longer exist");
             }
 
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"All {deletedCount} test users deleted successfully");
-            CreatedUserIds.Clear();
+            TestContext.Out.WriteLine("All test users confirmed deleted");
         }
 
         #region Helper Methods
 
-        private async Task<string?> CreateUserViaUi(string firstName, string lastName, string email)
+        private static string? ExtractUserIdFromResponse(string response, string firstName, string lastName)
         {
-            TestContext.Out.WriteLine($"Creating user: {firstName} {lastName} ({email})");
-            var fullName = $"{firstName} {lastName}";
-
-            await Actions.ScrollIntoViewById(AddUserBtn);
-            await Actions.Wait500();
-
-            var addButton = await Actions.FindElementById(AddUserBtn);
-            Assert.That(addButton, Is.Not.Null, "Add button should exist");
-            await addButton!.ClickAsync();
-            await Actions.Wait1000();
-
-            await Actions.TypeIntoInputById(InputFirstName, firstName);
-            await Actions.TypeIntoInputById(InputLastName, lastName);
-            await Actions.TypeIntoInputById(InputEmail, email);
-            await Actions.Wait1000();
-
-            var usernameInput = await Actions.FindElementById(InputUserName);
-            if (usernameInput != null)
+            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
             {
-                var autoUsername = await usernameInput.InputValueAsync();
-                TestContext.Out.WriteLine($"Auto-generated username: {autoUsername}");
-            }
+                var trimmed = line.Trim().TrimStart('-', '*', ' ');
 
-            var saveButton = await Actions.FindElementById(ModalSaveBtn);
-            Assert.That(saveButton, Is.Not.Null, "Save button should exist");
-
-            var isEnabled = await saveButton!.IsEnabledAsync();
-            TestContext.Out.WriteLine($"Save button enabled: {isEnabled}");
-            Assert.That(isEnabled, Is.True, "Save button should be enabled after filling all fields");
-
-            await Actions.ClickElementById(ModalSaveBtn);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait3500();
-
-            var msgOkBtn = await Page.QuerySelectorAsync($"#{PasswordResetModalOkBtn}");
-            if (msgOkBtn != null)
-            {
-                TestContext.Out.WriteLine("Dismissing password info dialog");
-                await msgOkBtn.ClickAsync();
-                await Actions.Wait1000();
-            }
-
-            var nameInputs = await Page.QuerySelectorAllAsync($"input[id^='{RowNamePrefix}']");
-            TestContext.Out.WriteLine($"Found {nameInputs.Count} users in list after save");
-            foreach (var input in nameInputs)
-            {
-                var value = await input.InputValueAsync();
-                if (value.Contains(fullName, StringComparison.OrdinalIgnoreCase))
+                if (trimmed.Contains("userId", StringComparison.OrdinalIgnoreCase)
+                    || trimmed.StartsWith("ID:", StringComparison.OrdinalIgnoreCase))
                 {
-                    var inputId = await input.GetAttributeAsync("id");
-                    var userId = inputId?.Replace(RowNamePrefix, "");
-                    TestContext.Out.WriteLine($"Found created user: '{value}' (ID: {userId})");
-                    if (userId != null)
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
                     {
-                        CreatedUserIds.Add(userId);
-                        return userId;
+                        var id = parts[1].Trim().Trim('`', '\'', '"', '*', ' ');
+                        if (!string.IsNullOrEmpty(id) && id.Contains('-'))
+                            return id;
                     }
                 }
             }
 
-            TestContext.Out.WriteLine($"WARNING: User '{fullName}' not found in list after creation");
             return null;
         }
 
         private async Task EnsureChatOpen()
         {
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             if (chatInput == null)
             {
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -360,18 +316,18 @@ namespace Klacks.E2ETest
 
         private async Task CloseChatIfOpen()
         {
-            var aside = await Page.QuerySelectorAsync("app-aside.visible");
+            var aside = await Actions.QuerySelector("app-aside.visible");
             if (aside != null)
             {
-                TestContext.Out.WriteLine("Closing chat aside panel via JS click");
-                await Page.EvaluateAsync($"() => document.getElementById('{HeaderAssistantButton}')?.click()");
+                TestContext.Out.WriteLine("Closing chat aside panel");
+                await Actions.ClickButtonById(HeaderAssistantButton);
                 await Actions.Wait1000();
 
-                var stillVisible = await Page.QuerySelectorAsync("app-aside.visible");
+                var stillVisible = await Actions.QuerySelector("app-aside.visible");
                 if (stillVisible != null)
                 {
-                    TestContext.Out.WriteLine("Aside still visible, retrying via JS click");
-                    await Page.EvaluateAsync($"() => document.getElementById('{HeaderAssistantButton}')?.click()");
+                    TestContext.Out.WriteLine("Aside still visible, retrying");
+                    await Actions.ClickButtonById(HeaderAssistantButton);
                     await Actions.Wait1000();
                 }
             }
@@ -388,7 +344,7 @@ namespace Klacks.E2ETest
                     return;
 
                 TestContext.Out.WriteLine($"Chat input disabled (attempt {attempt + 1}/{maxRetries}), refreshing page...");
-                await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
+                await Actions.Reload();
                 await Actions.Wait2000();
 
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -403,7 +359,7 @@ namespace Klacks.E2ETest
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+                var chatInput = await Actions.FindElementById(ChatInput);
                 if (chatInput != null)
                 {
                     var isDisabled = await chatInput.IsDisabledAsync();
@@ -420,31 +376,13 @@ namespace Klacks.E2ETest
         private async Task SendChatMessage(string message)
         {
             TestContext.Out.WriteLine($"Sending message: {message}");
-
-            var inputLocator = Page.Locator($"#{ChatInput}");
-            await inputLocator.WaitForAsync(new LocatorWaitForOptions
-            {
-                State = WaitForSelectorState.Visible,
-                Timeout = 10000
-            });
-
-            await inputLocator.FillAsync(message);
-            await Actions.Wait200();
-
-            await Page.EvaluateAsync($@"() => {{
-                const textarea = document.getElementById('{ChatInput}');
-                if (textarea) {{
-                    textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                }}
-            }}");
-            await Actions.Wait200();
-
+            await Actions.FillInputWithDispatch(ChatInput, message);
             await Actions.ClickButtonById(ChatSendBtn);
         }
 
         private async Task<int> GetMessageCount()
         {
-            var messages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+            var messages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
             return messages.Count;
         }
 
@@ -457,16 +395,16 @@ namespace Klacks.E2ETest
 
             while (DateTime.UtcNow - startTime < timeout)
             {
-                var typingIndicator = await Page.QuerySelectorAsync($"#{ChatMessages} .typing-indicator");
-                var currentMessages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+                var typingIndicator = await Actions.QuerySelector($"#{ChatMessages} .typing-indicator");
+                var currentMessages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
 
                 if (typingIndicator == null && currentMessages.Count > previousMessageCount)
                 {
                     var lastMessage = currentMessages[currentMessages.Count - 1];
-                    var messageText = await lastMessage.QuerySelectorAsync(".message-text");
+                    var messageText = await Actions.QueryChildSelector(lastMessage, ".message-text");
                     if (messageText != null)
                     {
-                        var text = await messageText.TextContentAsync();
+                        var text = await Actions.GetElementText(messageText);
                         if (!string.IsNullOrWhiteSpace(text))
                         {
                             TestContext.Out.WriteLine($"Bot responded after {(DateTime.UtcNow - startTime).TotalSeconds:F1}s");

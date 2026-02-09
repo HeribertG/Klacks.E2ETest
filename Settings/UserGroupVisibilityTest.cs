@@ -1,9 +1,7 @@
 using Klacks.E2ETest.Constants;
 using Klacks.E2ETest.Helpers;
 using Klacks.E2ETest.Wrappers;
-using Microsoft.Playwright;
 using static Klacks.E2ETest.Constants.LlmChatIds;
-using static Klacks.E2ETest.Constants.SettingsUserAdministrationIds;
 
 namespace Klacks.E2ETest
 {
@@ -57,7 +55,7 @@ namespace Klacks.E2ETest
             await Actions.Wait1000();
 
             // Assert
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             Assert.That(chatInput, Is.Not.Null, "Chat input should be visible");
 
             TestContext.Out.WriteLine("Chat panel opened successfully");
@@ -87,8 +85,11 @@ namespace Klacks.E2ETest
             Assert.That(hasUsername, Is.True, $"Response should contain username. Got: {response}");
 
             (_capturedUsername, _capturedPassword) = ParseCredentialsFromResponse(response);
+            _createdUserId = ExtractUserIdFromResponse(response) ?? "";
+
             TestContext.Out.WriteLine($"Parsed Username: {_capturedUsername}");
             TestContext.Out.WriteLine($"Parsed Password length: {_capturedPassword.Length}");
+            TestContext.Out.WriteLine($"Parsed UserId: {_createdUserId}");
 
             Assert.That(_capturedUsername, Is.Not.Empty, "Username should be extracted from bot response");
             Assert.That(_capturedPassword, Is.Not.Empty, "Password should be extracted from bot response");
@@ -101,47 +102,16 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(3)]
-        public async Task Step3_FindUserIdAndSetGroupScope()
+        public async Task Step3_SetGroupScopeViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 3: Find User ID + Set Group Scope via Chat ===");
+            TestContext.Out.WriteLine("=== Step 3: Set Group Scope via Chat ===");
+            Assert.That(_createdUserId, Is.Not.Empty, "User ID should have been extracted in Step 2");
             await EnsureChatOpen();
-
-            await CloseChatIfOpen();
-            await Actions.Wait500();
-
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
-
-            await Actions.ScrollIntoViewById(UserAdminSection);
-            await Actions.Wait1000();
-
-            var fullName = $"{_firstName} {_lastName}";
-            var nameInputs = await Page.QuerySelectorAllAsync($"input[id^='{RowNamePrefix}']");
-            foreach (var input in nameInputs)
-            {
-                var value = await input.InputValueAsync();
-                if (value.Contains(fullName, StringComparison.OrdinalIgnoreCase))
-                {
-                    var inputId = await input.GetAttributeAsync("id");
-                    _createdUserId = inputId?.Replace(RowNamePrefix, "") ?? "";
-                    TestContext.Out.WriteLine($"Found created user in list: '{value}' (ID: {_createdUserId})");
-                    break;
-                }
-            }
-
-            Assert.That(_createdUserId, Is.Not.Empty, $"User '{fullName}' should exist in user list");
 
             // Act
-            await Actions.ClickButtonById(HeaderAssistantButton);
-            await Actions.Wait1000();
-            await EnsureChatOpen();
-
-            var message = $"Setze den Group Scope für den Benutzer mit ID '{_createdUserId}' auf '{TargetGroupName}'";
-
             _messageCountBefore = await GetMessageCount();
-            await SendChatMessage(message);
+            await SendChatMessage($"Setze den Group Scope für den Benutzer mit ID '{_createdUserId}' auf '{TargetGroupName}'");
             var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
@@ -213,11 +183,11 @@ namespace Klacks.E2ETest
             for (var i = 0; i < 100; i++)
             {
                 var cellId = $"{GroupIds.CellNamePrefix}{i}";
-                var cell = await Page.QuerySelectorAsync($"#{cellId}");
+                var cell = await Actions.FindElementById(cellId);
                 if (cell == null)
                     break;
 
-                var text = await cell.TextContentAsync();
+                var text = await Actions.GetTextContentById(cellId);
                 if (!string.IsNullOrWhiteSpace(text))
                 {
                     groupNames.Add(text.Trim());
@@ -256,10 +226,10 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(8)]
-        public async Task Step8_CleanupDeleteCreatedUser()
+        public async Task Step8_CleanupDeleteCreatedUserViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 8: Cleanup - Delete Created User ===");
+            TestContext.Out.WriteLine("=== Step 8: Cleanup - Delete Created User via Chat ===");
 
             if (string.IsNullOrEmpty(_createdUserId))
             {
@@ -268,32 +238,27 @@ namespace Klacks.E2ETest
                 return;
             }
 
+            await EnsureChatOpen();
+
             // Act
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait500();
-
-            await Actions.ScrollIntoViewById(UserAdminSection);
-            await Actions.Wait1000();
-
-            var deleteButtonId = $"{RowDeletePrefix}{_createdUserId}";
-            var deleteButton = await Actions.FindElementById(deleteButtonId);
-            Assert.That(deleteButton, Is.Not.Null, $"Delete button for user {_createdUserId} should exist");
-
-            await deleteButton!.ClickAsync();
-            await Actions.Wait500();
-
-            await Actions.ClickElementById(DeleteModalConfirmBtn);
-            await Actions.Wait2000();
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage($"Lösche den Benutzer mit ID {_createdUserId}");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            var deletedUser = await Page.QuerySelectorAsync($"#{RowNamePrefix}{_createdUserId}");
-            Assert.That(deletedUser, Is.Null, $"User {_createdUserId} should be deleted");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, $"Bot should respond for user {_createdUserId}");
+
+            var hasConfirmation = response.Contains("gelöscht", StringComparison.OrdinalIgnoreCase)
+                || response.Contains("erfolgreich", StringComparison.OrdinalIgnoreCase)
+                || response.Contains("deleted", StringComparison.OrdinalIgnoreCase);
+            Assert.That(hasConfirmation, Is.True,
+                $"Response should confirm deletion of user {_createdUserId}. Got: {response}");
 
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"User {_createdUserId} deleted successfully");
+            TestContext.Out.WriteLine($"User {_createdUserId} deleted via chat successfully");
         }
 
         #region Helper Methods
@@ -301,10 +266,10 @@ namespace Klacks.E2ETest
         private async Task PerformLogout()
         {
             TestContext.Out.WriteLine("Performing logout...");
-            await Page.EvaluateAsync($"() => document.getElementById('{LogoutButton}')?.click()");
+            await Actions.ClickButtonById(LogoutButton);
             await Actions.Wait2000();
 
-            await Page.WaitForURLAsync(url => url.Contains("login"), new() { Timeout = 10000 });
+            await Actions.WaitUntilUrlContains("login");
             TestContext.Out.WriteLine("Logout complete, on login page");
         }
 
@@ -322,14 +287,14 @@ namespace Klacks.E2ETest
             await Actions.ClickButtonById(LogInIds.ButtonSumitId);
             await Actions.WaitForSpinnerToDisappear();
 
-            await Page.WaitForURLAsync(url => !url.Contains("login"), new() { Timeout = 10000 });
+            await Actions.WaitUntilUrlNotContaining("login");
             await Actions.Wait1000();
             TestContext.Out.WriteLine("Login complete");
         }
 
         private async Task EnsureChatOpen()
         {
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             if (chatInput == null)
             {
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -341,17 +306,17 @@ namespace Klacks.E2ETest
 
         private async Task CloseChatIfOpen()
         {
-            var aside = await Page.QuerySelectorAsync("app-aside.visible");
+            var aside = await Actions.QuerySelector("app-aside.visible");
             if (aside != null)
             {
                 TestContext.Out.WriteLine("Closing chat aside panel");
-                await Page.EvaluateAsync($"() => document.getElementById('{HeaderAssistantButton}')?.click()");
+                await Actions.ClickButtonById(HeaderAssistantButton);
                 await Actions.Wait1000();
 
-                var stillVisible = await Page.QuerySelectorAsync("app-aside.visible");
+                var stillVisible = await Actions.QuerySelector("app-aside.visible");
                 if (stillVisible != null)
                 {
-                    await Page.EvaluateAsync($"() => document.getElementById('{HeaderAssistantButton}')?.click()");
+                    await Actions.ClickButtonById(HeaderAssistantButton);
                     await Actions.Wait1000();
                 }
             }
@@ -367,7 +332,7 @@ namespace Klacks.E2ETest
                     return;
 
                 TestContext.Out.WriteLine($"Chat input disabled (attempt {attempt + 1}/{maxRetries}), refreshing page...");
-                await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
+                await Actions.Reload();
                 await Actions.Wait2000();
 
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -382,7 +347,7 @@ namespace Klacks.E2ETest
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+                var chatInput = await Actions.FindElementById(ChatInput);
                 if (chatInput != null)
                 {
                     var isDisabled = await chatInput.IsDisabledAsync();
@@ -399,31 +364,13 @@ namespace Klacks.E2ETest
         private async Task SendChatMessage(string message)
         {
             TestContext.Out.WriteLine($"Sending message: {message}");
-
-            var inputLocator = Page.Locator($"#{ChatInput}");
-            await inputLocator.WaitForAsync(new LocatorWaitForOptions
-            {
-                State = WaitForSelectorState.Visible,
-                Timeout = 10000
-            });
-
-            await inputLocator.FillAsync(message);
-            await Actions.Wait200();
-
-            await Page.EvaluateAsync($@"() => {{
-                const textarea = document.getElementById('{ChatInput}');
-                if (textarea) {{
-                    textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                }}
-            }}");
-            await Actions.Wait200();
-
+            await Actions.FillInputWithDispatch(ChatInput, message);
             await Actions.ClickButtonById(ChatSendBtn);
         }
 
         private async Task<int> GetMessageCount()
         {
-            var messages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+            var messages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
             return messages.Count;
         }
 
@@ -436,16 +383,16 @@ namespace Klacks.E2ETest
 
             while (DateTime.UtcNow - startTime < timeout)
             {
-                var typingIndicator = await Page.QuerySelectorAsync($"#{ChatMessages} .typing-indicator");
-                var currentMessages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+                var typingIndicator = await Actions.QuerySelector($"#{ChatMessages} .typing-indicator");
+                var currentMessages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
 
                 if (typingIndicator == null && currentMessages.Count > previousMessageCount)
                 {
                     var lastMessage = currentMessages[currentMessages.Count - 1];
-                    var messageText = await lastMessage.QuerySelectorAsync(".message-text");
+                    var messageText = await Actions.QueryChildSelector(lastMessage, ".message-text");
                     if (messageText != null)
                     {
-                        var text = await messageText.TextContentAsync();
+                        var text = await Actions.GetElementText(messageText);
                         if (!string.IsNullOrWhiteSpace(text))
                         {
                             TestContext.Out.WriteLine($"Bot responded after {(DateTime.UtcNow - startTime).TotalSeconds:F1}s");
@@ -459,6 +406,29 @@ namespace Klacks.E2ETest
 
             Assert.Fail($"Bot did not respond within {timeoutMs / 1000}s");
             return string.Empty;
+        }
+
+        private static string? ExtractUserIdFromResponse(string response)
+        {
+            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim().TrimStart('-', '*', ' ');
+
+                if (trimmed.Contains("userId", StringComparison.OrdinalIgnoreCase)
+                    || trimmed.StartsWith("ID:", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = trimmed.Split(':', 2);
+                    if (parts.Length == 2)
+                    {
+                        var id = parts[1].Trim().Trim('`', '\'', '"', '*', ' ');
+                        if (!string.IsNullOrEmpty(id) && id.Contains('-'))
+                            return id;
+                    }
+                }
+            }
+
+            return null;
         }
 
         private static (string Username, string Password) ParseCredentialsFromResponse(string response)

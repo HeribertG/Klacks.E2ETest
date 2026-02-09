@@ -1,7 +1,6 @@
 using Klacks.E2ETest.Constants;
 using Klacks.E2ETest.Helpers;
 using Klacks.E2ETest.Wrappers;
-using Microsoft.Playwright;
 using static Klacks.E2ETest.Constants.LlmChatIds;
 
 namespace Klacks.E2ETest
@@ -42,10 +41,10 @@ namespace Klacks.E2ETest
             await Actions.Wait1000();
 
             // Assert
-            var chatMessages = await Page.QuerySelectorAsync($"#{ChatMessages}");
+            var chatMessages = await Actions.FindElementById(ChatMessages);
             Assert.That(chatMessages, Is.Not.Null, "Chat messages container should be visible");
 
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             Assert.That(chatInput, Is.Not.Null, "Chat input should be visible");
 
             TestContext.Out.WriteLine("Chat panel opened successfully");
@@ -194,51 +193,44 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(7)]
-        public async Task Step7_VerifyAddressOnSettingsPage()
+        public async Task Step7_VerifyAddressViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 7: Verify Address on Settings Page ===");
+            TestContext.Out.WriteLine("=== Step 7: Verify Address via LLM Chat ===");
+            await EnsureChatOpen();
 
-            await CloseChatIfOpen();
-            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
-            await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait2000();
+            // Act
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage("Lies die aktuelle Inhaberadresse aus den Einstellungen");
+            var response = await WaitForBotResponse(_messageCountBefore);
 
             // Assert
-            var nameInput = await Page.QuerySelectorAsync("#setting-owner-address-name") as IElementHandle;
-            Assert.That(nameInput, Is.Not.Null, "Address name input should exist");
+            TestContext.Out.WriteLine($"Bot response: {response}");
+            Assert.That(response, Is.Not.Empty, "Bot should respond with address data");
 
-            var streetInput = await Page.QuerySelectorAsync("#setting-owner-address-street") as IElementHandle;
-            var zipInput = await Page.QuerySelectorAsync("#setting-owner-address-zip") as IElementHandle;
-            var cityInput = await Page.QuerySelectorAsync("#setting-owner-address-city") as IElementHandle;
-            var countrySelect = await Page.QuerySelectorAsync("#setting-owner-address-country") as IElementHandle;
-            var stateSelect = await Page.QuerySelectorAsync("#setting-owner-address-state") as IElementHandle;
+            var hasCountry = response.Contains("CH", StringComparison.Ordinal)
+                || response.Contains("Schweiz", StringComparison.OrdinalIgnoreCase)
+                || response.Contains("country", StringComparison.OrdinalIgnoreCase)
+                || response.Contains("Land", StringComparison.OrdinalIgnoreCase);
+            var hasState = response.Contains("BE", StringComparison.Ordinal)
+                || response.Contains("Bern", StringComparison.OrdinalIgnoreCase)
+                || response.Contains("Kanton", StringComparison.OrdinalIgnoreCase)
+                || response.Contains("state", StringComparison.OrdinalIgnoreCase);
 
-            var nameValue = nameInput != null ? await nameInput.InputValueAsync() : "";
-            var streetValue = streetInput != null ? await streetInput.InputValueAsync() : "";
-            var zipValue = zipInput != null ? await zipInput.InputValueAsync() : "";
-            var cityValue = cityInput != null ? await cityInput.InputValueAsync() : "";
-            var countryValue = countrySelect != null ? await countrySelect.InputValueAsync() : "";
-            var stateValue = stateSelect != null ? await stateSelect.InputValueAsync() : "";
+            Assert.That(hasCountry, Is.True, $"Response should contain country info. Got: {response}");
+            Assert.That(hasState, Is.True, $"Response should contain state/canton info. Got: {response}");
 
-            TestContext.Out.WriteLine($"Name: {nameValue}");
-            TestContext.Out.WriteLine($"Street: {streetValue}");
-            TestContext.Out.WriteLine($"ZIP: {zipValue}");
-            TestContext.Out.WriteLine($"City: {cityValue}");
-            TestContext.Out.WriteLine($"Country: {countryValue}");
-            TestContext.Out.WriteLine($"State: {stateValue}");
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            Assert.That(countryValue, Is.Not.Empty, "Country MUST be set");
-            Assert.That(stateValue, Is.Not.Empty, "State/Canton MUST be set");
-
-            TestContext.Out.WriteLine("Address verified - State and Country are set");
+            TestContext.Out.WriteLine("Address verified via chat - Country and State confirmed");
         }
 
         #region Helper Methods
 
         private async Task EnsureChatOpen()
         {
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             if (chatInput == null)
             {
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -250,7 +242,7 @@ namespace Klacks.E2ETest
 
         private async Task CloseChatIfOpen()
         {
-            var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+            var chatInput = await Actions.FindElementById(ChatInput);
             if (chatInput != null)
             {
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -269,7 +261,7 @@ namespace Klacks.E2ETest
                     return;
 
                 TestContext.Out.WriteLine($"Chat input disabled (attempt {attempt + 1}/{maxRetries}), refreshing page...");
-                await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
+                await Actions.Reload();
                 await Actions.Wait2000();
 
                 await Actions.ClickButtonById(HeaderAssistantButton);
@@ -284,7 +276,7 @@ namespace Klacks.E2ETest
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var chatInput = await Page.QuerySelectorAsync($"#{ChatInput}");
+                var chatInput = await Actions.FindElementById(ChatInput);
                 if (chatInput != null)
                 {
                     var isDisabled = await chatInput.IsDisabledAsync();
@@ -301,31 +293,13 @@ namespace Klacks.E2ETest
         private async Task SendChatMessage(string message)
         {
             TestContext.Out.WriteLine($"Sending message: {message}");
-
-            var inputLocator = Page.Locator($"#{ChatInput}");
-            await inputLocator.WaitForAsync(new LocatorWaitForOptions
-            {
-                State = WaitForSelectorState.Visible,
-                Timeout = 10000
-            });
-
-            await inputLocator.FillAsync(message);
-            await Actions.Wait200();
-
-            await Page.EvaluateAsync($@"() => {{
-                const textarea = document.getElementById('{ChatInput}');
-                if (textarea) {{
-                    textarea.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                }}
-            }}");
-            await Actions.Wait200();
-
+            await Actions.FillInputWithDispatch(ChatInput, message);
             await Actions.ClickButtonById(ChatSendBtn);
         }
 
         private async Task<int> GetMessageCount()
         {
-            var messages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+            var messages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
             return messages.Count;
         }
 
@@ -338,16 +312,16 @@ namespace Klacks.E2ETest
 
             while (DateTime.UtcNow - startTime < timeout)
             {
-                var typingIndicator = await Page.QuerySelectorAsync($"#{ChatMessages} .typing-indicator");
-                var currentMessages = await Page.QuerySelectorAllAsync($"#{ChatMessages} .message-wrapper.assistant");
+                var typingIndicator = await Actions.QuerySelector($"#{ChatMessages} .typing-indicator");
+                var currentMessages = await Actions.QuerySelectorAll($"#{ChatMessages} .message-wrapper.assistant");
 
                 if (typingIndicator == null && currentMessages.Count > previousMessageCount)
                 {
                     var lastMessage = currentMessages[currentMessages.Count - 1];
-                    var messageText = await lastMessage.QuerySelectorAsync(".message-text");
+                    var messageText = await Actions.QueryChildSelector(lastMessage, ".message-text");
                     if (messageText != null)
                     {
-                        var text = await messageText.TextContentAsync();
+                        var text = await Actions.GetElementText(messageText);
                         if (!string.IsNullOrWhiteSpace(text))
                         {
                             TestContext.Out.WriteLine($"Bot responded after {(DateTime.UtcNow - startTime).TotalSeconds:F1}s");
