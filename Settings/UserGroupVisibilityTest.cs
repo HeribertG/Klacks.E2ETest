@@ -69,7 +69,7 @@ namespace Klacks.E2ETest
             TestContext.Out.WriteLine("=== Step 2: Create User via LLM Chat ===");
             await EnsureChatOpen();
 
-            var message = $"Erstelle einen neuen System-Benutzer über die UI (create_system_user) mit Vorname '{_firstName}', Nachname '{_lastName}' und Email '{_email}'. Gib mir Username und Password zurück.";
+            var message = $"Erstelle einen neuen System-Benutzer mit Vorname '{_firstName}', Nachname '{_lastName}' und Email '{_email}'. Gib mir bitte userId, Username und Password in der Antwort zurück.";
 
             // Act
             _messageCountBefore = await GetMessageCount();
@@ -266,7 +266,7 @@ namespace Klacks.E2ETest
         private async Task PerformLogout()
         {
             TestContext.Out.WriteLine("Performing logout...");
-            await Actions.ClickButtonById(LogoutButton);
+            await Actions.ClickByJavaScript(LogoutButton);
             await Actions.Wait2000();
 
             await Actions.WaitUntilUrlContains("login");
@@ -410,67 +410,24 @@ namespace Klacks.E2ETest
 
         private static string? ExtractUserIdFromResponse(string response)
         {
-            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var line in lines)
-            {
-                var trimmed = line.Trim().TrimStart('-', '*', ' ');
-
-                if (trimmed.Contains("userId", StringComparison.OrdinalIgnoreCase)
-                    || trimmed.StartsWith("ID:", StringComparison.OrdinalIgnoreCase))
-                {
-                    var parts = trimmed.Split(':', 2);
-                    if (parts.Length == 2)
-                    {
-                        var id = parts[1].Trim().Trim('`', '\'', '"', '*', ' ');
-                        if (!string.IsNullOrEmpty(id) && id.Contains('-'))
-                            return id;
-                    }
-                }
-            }
-
-            return null;
+            var pattern = @"(?:userId|User[\s-]?ID|ID)\s*[:=]\s*[`""'*]*([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})[`""'*]*";
+            var match = System.Text.RegularExpressions.Regex.Match(response, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value : null;
         }
 
         private static (string Username, string Password) ParseCredentialsFromResponse(string response)
         {
-            var username = "";
-            var password = "";
-
-            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var line in lines)
-            {
-                var trimmed = line.Trim().TrimStart('-', '*', ' ');
-
-                if (TryExtractValue(trimmed, "Username:", out var u) ||
-                    TryExtractValue(trimmed, "Benutzername:", out u) ||
-                    TryExtractValue(trimmed, "username:", out u))
-                {
-                    username = CleanExtractedValue(u);
-                }
-                else if (TryExtractValue(trimmed, "Password:", out var p) ||
-                         TryExtractValue(trimmed, "Passwort:", out p) ||
-                         TryExtractValue(trimmed, "password:", out p))
-                {
-                    password = CleanExtractedValue(p);
-                }
-            }
-
+            var username = ExtractValueByPattern(response,
+                @"(?:Username|Benutzername|User[\s-]?Name)\s*[:=]\s*[`""'*]*(\S+)[`""'*]*");
+            var password = ExtractValueByPattern(response,
+                @"(?:Password|Passwort|Pass)\s*[:=]\s*[`""'*]*(\S+)[`""'*]*");
             return (username, password);
         }
 
-        private static bool TryExtractValue(string line, string prefix, out string value)
+        private static string ExtractValueByPattern(string text, string pattern)
         {
-            value = "";
-            if (!line.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            value = line[prefix.Length..].Trim();
-            return true;
-        }
-
-        private static string CleanExtractedValue(string value)
-        {
-            return value.Trim('`', '\'', '"', '*', ' ');
+            var match = System.Text.RegularExpressions.Regex.Match(text, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value.Trim('`', '\'', '"', '*', ' ') : "";
         }
 
         #endregion

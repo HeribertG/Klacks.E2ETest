@@ -718,6 +718,18 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Clicks an element by ID using JavaScript click(). Useful for Angular custom components
+    /// where Playwright's native click might not trigger Angular event bindings.
+    /// </summary>
+    public async Task ClickByJavaScript(string elementId)
+    {
+        await _page.EvaluateAsync($@"() => {{
+            const el = document.getElementById('{elementId}');
+            if (el) el.click();
+        }}");
+    }
+
+    /// <summary>
     /// Clicks on a tab element (wrapper for ClickButtonById).
     /// </summary>
     public async Task ClickTabsById(string elementId)

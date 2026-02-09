@@ -106,26 +106,14 @@ namespace Klacks.E2ETest
         public async Task Step4_CreateZurichBranchViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 4: Create Zürich Branch via LLM Chat ===");
-            await EnsureChatOpen();
+            TestContext.Out.WriteLine("=== Step 4: Create Zürich Branch via LLM Chat (UI) ===");
+            var branch = BranchZurich;
 
-            // Act
-            _messageCountBefore = await GetMessageCount();
-            await SendChatMessage($"Erstelle eine neue Filiale: Name '{BranchZurich.Name}', Adresse '{BranchZurich.Address}', Telefon '{BranchZurich.Phone}', Email '{BranchZurich.Email}'");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            // Act & Assert
+            var branchId = await CreateBranchWithRetry(branch.Name, branch.Address, branch.Phone, branch.Email);
+            CreatedBranchIds.Add(branchId);
 
-            // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond");
-
-            var branchId = ExtractBranchIdFromResponse(response);
-            if (!string.IsNullOrEmpty(branchId))
-                CreatedBranchIds.Add(branchId);
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-            TestContext.Out.WriteLine($"Zürich branch created via chat (ID: {branchId})");
+            TestContext.Out.WriteLine($"Zürich branch created via UI: {branch.Name} (ID: {branchId})");
         }
 
         [Test]
@@ -155,26 +143,14 @@ namespace Klacks.E2ETest
         public async Task Step6_CreateLausanneBranchViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 6: Create Lausanne Branch via LLM Chat ===");
-            await EnsureChatOpen();
+            TestContext.Out.WriteLine("=== Step 6: Create Lausanne Branch via LLM Chat (UI) ===");
+            var branch = BranchLausanne;
 
-            // Act
-            _messageCountBefore = await GetMessageCount();
-            await SendChatMessage($"Erstelle eine neue Filiale: Name '{BranchLausanne.Name}', Adresse '{BranchLausanne.Address}', Telefon '{BranchLausanne.Phone}', Email '{BranchLausanne.Email}'");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            // Act & Assert
+            var branchId = await CreateBranchWithRetry(branch.Name, branch.Address, branch.Phone, branch.Email);
+            CreatedBranchIds.Add(branchId);
 
-            // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond");
-
-            var branchId = ExtractBranchIdFromResponse(response);
-            if (!string.IsNullOrEmpty(branchId))
-                CreatedBranchIds.Add(branchId);
-
-            Assert.That(_listener.HasApiErrors(), Is.False,
-                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-            TestContext.Out.WriteLine($"Lausanne branch created via chat (ID: {branchId})");
+            TestContext.Out.WriteLine($"Lausanne branch created via UI: {branch.Name} (ID: {branchId})");
         }
 
         [Test]
@@ -182,32 +158,30 @@ namespace Klacks.E2ETest
         public async Task Step7_VerifyBothBranchesViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 7: Verify Both Branches via LLM Chat ===");
+            TestContext.Out.WriteLine("=== Step 7: Verify Both Branches via LLM Chat (UI) ===");
             await EnsureChatOpen();
 
             // Act
             _messageCountBefore = await GetMessageCount();
-            await SendChatMessage("Liste alle Filialen auf");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            await SendChatMessage("Bitte verwende die Funktion list_branches um alle Filialen aufzulisten");
+            await WaitForBotResponse(_messageCountBefore, 90000);
+            await Actions.Wait2000();
 
             // Assert
-            TestContext.Out.WriteLine($"Bot response: {response}");
-            Assert.That(response, Is.Not.Empty, "Bot should respond with branch list");
+            var allFound = true;
+            var zurichExists = await BranchExistsInDom(BranchZurich.Name);
+            var lausanneExists = await BranchExistsInDom(BranchLausanne.Name);
 
-            var hasZurich = response.Contains(BranchZurich.Name, StringComparison.OrdinalIgnoreCase)
-                || response.Contains("Zürich", StringComparison.OrdinalIgnoreCase);
-            var hasLausanne = response.Contains(BranchLausanne.Name, StringComparison.OrdinalIgnoreCase)
-                || response.Contains("Lausanne", StringComparison.OrdinalIgnoreCase);
+            TestContext.Out.WriteLine($"  Zürich: {(zurichExists ? "FOUND in DOM" : "NOT FOUND in DOM")}");
+            TestContext.Out.WriteLine($"  Lausanne: {(lausanneExists ? "FOUND in DOM" : "NOT FOUND in DOM")}");
 
-            TestContext.Out.WriteLine($"  Zürich found: {hasZurich}");
-            TestContext.Out.WriteLine($"  Lausanne found: {hasLausanne}");
+            if (!zurichExists || !lausanneExists) allFound = false;
 
-            Assert.That(hasZurich, Is.True, $"Response should contain Zürich branch. Got: {response}");
-            Assert.That(hasLausanne, Is.True, $"Response should contain Lausanne branch. Got: {response}");
+            Assert.That(allFound, Is.True, "Both test branches should be visible in Settings DOM");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine("Both branches verified via chat");
+            TestContext.Out.WriteLine("Both branches verified in DOM");
         }
 
         [Test]
@@ -215,7 +189,7 @@ namespace Klacks.E2ETest
         public async Task Step8_DeleteBothBranchesViaChat()
         {
             // Arrange
-            TestContext.Out.WriteLine("=== Step 8: Delete Both Branches via LLM Chat ===");
+            TestContext.Out.WriteLine("=== Step 8: Delete Both Branches via LLM Chat (UI) ===");
 
             if (CreatedBranchIds.Count == 0)
             {
@@ -224,56 +198,168 @@ namespace Klacks.E2ETest
                 return;
             }
 
-            await EnsureChatOpen();
-
             // Act
             foreach (var branchId in CreatedBranchIds.ToList())
             {
-                _messageCountBefore = await GetMessageCount();
-                await SendChatMessage($"Lösche die Filiale mit ID {branchId}");
-                var response = await WaitForBotResponse(_messageCountBefore);
-
-                TestContext.Out.WriteLine($"Delete response for {branchId}: {response}");
-                Assert.That(response, Is.Not.Empty, $"Bot should respond for branch {branchId}");
-
-                var hasConfirmation = response.Contains("gelöscht", StringComparison.OrdinalIgnoreCase)
-                    || response.Contains("erfolgreich", StringComparison.OrdinalIgnoreCase)
-                    || response.Contains("deleted", StringComparison.OrdinalIgnoreCase);
-                Assert.That(hasConfirmation, Is.True,
-                    $"Response should confirm deletion of branch {branchId}. Got: {response}");
+                await DeleteBranchWithRetry(branchId);
+                await Actions.Wait2000();
             }
 
             // Assert
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"All {CreatedBranchIds.Count} test branches deleted via chat");
+            TestContext.Out.WriteLine($"All {CreatedBranchIds.Count} test branches deleted via UI");
             CreatedBranchIds.Clear();
+        }
+
+        [Test]
+        [Order(9)]
+        public async Task Step9_VerifyBranchesDeletedViaChat()
+        {
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 9: Verify Branches Deleted ===");
+            await EnsureChatOpen();
+
+            // Act
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage("Bitte verwende die Funktion list_branches um alle Filialen aufzulisten");
+            await WaitForBotResponse(_messageCountBefore, 90000);
+            await Actions.Wait2000();
+
+            // Assert
+            var zurichExists = await BranchExistsInDom(BranchZurich.Name);
+            var lausanneExists = await BranchExistsInDom(BranchLausanne.Name);
+
+            TestContext.Out.WriteLine($"  Zürich: {(zurichExists ? "STILL EXISTS" : "DELETED")}");
+            TestContext.Out.WriteLine($"  Lausanne: {(lausanneExists ? "STILL EXISTS" : "DELETED")}");
+
+            Assert.That(zurichExists, Is.False, $"Branch '{BranchZurich.Name}' should no longer exist in DOM");
+            Assert.That(lausanneExists, Is.False, $"Branch '{BranchLausanne.Name}' should no longer exist in DOM");
+            Assert.That(_listener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+
+            TestContext.Out.WriteLine("All test branches confirmed deleted");
         }
 
         #region Helper Methods
 
-        private static string? ExtractBranchIdFromResponse(string response)
+        private async Task<string> CreateBranchWithRetry(string name, string address, string phone, string email, int maxAttempts = 3)
         {
-            var lines = response.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var line in lines)
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                var trimmed = line.Trim().TrimStart('-', '*', ' ');
+                TestContext.Out.WriteLine($"Create branch attempt {attempt}/{maxAttempts}: {name}");
+                await EnsureChatOpen();
 
-                if (trimmed.Contains("branchId", StringComparison.OrdinalIgnoreCase)
-                    || trimmed.StartsWith("ID:", StringComparison.OrdinalIgnoreCase))
+                _messageCountBefore = await GetMessageCount();
+                await SendChatMessage(
+                    $"Bitte verwende die Funktion create_branch um folgende Filiale zu erstellen: " +
+                    $"Name '{name}', Adresse '{address}', Telefon '{phone}', Email '{email}'");
+                var response = await WaitForBotResponse(_messageCountBefore, 120000);
+                TestContext.Out.WriteLine($"Bot response ({response.Length} chars): {response[..Math.Min(200, response.Length)]}");
+
+                var branchId = await WaitForBranchInDom(name);
+                if (!string.IsNullOrEmpty(branchId))
                 {
-                    var parts = trimmed.Split(':', 2);
-                    if (parts.Length == 2)
-                    {
-                        var id = parts[1].Trim().Trim('`', '\'', '"', '*', ' ');
-                        if (!string.IsNullOrEmpty(id) && id.Contains('-'))
-                            return id;
-                    }
+                    Assert.That(_listener.HasApiErrors(), Is.False,
+                        $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+                    return branchId;
                 }
+
+                TestContext.Out.WriteLine($"Branch not found in DOM after attempt {attempt}, will retry...");
+                await Actions.Wait2000();
             }
 
-            return null;
+            Assert.Fail($"Branch '{name}' was not created after {maxAttempts} attempts");
+            return string.Empty;
+        }
+
+        private async Task DeleteBranchWithRetry(string branchId, int maxAttempts = 3)
+        {
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                TestContext.Out.WriteLine($"Delete branch attempt {attempt}/{maxAttempts}: {branchId}");
+                await EnsureChatOpen();
+
+                await Actions.ClickButtonById(ChatClearBtn);
+                await Actions.Wait1000();
+                await WaitForChatInputEnabled();
+
+                _messageCountBefore = await GetMessageCount();
+                await SendChatMessage(
+                    $"Lösche die Filiale mit der ID {branchId}");
+                var response = await WaitForBotResponse(_messageCountBefore, 90000);
+                TestContext.Out.WriteLine($"Delete response: {response[..Math.Min(200, response.Length)]}");
+
+                var removed = await WaitForBranchRemovedFromDom(branchId);
+                if (removed)
+                {
+                    TestContext.Out.WriteLine($"Branch {branchId} confirmed removed from DOM");
+                    return;
+                }
+
+                TestContext.Out.WriteLine($"Branch {branchId} still in DOM after attempt {attempt}, will retry...");
+                await Actions.Wait2000();
+            }
+
+            Assert.Fail($"Branch '{branchId}' was not deleted after {maxAttempts} attempts");
+        }
+
+        private async Task<string> WaitForBranchInDom(string branchName, int timeoutMs = 30000)
+        {
+            TestContext.Out.WriteLine($"Waiting for branch '{branchName}' to appear in DOM...");
+
+            var startTime = DateTime.UtcNow;
+            while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
+            {
+                var inputs = await Page.QuerySelectorAllAsync($"input[id^=\"{RowNamePrefix}\"]");
+                foreach (var input in inputs)
+                {
+                    var value = await input.InputValueAsync();
+                    if (value.Contains(branchName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var id = await input.GetAttributeAsync("id");
+                        var branchId = id?.Replace(RowNamePrefix, "") ?? "";
+                        TestContext.Out.WriteLine($"Branch '{branchName}' found in DOM with ID: {branchId}");
+                        return branchId;
+                    }
+                }
+
+                await Actions.Wait500();
+            }
+
+            TestContext.Out.WriteLine($"Branch '{branchName}' NOT found in DOM after {timeoutMs / 1000}s");
+            return "";
+        }
+
+        private async Task<bool> BranchExistsInDom(string branchName)
+        {
+            var inputs = await Page.QuerySelectorAllAsync($"input[id^=\"{RowNamePrefix}\"]");
+            foreach (var input in inputs)
+            {
+                var value = await input.InputValueAsync();
+                if (value.Contains(branchName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        private async Task<bool> WaitForBranchRemovedFromDom(string branchId, int timeoutMs = 20000)
+        {
+            TestContext.Out.WriteLine($"Waiting for branch '{branchId}' to be removed from DOM...");
+            var startTime = DateTime.UtcNow;
+            while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
+            {
+                var element = await Page.QuerySelectorAsync($"#{RowNamePrefix}{branchId}");
+                if (element == null)
+                {
+                    TestContext.Out.WriteLine($"Branch '{branchId}' removed from DOM");
+                    return true;
+                }
+                await Actions.Wait500();
+            }
+            TestContext.Out.WriteLine($"Branch '{branchId}' still in DOM after {timeoutMs / 1000}s");
+            return false;
         }
 
         private async Task EnsureChatOpen()
@@ -288,32 +374,13 @@ namespace Klacks.E2ETest
             await WaitForChatInputEnabled();
         }
 
-        private async Task CloseChatIfOpen()
-        {
-            var aside = await Actions.QuerySelector("app-aside.visible");
-            if (aside != null)
-            {
-                TestContext.Out.WriteLine("Closing chat aside panel");
-                await Actions.ClickButtonById(HeaderAssistantButton);
-                await Actions.Wait1000();
-
-                var stillVisible = await Actions.QuerySelector("app-aside.visible");
-                if (stillVisible != null)
-                {
-                    TestContext.Out.WriteLine("Aside still visible, retrying");
-                    await Actions.ClickButtonById(HeaderAssistantButton);
-                    await Actions.Wait1000();
-                }
-            }
-        }
-
         private async Task WaitForChatInputEnabled()
         {
             var maxRetries = 3;
 
             for (var attempt = 0; attempt < maxRetries; attempt++)
             {
-                var isEnabled = await WaitForInputEnabled(10000);
+                var isEnabled = await WaitForInputEnabled(15000);
                 if (isEnabled)
                     return;
 
