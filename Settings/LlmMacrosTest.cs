@@ -13,7 +13,7 @@ namespace Klacks.E2ETest
         private Listener _listener;
         private int _messageCountBefore;
 
-        private static readonly List<string> CreatedMacroIds = new();
+        private static bool _macroCreated;
         private static readonly string MacroName = $"TestMacro_{DateTime.UtcNow:yyyyMMddHHmmss}";
 
         [SetUp]
@@ -58,8 +58,8 @@ namespace Klacks.E2ETest
             TestContext.Out.WriteLine($"=== Step 2: Create Macro '{MacroName}' with Script via LLM Chat (UI) ===");
 
             // Act
-            var (macroId, response) = await CreateMacroWithRetry(MacroName);
-            CreatedMacroIds.Add(macroId);
+            var response = await CreateMacroWithRetry(MacroName);
+            _macroCreated = true;
 
             // Assert
             TestContext.Out.WriteLine($"Bot response: {response}");
@@ -68,7 +68,7 @@ namespace Klacks.E2ETest
                      || response.Contains("erstellt", StringComparison.OrdinalIgnoreCase),
                 Is.True, $"Response should confirm script was created. Got: {response}");
 
-            TestContext.Out.WriteLine($"Macro created with script via UI: {MacroName} (ID: {macroId})");
+            TestContext.Out.WriteLine($"Macro created with script via UI: {MacroName}");
         }
 
         [Test]
@@ -107,7 +107,7 @@ namespace Klacks.E2ETest
             // Arrange
             TestContext.Out.WriteLine("=== Step 4: Delete Macro via LLM Chat (UI) ===");
 
-            if (CreatedMacroIds.Count == 0)
+            if (!_macroCreated)
             {
                 TestContext.Out.WriteLine("No macros to delete - skipping");
                 Assert.Inconclusive("No macros were created in previous steps");
@@ -115,18 +115,15 @@ namespace Klacks.E2ETest
             }
 
             // Act
-            foreach (var macroId in CreatedMacroIds.ToList())
-            {
-                await DeleteMacroWithRetry(macroId);
-                await Actions.Wait2000();
-            }
+            await DeleteMacroWithRetry(MacroName);
+            await Actions.Wait2000();
 
             // Assert
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
-            TestContext.Out.WriteLine($"All {CreatedMacroIds.Count} test macros deleted via UI");
-            CreatedMacroIds.Clear();
+            TestContext.Out.WriteLine($"Test macro '{MacroName}' deleted via UI");
+            _macroCreated = false;
         }
 
         [Test]
@@ -160,7 +157,7 @@ namespace Klacks.E2ETest
 
         #region Helper Methods
 
-        private async Task<(string MacroId, string Response)> CreateMacroWithRetry(string name, int maxAttempts = 3)
+        private async Task<string> CreateMacroWithRetry(string name, int maxAttempts = 3)
         {
             for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
@@ -184,12 +181,11 @@ namespace Klacks.E2ETest
                 var response = await WaitForBotResponse(_messageCountBefore, 120000);
                 TestContext.Out.WriteLine($"Bot response ({response.Length} chars): {response[..Math.Min(300, response.Length)]}");
 
-                var macroId = await WaitForMacroInDom(name);
-                if (!string.IsNullOrEmpty(macroId))
+                if (await WaitForMacroInDom(name))
                 {
                     Assert.That(_listener.HasApiErrors(), Is.False,
                         $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-                    return (macroId, response);
+                    return response;
                 }
 
                 TestContext.Out.WriteLine($"Macro not found in DOM after attempt {attempt}, will retry...");
@@ -197,14 +193,14 @@ namespace Klacks.E2ETest
             }
 
             Assert.Fail($"Macro '{name}' was not created after {maxAttempts} attempts");
-            return (string.Empty, string.Empty);
+            return string.Empty;
         }
 
-        private async Task DeleteMacroWithRetry(string macroId, int maxAttempts = 3)
+        private async Task DeleteMacroWithRetry(string macroName, int maxAttempts = 3)
         {
             for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                TestContext.Out.WriteLine($"Delete macro attempt {attempt}/{maxAttempts}: {macroId}");
+                TestContext.Out.WriteLine($"Delete macro attempt {attempt}/{maxAttempts}: {macroName}");
                 await EnsureChatOpen();
 
                 await Actions.ClickButtonById(ChatClearBtn);
@@ -213,49 +209,42 @@ namespace Klacks.E2ETest
 
                 _messageCountBefore = await GetMessageCount();
                 await SendChatMessage(
-                    $"Lösche das Macro mit der ID '{macroId}'");
+                    $"Lösche das Macro '{macroName}'");
                 var response = await WaitForBotResponse(_messageCountBefore, 90000);
                 TestContext.Out.WriteLine($"Delete response: {response[..Math.Min(200, response.Length)]}");
 
-                var removed = await WaitForMacroRemovedFromDom(macroId);
+                var removed = await WaitForMacroRemovedFromDom(macroName);
                 if (removed)
                 {
-                    TestContext.Out.WriteLine($"Macro {macroId} confirmed removed from DOM");
+                    TestContext.Out.WriteLine($"Macro '{macroName}' confirmed removed from DOM");
                     return;
                 }
 
-                TestContext.Out.WriteLine($"Macro {macroId} still in DOM after attempt {attempt}, will retry...");
+                TestContext.Out.WriteLine($"Macro '{macroName}' still in DOM after attempt {attempt}, will retry...");
                 await Actions.Wait2000();
             }
 
-            Assert.Fail($"Macro '{macroId}' was not deleted after {maxAttempts} attempts");
+            Assert.Fail($"Macro '{macroName}' was not deleted after {maxAttempts} attempts");
         }
 
-        private async Task<string> WaitForMacroInDom(string macroName, int timeoutMs = 30000)
+        private async Task<bool> WaitForMacroInDom(string macroName, int timeoutMs = 30000)
         {
             TestContext.Out.WriteLine($"Waiting for macro '{macroName}' to appear in DOM...");
 
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var inputs = await Page.QuerySelectorAllAsync($"input[id^=\"{RowNamePrefix}\"]");
-                foreach (var input in inputs)
+                if (await MacroExistsInDom(macroName))
                 {
-                    var value = await input.InputValueAsync();
-                    if (value.Contains(macroName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        var id = await input.GetAttributeAsync("id");
-                        var macroId = id?.Replace(RowNamePrefix, "") ?? "";
-                        TestContext.Out.WriteLine($"Macro '{macroName}' found in DOM with ID: {macroId}");
-                        return macroId;
-                    }
+                    TestContext.Out.WriteLine($"Macro '{macroName}' found in DOM");
+                    return true;
                 }
 
                 await Actions.Wait500();
             }
 
             TestContext.Out.WriteLine($"Macro '{macroName}' NOT found in DOM after {timeoutMs / 1000}s");
-            return "";
+            return false;
         }
 
         private async Task<bool> MacroExistsInDom(string macroName)
@@ -270,21 +259,20 @@ namespace Klacks.E2ETest
             return false;
         }
 
-        private async Task<bool> WaitForMacroRemovedFromDom(string macroId, int timeoutMs = 20000)
+        private async Task<bool> WaitForMacroRemovedFromDom(string macroName, int timeoutMs = 20000)
         {
-            TestContext.Out.WriteLine($"Waiting for macro '{macroId}' to be removed from DOM...");
+            TestContext.Out.WriteLine($"Waiting for macro '{macroName}' to be removed from DOM...");
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var element = await Page.QuerySelectorAsync($"#{RowNamePrefix}{macroId}");
-                if (element == null)
+                if (!await MacroExistsInDom(macroName))
                 {
-                    TestContext.Out.WriteLine($"Macro '{macroId}' removed from DOM");
+                    TestContext.Out.WriteLine($"Macro '{macroName}' removed from DOM");
                     return true;
                 }
                 await Actions.Wait500();
             }
-            TestContext.Out.WriteLine($"Macro '{macroId}' still in DOM after {timeoutMs / 1000}s");
+            TestContext.Out.WriteLine($"Macro '{macroName}' still in DOM after {timeoutMs / 1000}s");
             return false;
         }
 

@@ -1,63 +1,70 @@
 # E2E Test-Reihenfolge
 
-## Übersicht
+## Uebersicht
 
-Die E2E-Tests werden in einer definierten Reihenfolge ausgeführt, gesteuert durch das `[Order(n)]` Attribut auf Klassen-Ebene.
+Die E2E-Tests werden in einer definierten Reihenfolge ausgefuehrt, gesteuert durch das `[Order(n)]` Attribut auf Klassen-Ebene.
 
 ## Test-Dateien sortiert nach Order
 
-| Order | Test-Datei | Beschreibung |
-|------:|------------|--------------|
-| 1 | `Login/LoginTest.cs` | Login |
-| 2 | `Navigation/NavigationStepsTest.cs` | Navigation Steps |
-| 3 | `Navigation/NavigationTest.cs` | Navigation |
-| 10 | `Client/ClientCreationTest.cs` | Client erstellen |
-| 11 | `Client/ClientSearchTest.cs` | Client Suche |
-| 12 | `Client/ClientTypeFilterTest.cs` | Client Type Filter |
-| 13 | `Client/ClientAdvancedFiltersTest.cs` | Client Advanced Filters |
-| 14 | `Client/ClientDeletionTest.cs` | Client löschen |
-| 20 | `Settings/SettingsGeneralTest.cs` | Settings General |
-| 21 | `Settings/SettingsOwnerAddressTest.cs` | Settings Owner Address |
-| 22 | `Settings/SettingsUserAdministrationTest.cs` | Settings User Administration |
-| 23 | `Settings/SettingsGroupScopeTest.cs` | Settings Group Scope |
-| 24 | `Settings/SettingsGridColorTest.cs` | Settings Grid Color |
-| 25 | `Settings/SettingsStateTest.cs` | Settings State |
-| 26 | `Settings/SettingsCountriesTest.cs` | Settings Countries |
-| 27 | `Settings/SettingsEmailTest.cs` | Settings Email |
-| 28 | `Settings/SettingsIdentityProviderTest.cs` | Settings Identity Provider |
-| 29 | `Settings/SettingsAbsenceTest.cs` | Settings Absence (CRUD) |
-| 30 | `Settings/SettingsCalendarRulesTest.cs` | Settings Calendar Rules (CRUD + API Validation) |
-| 31 | `Settings/SettingsLlmProvidersTest.cs` | Settings LLM Providers (CRUD) |
-| 32 | `Settings/SettingsLlmModelsTest.cs` | Settings LLM Models (CRUD) |
-| 33 | `Gantt/GanttGroupFilterTest.cs` | Gantt Group Filter |
-| 34 | `Gantt/GanttVirtualScrollingTest.cs` | Gantt Virtual Scrolling |
-| 35 | `Group/GroupCreationTest.cs` | Group erstellen |
-| 36 | `Group/GroupSearchTest.cs` | Group Suche |
-| 37 | `Group/GroupDeletionTest.cs` | Group löschen |
-| 38 | `Group/GroupTreeCreationTest.cs` | Group Tree erstellen |
-| 40 | `Shifts/ShiftCutsBasicTest.cs` | Shift Cuts Basic |
-| 41 | `Shifts/ShiftCutsNestedTest.cs` | Shift Cuts Nested |
-| 42 | `Shifts/ShiftCutsBatchTest.cs` | Shift Cuts Batch |
-| 43 | `Shifts/ShiftOrderCreationTest.cs` | Shift Order Creation |
-| 50 | `Settings/LlmSettingsGeneralTest.cs` | LLM Chat: Settings General |
-| 60 | `Settings/LlmSoulMemoryTest.cs` | LLM Chat: AI Soul & Memory |
+| Order | Test-Datei | Tests | Beschreibung |
+|------:|------------|------:|--------------|
+| 1 | `Login/LoginTest.cs` | | Login |
+| 2 | `Navigation/NavigationStepsTest.cs` | | Navigation Steps |
+| 3 | `Navigation/NavigationTest.cs` | | Navigation |
+| 10 | `Client/ClientCreationTest.cs` | | Client erstellen |
+| 11 | `Client/ClientSearchTest.cs` | | Client Suche |
+| 12 | `Client/ClientTypeFilterTest.cs` | | Client Type Filter |
+| 13 | `Client/ClientAdvancedFiltersTest.cs` | | Client Advanced Filters |
+| 14 | `Client/ClientDeletionTest.cs` | | Client loeschen |
+| 20 | `Settings/SettingsGeneralTest.cs` | | Settings General |
+| 21 | `Settings/SettingsOwnerAddressTest.cs` | | Settings Owner Address |
+| 22 | `Settings/SettingsUserAdministrationTest.cs` | | Settings User Administration |
+| 23 | `Settings/SettingsGroupScopeTest.cs` | | Settings Group Scope |
+| 24 | `Settings/SettingsGridColorTest.cs` | | Settings Grid Color |
+| 25 | `Settings/SettingsStateTest.cs` | | Settings State |
+| 26 | `Settings/SettingsCountriesTest.cs` | | Settings Countries |
+| 27 | `Settings/SettingsEmailTest.cs` | | Settings Email |
+| 28 | `Settings/SettingsIdentityProviderTest.cs` | | Settings Identity Provider |
+| 29 | `Settings/SettingsAbsenceTest.cs` | | Settings Absence (CRUD) |
+| 30 | `Settings/SettingsCalendarRulesTest.cs` | | Settings Calendar Rules (CRUD + API Validation) |
+| 31 | `Settings/SettingsLlmProvidersTest.cs` | | Settings LLM Providers (CRUD) |
+| 32 | `Settings/SettingsLlmModelsTest.cs` | | Settings LLM Models (CRUD) |
+| 33 | `Gantt/GanttGroupFilterTest.cs` | | Gantt Group Filter |
+| 34 | `Gantt/GanttVirtualScrollingTest.cs` | | Gantt Virtual Scrolling |
+| 35 | `Group/GroupCreationTest.cs` | | Group erstellen |
+| 36 | `Group/GroupSearchTest.cs` | | Group Suche |
+| 37 | `Group/GroupDeletionTest.cs` | | Group loeschen |
+| 38 | `Group/GroupTreeCreationTest.cs` | | Group Tree erstellen |
+| 40 | `Shifts/ShiftCutsBasicTest.cs` | | Shift Cuts Basic |
+| 41 | `Shifts/ShiftCutsNestedTest.cs` | | Shift Cuts Nested |
+| 42 | `Shifts/ShiftCutsBatchTest.cs` | | Shift Cuts Batch |
+| 43 | `Shifts/ShiftOrderCreationTest.cs` | | Shift Order Creation |
+| 50 | `Settings/LlmSettingsGeneralTest.cs` | 8 | LLM Chat: Settings General (App-Name, Icon, Logo) |
+| 51 | `Settings/LlmOwnerAddressTest.cs` | 7 | LLM Chat: Owner Address (Validierung, CRUD) |
+| 60 | `Settings/LlmSoulMemoryTest.cs` | 8 | LLM Chat: AI Soul & Memory (CRUD) |
+| 62 | `Settings/LlmUserAdministrationTest.cs` | 8 | LLM Chat: User CRUD (Create 3, Verify, Delete) |
+| 63 | `Settings/LlmBranchesTest.cs` | 9 | LLM Chat: Filialen CRUD (Zuerich + Lausanne) |
+| 64 | `Settings/LlmMacrosTest.cs` | 5 | LLM Chat: Macro CRUD mit Script |
+| 64 | `Settings/UserGroupVisibilityTest.cs` | 8 | LLM Chat: Gruppen-Sichtbarkeit (Login as new user) |
 
 ## Gruppierung
 
 | Range | Kategorie | Beschreibung |
 |-------|-----------|--------------|
 | 1-9 | Login & Navigation | Grundlegende Anmeldung und Navigation |
-| 10-19 | Client | Client-Verwaltung (Erstellen, Suche, Filter, Löschen) |
-| 20-32 | Settings | Einstellungen (General, Owner, Users, Absence, CalendarRules, LLM Providers, LLM Models, etc.) |
+| 10-19 | Client | Client-Verwaltung (Erstellen, Suche, Filter, Loeschen) |
+| 20-32 | Settings | Einstellungen (General, Owner, Users, Absence, CalendarRules, LLM Providers/Models) |
 | 33-34 | Gantt | Gantt-Diagramm Tests |
-| 35-39 | Group | Gruppen-Verwaltung (Erstellen, Suche, Löschen, Tree) |
+| 35-39 | Group | Gruppen-Verwaltung (Erstellen, Suche, Loeschen, Tree) |
 | 40-49 | Shifts | Dienst-Verwaltung (Cutting, Orders) |
-| 50-59 | LLM Integration | LLM-Chat-Tests für Settings |
+| 50-59 | LLM Settings | LLM-Chat-Tests fuer Settings + Owner Address |
+| 60-69 | LLM Features | LLM-Chat-Tests fuer AI Soul/Memory, Users, Branches, Macros, GroupVisibility |
 
 ## Hinweise
 
-- Tests innerhalb einer Klasse haben ebenfalls `[Order(n)]` Attribute für die interne Reihenfolge
-- Die Order-Nummern haben Lücken, um später neue Tests einfügen zu können
-- Login muss immer zuerst laufen (Order 1), da alle anderen Tests eine aktive Session benötigen
-- Settings-Tests reichen jetzt bis Order 32 (LLM Models)
-- LLM-Integration-Tests ab Order 50 (Chat-basierte Settings-Interaktion)
+- Tests innerhalb einer Klasse haben ebenfalls `[Order(n)]` Attribute fuer die interne Reihenfolge
+- Die Order-Nummern haben Luecken, um spaeter neue Tests einfuegen zu koennen
+- Login muss immer zuerst laufen (Order 1), da alle anderen Tests eine aktive Session benoetigen
+- LLM-Tests (Order 50-69) nutzen den Chat-LLM und sind durch LLM-Nondeterminismus bedingt instabiler
+- LLM-Tests verwenden Retry-Logik und Chat-Clear vor jeder Nachricht
+- Tests laufen nur unter Windows, nicht in WSL (siehe `.claude/skills/e2e-test-environment.md`)
