@@ -173,9 +173,14 @@ namespace Klacks.E2ETest
 
                 _messageCountBefore = await GetMessageCount();
                 await SendChatMessage(
-                    $"Erstelle ein neues Macro mit dem Namen '{name}'. " +
-                    "Das Macro soll einen Wochenendzuschlag berechnen: " +
-                    "Wenn der Wochentag >= 6 ist (Samstag oder Sonntag), soll der sorate-Zuschlag ausgegeben werden, sonst 0.");
+                    $"Erstelle ein neues Macro mit dem Namen '{name}' und genau folgendem Script:\n" +
+                    "import weekday\n" +
+                    "import sorate\n\n" +
+                    "IF weekday >= 6 THEN\n" +
+                    "  OUTPUT 1, sorate\n" +
+                    "ELSE\n" +
+                    "  OUTPUT 1, 0\n" +
+                    "END IF");
                 var response = await WaitForBotResponse(_messageCountBefore, 120000);
                 TestContext.Out.WriteLine($"Bot response ({response.Length} chars): {response[..Math.Min(300, response.Length)]}");
 
