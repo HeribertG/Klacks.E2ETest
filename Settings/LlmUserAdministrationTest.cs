@@ -16,7 +16,6 @@ namespace Klacks.E2ETest
         private static string _timestamp = "";
         private static (string FirstName, string LastName, string Email)[] _testUsers = Array.Empty<(string, string, string)>();
         private static readonly List<string> CreatedUserIds = new();
-
         [SetUp]
         public async Task Setup()
         {
@@ -165,7 +164,7 @@ namespace Klacks.E2ETest
             // Arrange
             TestContext.Out.WriteLine("=== Step 7: Delete Created Users via LLM Chat (UI) ===");
 
-            if (CreatedUserIds.Count == 0)
+            if (_testUsers.Length == 0)
             {
                 TestContext.Out.WriteLine("No users to delete - skipping");
                 Assert.Inconclusive("No users were created in previous steps");
@@ -173,14 +172,14 @@ namespace Klacks.E2ETest
             }
 
             // Act
-            foreach (var userId in CreatedUserIds.ToList())
+            foreach (var user in _testUsers)
             {
-                await DeleteUserWithRetry(userId);
+                await DeleteUserWithRetry(user.FirstName, user.LastName);
                 await Actions.Wait2000();
             }
 
             // Assert
-            TestContext.Out.WriteLine($"All {CreatedUserIds.Count} test users deleted via UI");
+            TestContext.Out.WriteLine($"All {_testUsers.Length} test users deleted via UI");
             CreatedUserIds.Clear();
         }
 
@@ -226,10 +225,14 @@ namespace Klacks.E2ETest
                 await WaitForChatInputEnabled();
 
                 _messageCountBefore = await GetMessageCount();
+
                 await SendChatMessage(
                     $"Erstelle einen neuen Systembenutzer: Vorname '{firstName}', Nachname '{lastName}', Email '{email}'");
+
                 var response = await WaitForBotResponse(_messageCountBefore, 120000);
                 TestContext.Out.WriteLine($"Bot response ({response.Length} chars): {response[..Math.Min(200, response.Length)]}");
+
+                await Task.Delay(5000);
 
                 var userId = await WaitForUserInDom(firstName, lastName);
                 if (!string.IsNullOrEmpty(userId))
@@ -247,36 +250,37 @@ namespace Klacks.E2ETest
             return string.Empty;
         }
 
-        private async Task DeleteUserWithRetry(string userId, int maxAttempts = 3)
+        private async Task DeleteUserWithRetry(string firstName, string lastName, int maxAttempts = 5)
         {
+            var fullName = $"{firstName} {lastName}";
+
             for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                TestContext.Out.WriteLine($"Delete user attempt {attempt}/{maxAttempts}: {userId}");
+                TestContext.Out.WriteLine($"Delete user attempt {attempt}/{maxAttempts}: {fullName}");
                 await EnsureChatOpen();
 
-                // fresh conversation to avoid LLM context confusion
                 await Actions.ClickButtonById(ChatClearBtn);
                 await Actions.Wait1000();
                 await WaitForChatInputEnabled();
 
                 _messageCountBefore = await GetMessageCount();
                 await SendChatMessage(
-                    $"Lösche den Systembenutzer mit der ID '{userId}'");
+                    $"Lösche den Systembenutzer mit Vorname '{firstName}' und Nachname '{lastName}'");
                 var response = await WaitForBotResponse(_messageCountBefore, 90000);
                 TestContext.Out.WriteLine($"Delete response: {response[..Math.Min(200, response.Length)]}");
 
-                var removed = await WaitForUserRemovedFromDom(userId);
+                var removed = await WaitForUserRemovedFromDom(firstName, lastName);
                 if (removed)
                 {
-                    TestContext.Out.WriteLine($"User {userId} confirmed removed from DOM");
+                    TestContext.Out.WriteLine($"User '{fullName}' confirmed removed from DOM");
                     return;
                 }
 
-                TestContext.Out.WriteLine($"User {userId} still in DOM after attempt {attempt}, will retry...");
+                TestContext.Out.WriteLine($"User '{fullName}' still in DOM after attempt {attempt}, will retry...");
                 await Actions.Wait2000();
             }
 
-            Assert.Fail($"User '{userId}' was not deleted after {maxAttempts} attempts");
+            Assert.Fail($"User '{fullName}' was not deleted after {maxAttempts} attempts. LLM may have chosen list_system_users instead of delete_system_user.");
         }
 
         private async Task<string> WaitForUserInDom(string firstName, string lastName, int timeoutMs = 30000)
@@ -320,9 +324,10 @@ namespace Klacks.E2ETest
             return false;
         }
 
-        private async Task<bool> WaitForUserRemovedFromDom(string userId, int timeoutMs = 30000)
+        private async Task<bool> WaitForUserRemovedFromDom(string firstName, string lastName, int timeoutMs = 30000)
         {
-            TestContext.Out.WriteLine($"Waiting for user '{userId}' to be removed from DOM...");
+            var fullName = $"{firstName} {lastName}";
+            TestContext.Out.WriteLine($"Waiting for user '{fullName}' to be removed from DOM...");
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
@@ -335,15 +340,14 @@ namespace Klacks.E2ETest
                     continue;
                 }
 
-                var element = await Page.QuerySelectorAsync($"#{RowNamePrefix}{userId}");
-                if (element == null)
+                if (!await UserExistsInDom(firstName, lastName))
                 {
-                    TestContext.Out.WriteLine($"User '{userId}' removed from DOM");
+                    TestContext.Out.WriteLine($"User '{fullName}' removed from DOM");
                     return true;
                 }
                 await Actions.Wait500();
             }
-            TestContext.Out.WriteLine($"User '{userId}' still in DOM after {timeoutMs / 1000}s");
+            TestContext.Out.WriteLine($"User '{fullName}' still in DOM after {timeoutMs / 1000}s");
             return false;
         }
 
