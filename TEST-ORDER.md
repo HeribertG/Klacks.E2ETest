@@ -39,6 +39,7 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgefuehrt, gesteuert dur
 | 41 | `Shifts/ShiftCutsNestedTest.cs` | | Shift Cuts Nested |
 | 42 | `Shifts/ShiftCutsBatchTest.cs` | | Shift Cuts Batch |
 | 43 | `Shifts/ShiftOrderCreationTest.cs` | | Shift Order Creation |
+| 48 | `Settings/LlmKimiProviderTest.cs` | 7 | KIMI Provider: Create/Verify Provider + Model, Chat Smoke-Test (bleibt fuer Order 50-69) |
 | 50 | `Settings/LlmSettingsGeneralTest.cs` | 8 | LLM Chat: Settings General (App-Name, Icon, Logo) |
 | 51 | `Settings/LlmOwnerAddressTest.cs` | 7 | LLM Chat: Owner Address (Validierung, CRUD) |
 | 60 | `Settings/LlmSoulMemoryTest.cs` | 8 | LLM Chat: AI Soul & Memory (CRUD) |
