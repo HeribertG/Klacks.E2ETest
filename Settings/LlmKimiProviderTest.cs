@@ -227,6 +227,17 @@ public class LlmKimiProviderTest : PlaywrightSetup
         await Actions.ClearInputById(SettingsLlmModelsIds.ModalInputOutputCost);
         await Actions.TypeIntoInputById(SettingsLlmModelsIds.ModalInputOutputCost, KimiOutputCost);
 
+        var isDefaultCheckbox = await Actions.FindElementById(SettingsLlmModelsIds.ModalCheckboxIsDefault);
+        if (isDefaultCheckbox != null)
+        {
+            var isChecked = await isDefaultCheckbox.IsCheckedAsync();
+            if (!isChecked)
+            {
+                await isDefaultCheckbox.ClickAsync();
+                TestContext.Out.WriteLine("Set as default model");
+            }
+        }
+
         TestContext.Out.WriteLine($"Filled model form: {KimiModelName} ({KimiModelId})");
 
         var saveBtn = await Actions.FindElementById(SettingsLlmModelsIds.ModalSaveBtn);

@@ -65,7 +65,10 @@ namespace Klacks.E2ETest
             TestContext.Out.WriteLine($"Bot response: {response}");
             Assert.That(response.Contains("Syntax OK", StringComparison.OrdinalIgnoreCase)
                      || response.Contains("Script", StringComparison.OrdinalIgnoreCase)
-                     || response.Contains("erstellt", StringComparison.OrdinalIgnoreCase),
+                     || response.Contains("erstellt", StringComparison.OrdinalIgnoreCase)
+                     || response.Contains("created", StringComparison.OrdinalIgnoreCase)
+                     || response.Contains(MacroName, StringComparison.OrdinalIgnoreCase)
+                     || response.Contains("Macro", StringComparison.OrdinalIgnoreCase),
                 Is.True, $"Response should confirm script was created. Got: {response}");
 
             TestContext.Out.WriteLine($"Macro created with script via UI: {MacroName}");

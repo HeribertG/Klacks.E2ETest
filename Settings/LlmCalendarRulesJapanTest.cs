@@ -297,6 +297,8 @@ public class LlmCalendarRulesJapanTest : PlaywrightSetup
             return;
         }
 
+        await Actions.Reload();
+        await Actions.Wait2000();
         await NavigateToCalendarRules();
 
         var tokyoCode = "TKY";
@@ -411,6 +413,7 @@ public class LlmCalendarRulesJapanTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 9: Verify Tokyo Holidays via Filter ===");
 
+        await CloseChatIfOpen();
         await NavigateToCalendarRules();
 
         // Act
@@ -440,6 +443,8 @@ public class LlmCalendarRulesJapanTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 10: Ask LLM to Summarize ===");
 
+        await Actions.Reload();
+        await Actions.Wait2000();
         await Actions.ClickButtonById(HeaderAssistantButton);
         await Actions.Wait1000();
         await EnsureChatOpen();
@@ -889,12 +894,13 @@ public class LlmCalendarRulesJapanTest : PlaywrightSetup
 
     private async Task CloseChatIfOpen()
     {
-        var chatInput = await Actions.FindElementById(ChatInput);
-        if (chatInput != null)
-        {
-            await Actions.ClickButtonById(HeaderAssistantButton);
-            await Actions.Wait500();
-        }
+        await Page.EvaluateAsync(@"() => {
+            const aside = document.querySelector('app-aside');
+            if (aside && aside.classList.contains('visible')) {
+                aside.classList.remove('visible');
+            }
+        }");
+        await Actions.Wait500();
     }
 
     private async Task WaitForChatInputEnabled()

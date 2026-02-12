@@ -168,6 +168,8 @@ namespace Klacks.E2ETest
             // Arrange
             TestContext.Out.WriteLine("=== Step 7: Verify Multiple Memories ===");
             await EnsureChatOpen();
+            await Actions.ClickButtonById(ChatClearBtn);
+            await Actions.Wait1000();
 
             // Act
             _messageCountBefore = await GetMessageCount();

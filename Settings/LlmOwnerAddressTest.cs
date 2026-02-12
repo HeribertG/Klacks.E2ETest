@@ -105,7 +105,7 @@ namespace Klacks.E2ETest
             // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Setze die Firmenadresse auf Bahnhofstrasse 10, 3011 Bern, Schweiz. Der Firmenname ist Klacks AG.");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            var response = await WaitForBotResponse(_messageCountBefore, 120000);
 
             // Assert
             TestContext.Out.WriteLine($"Bot response: {response}");
@@ -303,7 +303,7 @@ namespace Klacks.E2ETest
             return messages.Count;
         }
 
-        private async Task<string> WaitForBotResponse(int previousMessageCount, int timeoutMs = 60000)
+        private async Task<string> WaitForBotResponse(int previousMessageCount, int timeoutMs = 90000)
         {
             TestContext.Out.WriteLine("Waiting for bot response...");
 

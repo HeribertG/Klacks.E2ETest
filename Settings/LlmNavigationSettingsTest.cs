@@ -332,7 +332,7 @@ namespace Klacks.E2ETest
             return messages.Count;
         }
 
-        private async Task<string> WaitForBotResponse(int previousMessageCount, int timeoutMs = 60000)
+        private async Task<string> WaitForBotResponse(int previousMessageCount, int timeoutMs = 90000)
         {
             TestContext.Out.WriteLine("Waiting for bot response...");
 

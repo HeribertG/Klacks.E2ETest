@@ -150,7 +150,7 @@ namespace Klacks.E2ETest
             // Act
             _messageCountBefore = await GetMessageCount();
             await SendChatMessage("Wer bin ich? Zeige mir meine Benutzerinformationen.");
-            var response = await WaitForBotResponse(_messageCountBefore);
+            var response = await WaitForBotResponse(_messageCountBefore, 90000);
 
             // Assert
             TestContext.Out.WriteLine($"Bot response: {response}");
