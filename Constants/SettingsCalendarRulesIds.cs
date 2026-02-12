@@ -69,5 +69,5 @@ public static class SettingsCalendarRulesTestData
 
     public const string EasterRule = "EASTER+00";
     public const string AscensionRule = "EASTER+39";
-    public const string ThanksgivingRule = "11/22+000+TH";
+    public const string ThanksgivingRule = "11/22+00+TH";
 }

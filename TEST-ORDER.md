@@ -46,6 +46,10 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgefuehrt, gesteuert dur
 | 63 | `Settings/LlmBranchesTest.cs` | 9 | LLM Chat: Filialen CRUD (Zuerich + Lausanne) |
 | 64 | `Settings/LlmMacrosTest.cs` | 5 | LLM Chat: Macro CRUD mit Script |
 | 64 | `Settings/UserGroupVisibilityTest.cs` | 8 | LLM Chat: Gruppen-Sichtbarkeit (Login as new user) |
+| 65 | `Settings/LlmAiGuidelinesTest.cs` | 7 | LLM Chat: AI Guidelines (Lesen, Aktualisieren, Verifizieren) |
+| 66 | `Settings/LlmNavigationSettingsTest.cs` | 8 | LLM Chat: Navigation zu Settings/Seiten via Chat |
+| 67 | `Settings/LlmSystemInfoPermissionsTest.cs` | 8 | LLM Chat: Systeminfo & Berechtigungen abfragen |
+| 68 | `Settings/LlmCalendarRulesJapanTest.cs` | 13 | LLM Chat: Japan Feiertage recherchieren + Country/States/CalendarRules CRUD |
 
 ## Gruppierung
 
