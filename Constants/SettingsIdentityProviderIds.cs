@@ -3,10 +3,10 @@ namespace Klacks.E2ETest.Constants;
 public static class SettingsIdentityProviderIds
 {
     public const string Section = "settings-identity-providers";
-    public const string Card = "identity-provider-card";
-    public const string Header = "identity-provider-header";
-    public const string Rows = "identity-provider-rows";
-    public const string AddBtn = "identity-provider-add-btn";
+    public const string Card = "identity-providers-card";
+    public const string Header = "identity-providers-header";
+    public const string Rows = "identity-providers-rows";
+    public const string AddBtn = "identity-providers-add-btn";
 
     public const string HeaderContainer = "identity-provider-header-container";
     public const string HeaderName = "identity-provider-header-name";

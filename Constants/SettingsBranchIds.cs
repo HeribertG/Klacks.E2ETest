@@ -2,8 +2,8 @@ namespace Klacks.E2ETest.Constants;
 
 public static class SettingsBranchIds
 {
-    public const string BranchSection = "settings-list-card";
-    public const string AddBranchBtn = "settings-list-add-btn";
+    public const string BranchSection = "branches-card";
+    public const string AddBranchBtn = "branches-add-btn";
 
     public const string ModalForm = "branches-modal-form";
     public const string ModalCloseBtn = "branches-modal-close-btn";

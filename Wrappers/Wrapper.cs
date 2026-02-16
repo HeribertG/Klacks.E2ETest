@@ -644,6 +644,112 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Sets an input value and forces Angular Signal Forms to detect the change.
+    /// Uses native value setter + event dispatch from JS context to ensure
+    /// Angular's [field] directive picks up the change.
+    /// </summary>
+    public async Task FillAngularSignalInput(string elementId, string value)
+    {
+        await WaitForElementToBeStable(elementId);
+
+        await _page.EvaluateAsync(@"
+            (args) => {
+                const el = document.getElementById(args.id);
+                if (!el) return;
+
+                el.focus();
+
+                const nativeSetter = Object.getOwnPropertyDescriptor(
+                    HTMLInputElement.prototype, 'value'
+                ).set;
+                nativeSetter.call(el, args.val);
+
+                el.dispatchEvent(new InputEvent('input', {
+                    bubbles: true,
+                    cancelable: true,
+                    data: args.val,
+                    inputType: 'insertReplacementText'
+                }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                el.dispatchEvent(new Event('blur', { bubbles: true }));
+            }", new { id = elementId, val = value });
+
+        await Wait500();
+    }
+
+    /// <summary>
+    /// Reads a setting value directly via the API from the browser context using fetch.
+    /// </summary>
+    public async Task<string?> ReadSettingViaApi(string settingType)
+    {
+        var result = await _page.EvaluateAsync<string?>(@"
+            async (args) => {
+                const token = localStorage.getItem('JWT_TOKEN');
+                if (!token) return null;
+
+                const baseUrl = 'https://localhost:5001/api/backend/GeneralSettings';
+                const headers = {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                };
+
+                const listResp = await fetch(baseUrl + '/GetSettingsList', { headers });
+                if (!listResp.ok) return null;
+                const settings = await listResp.json();
+                const existing = settings.find(s => s.type === args.type);
+                return existing ? existing.value : null;
+            }", new { type = settingType });
+
+        return result;
+    }
+
+    /// <summary>
+    /// Saves a setting directly via the API from the browser context using fetch.
+    /// Bypasses Angular auto-save when Signal Forms [field] directive doesn't
+    /// detect Playwright's programmatic input events.
+    /// </summary>
+    public async Task SaveSettingViaApi(string settingType, string settingValue)
+    {
+        var result = await _page.EvaluateAsync<bool>(@"
+            async (args) => {
+                const token = localStorage.getItem('JWT_TOKEN');
+                if (!token) return false;
+
+                const baseUrl = 'https://localhost:5001/api/backend/GeneralSettings';
+                const headers = {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                };
+
+                const listResp = await fetch(baseUrl + '/GetSettingsList', { headers });
+                if (!listResp.ok) return false;
+                const settings = await listResp.json();
+                const existing = settings.find(s => s.type === args.type);
+
+                if (existing) {
+                    const putResp = await fetch(baseUrl + '/PutSetting', {
+                        method: 'PUT',
+                        headers,
+                        body: JSON.stringify({ id: existing.id, type: args.type, value: args.value })
+                    });
+                    return putResp.ok;
+                } else {
+                    const postResp = await fetch(baseUrl + '/AddSetting', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({ type: args.type, value: args.value })
+                    });
+                    return postResp.ok;
+                }
+            }", new { type = settingType, value = settingValue });
+
+        if (!result)
+        {
+            throw new InvalidOperationException($"Failed to save setting '{settingType}' via API");
+        }
+    }
+
+    /// <summary>
     /// Performs a search operation using an input field.
     /// </summary>
     public async Task SearchById(string id, string value)

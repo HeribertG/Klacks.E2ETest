@@ -254,15 +254,22 @@ public class PlaywrightSetup : PageTest
     private async Task CreateBrowser()
     {
         _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+        var args = new List<string> { "--disable-gpu", "--disable-software-rasterizer" };
+        if (_windowsMaximized)
+        {
+            args.Add("--start-fullscreen");
+        }
+
         var launchOptions = new BrowserTypeLaunchOptions
         {
             Headless = _isHeadless,
             SlowMo = 50,
-            Args = _windowsMaximized ? new[] { "--start-fullscreen" } : null
+            Args = args.ToArray()
         };
 
         _browser = await _playwright.Chromium.LaunchAsync(launchOptions);
         var contextOptions = new BrowserNewContextOptions();
+        contextOptions.IgnoreHTTPSErrors = true;
         contextOptions.ViewportSize = new ViewportSize
         {
             Width = 1280,   // Statt 1920

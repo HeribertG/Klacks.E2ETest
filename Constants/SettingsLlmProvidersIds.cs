@@ -3,10 +3,10 @@ namespace Klacks.E2ETest.Constants;
 public static class SettingsLlmProvidersIds
 {
     public const string Section = "settings-llm-providers";
-    public const string Card = "settings-list-card";
-    public const string Header = "settings-list-header";
-    public const string RowsContainer = "settings-list-rows";
-    public const string AddBtn = "settings-list-add-btn";
+    public const string Card = "llm-providers-card";
+    public const string Header = "llm-providers-header";
+    public const string RowsContainer = "llm-providers-rows";
+    public const string AddBtn = "llm-providers-add-btn";
 
     public const string TableHeader = "llm-providers-table-header";
     public const string RowSelector = "[id^='llm-providers-row-']:not([id*='display']):not([id*='delete']):not([id*='form']):not([id*='container'])";
