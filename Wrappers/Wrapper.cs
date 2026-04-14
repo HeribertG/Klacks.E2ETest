@@ -224,6 +224,29 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Waits until an element matching the CSS selector is hidden or detached from the DOM.
+    /// </summary>
+    /// <param name="name">The CSS selector to wait for</param>
+    public async Task ElementIsHiddenByCssSelector(string name)
+    {
+        await _page.WaitForSelectorAsync(name, new() { State = WaitForSelectorState.Hidden, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+    }
+
+    /// <summary>
+    /// Performs a right-click (context menu click) on the first element matching the CSS selector.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the element to right-click</param>
+    public async Task RightClickByCssSelector(string cssSelector)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        await _page.Locator(cssSelector).First.ClickAsync(new LocatorClickOptions
+        {
+            Button = MouseButton.Right,
+            Timeout = WrapperConstants.DEFAULT_TIMEOUT
+        });
+    }
+
+    /// <summary>
     /// Checks if an element is disabled. Returns true if element is null or disabled.
     /// </summary>
     public async Task<bool> IsDisabled(IElementHandle? element)
