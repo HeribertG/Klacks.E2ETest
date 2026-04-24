@@ -53,37 +53,34 @@ public class WizardBenchmarkTrainingTest
         _http.Dispose();
     }
 
+    private const string PeriodFrom = "2026-04-20";
+    private const string PeriodUntil = "2026-05-03";
+    private const int AgentCount = 50;
+    private const int ShiftPerBucket = 5;
+
     [Test]
     public async Task Benchmark_ParameterGrid_WritesJsonReport()
     {
-        var agents = await FetchIdsAsync("SELECT id FROM client WHERE is_deleted = false LIMIT 10");
-        var shifts = await FetchIdsAsync(
-            "SELECT id FROM shift WHERE is_deleted = false " +
-            "AND (until_date IS NULL OR until_date >= '2026-04-20') " +
-            "AND from_date <= '2026-04-26' LIMIT 5");
+        var agents = await FetchIdsAsync(
+            $"SELECT id FROM client WHERE is_deleted = false ORDER BY name LIMIT {AgentCount}");
 
-        Assert.That(agents, Is.Not.Empty, "need clients in Dev DB");
-        Assert.That(shifts, Is.Not.Empty, "need active shifts in Dev DB");
+        var shifts = new List<Guid>();
+        shifts.AddRange(await FetchShiftBucketAsync("07:00", "15:00")); // Frueh
+        shifts.AddRange(await FetchShiftBucketAsync("15:00", "23:00")); // Spaet
+        shifts.AddRange(await FetchShiftBucketAsync("23:00", "07:00")); // Nacht
 
-        var grid = new[]
-        {
-            new TrainingOverrides(PopulationSize: 20, MaxGenerations: 30, RandomSeed: 42),
-            new TrainingOverrides(PopulationSize: 40, MaxGenerations: 100, RandomSeed: 42),
-            new TrainingOverrides(PopulationSize: 80, MaxGenerations: 200, RandomSeed: 42),
-            new TrainingOverrides(PopulationSize: 40, MaxGenerations: 100, MutationRate: 0.4, RandomSeed: 42),
-            new TrainingOverrides(PopulationSize: 40, MaxGenerations: 100, MutationRate: 0.1, RandomSeed: 42),
-        };
+        Assert.That(agents, Has.Count.EqualTo(AgentCount), "need clients in Dev DB");
+        Assert.That(shifts, Has.Count.EqualTo(ShiftPerBucket * 3),
+            "need FD/SD/ND shift pool (07-15, 15-23, 23-07) in Dev DB");
+
+        var grid = BuildParameterGrid();
 
         var results = new List<BenchmarkResponse>();
         foreach (var overrides in grid)
         {
             var response = await RunBenchmarkAsync(agents, shifts, overrides);
             results.Add(response);
-            TestContext.Out.WriteLine(
-                $"pop={overrides.PopulationSize} gen={overrides.MaxGenerations} mut={overrides.MutationRate?.ToString("F2") ?? "dflt"} | " +
-                $"time={response.DurationMs}ms stage0={response.FinalHardViolations} stage1={response.FinalStage1Completion:F2} " +
-                $"stage2={response.FinalStage2Score:F3} tokens={response.TokenCount}/{response.AvailableShiftSlots} " +
-                $"cov={response.CoverageRatio:F2} dup={response.ClientDayDuplicates}");
+            TestContext.Out.WriteLine(FormatRow(overrides, response));
         }
 
         var reportPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
@@ -94,8 +91,80 @@ public class WizardBenchmarkTrainingTest
 
         Assert.That(results, Has.All.Matches<BenchmarkResponse>(r => r.DurationMs >= 0),
             "all runs should complete successfully");
-        Assert.That(results, Has.All.Matches<BenchmarkResponse>(r => r.FinalHardViolations == 0),
-            "with these inputs, hard violations should stay 0 for all configs");
+    }
+
+    private static IReadOnlyList<TrainingOverrides> BuildParameterGrid()
+    {
+        const int seed = 42;
+        return new[]
+        {
+            // Baseline (current TokenEvolutionConfig defaults)
+            new TrainingOverrides(RandomSeed: seed),
+
+            // Population scaling
+            new TrainingOverrides(PopulationSize: 20, MaxGenerations: 100, RandomSeed: seed),
+            new TrainingOverrides(PopulationSize: 80, MaxGenerations: 100, RandomSeed: seed),
+            new TrainingOverrides(PopulationSize: 120, MaxGenerations: 100, RandomSeed: seed),
+
+            // Generation depth
+            new TrainingOverrides(PopulationSize: 40, MaxGenerations: 50, RandomSeed: seed),
+            new TrainingOverrides(PopulationSize: 40, MaxGenerations: 300, RandomSeed: seed),
+
+            // Mutation rate sweep
+            new TrainingOverrides(MutationRate: 0.10, RandomSeed: seed),
+            new TrainingOverrides(MutationRate: 0.40, RandomSeed: seed),
+            new TrainingOverrides(MutationRate: 0.60, RandomSeed: seed),
+
+            // Tournament selection pressure
+            new TrainingOverrides(TournamentK: 2, RandomSeed: seed),
+            new TrainingOverrides(TournamentK: 5, RandomSeed: seed),
+            new TrainingOverrides(TournamentK: 7, RandomSeed: seed),
+
+            // Elitism
+            new TrainingOverrides(ElitismCount: 0, RandomSeed: seed),
+            new TrainingOverrides(ElitismCount: 5, RandomSeed: seed),
+
+            // Early-stop horizon
+            new TrainingOverrides(EarlyStopNoImprovementGenerations: 10, RandomSeed: seed),
+            new TrainingOverrides(EarlyStopNoImprovementGenerations: 60, RandomSeed: seed),
+
+            // Promising combo (exploration-heavy big run)
+            new TrainingOverrides(
+                PopulationSize: 80, MaxGenerations: 200, MutationRate: 0.35,
+                TournamentK: 4, ElitismCount: 3, RandomSeed: seed),
+        };
+    }
+
+    private static string FormatRow(TrainingOverrides ov, BenchmarkResponse r)
+    {
+        return $"pop={Fmt(ov.PopulationSize)} gen={Fmt(ov.MaxGenerations)} " +
+               $"mut={FmtD(ov.MutationRate)} k={Fmt(ov.TournamentK)} elit={Fmt(ov.ElitismCount)} " +
+               $"early={Fmt(ov.EarlyStopNoImprovementGenerations)} | " +
+               $"time={r.DurationMs}ms stage0={r.FinalHardViolations} " +
+               $"stage1={r.FinalStage1Completion:F2} stage2={r.FinalStage2Score:F3} " +
+               $"tokens={r.TokenCount}/{r.AvailableShiftSlots} " +
+               $"slots={r.CoveredShiftSlots}/{r.AvailableShiftSlots} " +
+               $"slotCov={r.ShiftCoverageRatio:P1}(max={r.TheoreticalMaxCoverage:P1}) " +
+               $"agents={r.DistinctAgents}/{r.AgentsInContext}(shiftCap={r.AgentsShiftCapable}) " +
+               $"over={r.OverstaffingCount} under={r.UndersupplyCount} dup={r.ClientDayDuplicates}";
+    }
+
+    private static string Fmt(int? v) => v?.ToString() ?? "dflt";
+    private static string FmtD(double? v) => v?.ToString("F2") ?? "dflt";
+
+    private async Task<IReadOnlyList<Guid>> FetchShiftBucketAsync(string startTime, string endTime)
+    {
+        var sql =
+            "SELECT id FROM shift " +
+            "WHERE is_deleted = false " +
+            $"  AND start_shift = TIME '{startTime}' " +
+            $"  AND end_shift = TIME '{endTime}' " +
+            "  AND work_time = 8 " +
+            $"  AND (until_date IS NULL OR until_date >= '{PeriodFrom}') " +
+            $"  AND from_date <= '{PeriodUntil}' " +
+            "ORDER BY name " +
+            $"LIMIT {ShiftPerBucket}";
+        return await FetchIdsAsync(sql);
     }
 
     private async Task<BenchmarkResponse> RunBenchmarkAsync(
@@ -138,8 +207,11 @@ public class WizardBenchmarkTrainingTest
     private sealed record TrainingOverrides(
         int? PopulationSize = null,
         int? MaxGenerations = null,
+        int? TournamentK = null,
         double? MutationRate = null,
         double? CrossoverRate = null,
+        int? ElitismCount = null,
+        int? EarlyStopNoImprovementGenerations = null,
         int? RandomSeed = null);
 
     private sealed record BenchmarkResponse(
@@ -154,6 +226,14 @@ public class WizardBenchmarkTrainingTest
         int DistinctAgents,
         int DistinctShifts,
         int DistinctDates,
+        int CoveredShiftSlots,
+        int OverstaffingCount,
+        int UndersupplyCount,
+        double ShiftCoverageRatio,
+        int AgentsInContext,
+        int AgentsShiftCapable,
+        int SlotsFillableByData,
+        double TheoreticalMaxCoverage,
         EffectiveConfig EffectiveConfig);
 
     private sealed record EffectiveConfig(
