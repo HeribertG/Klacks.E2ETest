@@ -7,7 +7,6 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(76)]
-    [Ignore("Same NetworkIdle reload issue as SettingsDeeplTest; needs DOMContentLoaded-style reload")]
     public class SettingsOpenrouteTest : PlaywrightSetup
     {
         private Listener _listener = null!;
@@ -154,8 +153,14 @@ namespace Klacks.E2ETest
             await Actions.ClickElementById(ApiKeyToggle);
             await Actions.Wait500();
 
-            await Actions.FillInputById(ApiKey, _originalApiKey);
+            await Actions.ClearInputById(ApiKey);
             await Actions.Wait500();
+
+            if (_originalApiKey.Length > 0)
+            {
+                await Actions.FillInputById(ApiKey, _originalApiKey);
+                await Actions.Wait500();
+            }
 
             await Actions.PressKey(Keys.Tab);
             TestContext.Out.WriteLine("Restored original API key and triggered blur");

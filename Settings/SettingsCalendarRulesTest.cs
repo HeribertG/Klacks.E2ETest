@@ -11,7 +11,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(30)]
-[Ignore("Calendar rule create/update triggers translation that fails in dev; complex multi-step pagination tests need rewrite")]
+[Ignore("Step4_UpdateCalendarRule: after rename, FindRuleWithPagination cannot locate the renamed rule across pages - needs pagination/search rework")]
 public class SettingsCalendarRulesTest : PlaywrightSetup
 {
     private Listener _listener = null!;

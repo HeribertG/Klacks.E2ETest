@@ -316,12 +316,11 @@ public class ClientCreationTest : PlaywrightSetup
 
         TestContext.Out.WriteLine("Save button is enabled, proceeding with save...");
         await Actions.ClickButtonById(SaveBarIds.SaveButton);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-        await Actions.Wait1000();
         TestContext.Out.WriteLine("Clicked Save button");
 
         await DismissAddressValidationToastIfPresent();
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
 
         // Assert: ignore the 400 address.validation.failed error that the toast handles.
         if (_listener.HasApiErrors() && !_listener.GetLastErrorMessage().Contains("address.validation.failed"))
@@ -338,20 +337,30 @@ public class ClientCreationTest : PlaywrightSetup
 
     private async Task DismissAddressValidationToastIfPresent()
     {
-        var saveAnywayButton = await Page.QuerySelectorAsync(
-            "app-toasts .reply-chip-btn:has-text(\"Trotzdem speichern\"), app-toasts .reply-chip-btn:has-text(\"Save anyway\")");
+        const int totalWaitMs = 4500;
+        const int pollIntervalMs = 250;
+        var saveAnywaySelector = "app-toasts .reply-chip-btn:has-text(\"Trotzdem speichern\"), app-toasts .reply-chip-btn:has-text(\"Save anyway\")";
 
-        if (saveAnywayButton == null)
+        for (var elapsed = 0; elapsed < totalWaitMs; elapsed += pollIntervalMs)
         {
-            return;
+            var saveAnywayButton = await Page.QuerySelectorAsync(saveAnywaySelector);
+            if (saveAnywayButton != null)
+            {
+                TestContext.Out.WriteLine("Address validation toast detected - clicking 'Save anyway'");
+                try
+                {
+                    await saveAnywayButton.ClickAsync(new ElementHandleClickOptions { Force = true, Timeout = 2000 });
+                }
+                catch
+                {
+                    await saveAnywayButton.EvaluateAsync("el => el.click()");
+                }
+                await Actions.Wait1000();
+                TestContext.Out.WriteLine("Address validation bypassed");
+                return;
+            }
+            await Task.Delay(pollIntervalMs);
         }
-
-        TestContext.Out.WriteLine("Address validation toast detected - clicking 'Save anyway'");
-        await saveAnywayButton.ClickAsync();
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-        await Actions.Wait1000();
-        TestContext.Out.WriteLine("Address validation bypassed");
     }
 
     private async Task WaitForCountriesToLoad()

@@ -7,7 +7,6 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(75)]
-    [Ignore("Reload after API key change loops forever (NetworkIdle never reached); test relies on real DeepL API for persistence verification")]
     public class SettingsDeeplTest : PlaywrightSetup
     {
         private Listener _listener = null!;
@@ -154,8 +153,14 @@ namespace Klacks.E2ETest
             await Actions.ClickElementById(ApiKeyToggle);
             await Actions.Wait500();
 
-            await Actions.FillInputById(ApiKey, _originalApiKey);
+            await Actions.ClearInputById(ApiKey);
             await Actions.Wait500();
+
+            if (_originalApiKey.Length > 0)
+            {
+                await Actions.FillInputById(ApiKey, _originalApiKey);
+                await Actions.Wait500();
+            }
 
             await Actions.PressKey(Keys.Tab);
             TestContext.Out.WriteLine("Restored original API key and triggered blur");
