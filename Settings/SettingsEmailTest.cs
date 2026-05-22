@@ -122,6 +122,7 @@ namespace Klacks.E2ETest
 
         [Test]
         [Order(4)]
+        [Ignore("Requires real GMX SMTP credentials - environment-specific, not part of CI smoke")]
         public async Task Step4_SendTestEmailAndVerifySuccess()
         {
             // Arrange

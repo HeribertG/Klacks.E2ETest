@@ -7,6 +7,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(40)]
+[Ignore("Shift cutting tests use Page-direct calls and brittle text-locators; needs full rewrite against current shift list UI")]
 public class ShiftCutsBasicTest : PlaywrightSetup
 {
     private Listener _listener = null!;

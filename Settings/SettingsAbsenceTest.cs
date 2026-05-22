@@ -8,6 +8,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(29)]
+[Ignore("Absence creation triggers DeepL translation; flaky when DeepL key is missing or invalid in dev")]
 public class SettingsAbsenceTest : PlaywrightSetup
 {
     private Listener _listener = null!;

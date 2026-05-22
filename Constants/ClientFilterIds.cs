@@ -44,7 +44,7 @@ public static class ClientFilterIds
 
     public const string ResetAddressButtonId = "filter-reset-button";
 
-    public const string GroupDeutschweizMitte = "Deutschweiz Mitte";
+    public const string GroupDeutschschweizMitte = "Deutschschweiz Mitte";
     public const string GroupBE = "BE";
     public const string GroupBern = "Bern";
 }

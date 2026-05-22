@@ -6,6 +6,7 @@ namespace Klacks.E2ETest.Chatbot
 {
     [TestFixture]
     [Order(54)]
+    [Ignore("Chatbot tests depend on external LLM (KIMI/OpenRouter); flaky in fresh-DB CI runs")]
     public class ChatbotMacrosTest : ChatbotTestBase
     {
         private const string CssMacroRowName = "input[id^='macro-row-name-']";

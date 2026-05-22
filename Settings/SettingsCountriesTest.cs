@@ -1,3 +1,4 @@
+using Klacks.E2ETest.Chatbot.Helpers;
 using Klacks.E2ETest.Constants;
 using Klacks.E2ETest.Helpers;
 using Klacks.E2ETest.Wrappers;
@@ -10,6 +11,12 @@ namespace Klacks.E2ETest
     public class SettingsCountriesTest : PlaywrightSetup
     {
         private Listener _listener;
+
+        [OneTimeSetUp]
+        public async Task CleanupTestCountriesFromDb()
+        {
+            await DbHelper.ExecuteSqlAsync($"DELETE FROM countries WHERE abbreviation = '{TestAbbreviation}'");
+        }
 
         [SetUp]
         public async Task Setup()

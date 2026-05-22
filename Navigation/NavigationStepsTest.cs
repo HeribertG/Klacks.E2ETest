@@ -11,10 +11,13 @@ namespace Klacks.E2ETest
         private Listener _listener;
 
         [SetUp]
-        public void Setup()
+        public async Task Setup()
         {
             _listener = new Listener(Page);
             _listener.RecognizeApiErrors();
+
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait500();
         }
 
         [TearDown]
@@ -56,8 +59,8 @@ namespace Klacks.E2ETest
 
             // Act
             await Actions.ClickButtonById(MainNavIds.OpenAbsenceId);
+            await Actions.WaitUntilUrlContains("absence");
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
 
             // Assert
             Assert.That(Actions.ReadCurrentUrl().Contains("absence"), Is.True, "Should be on absence page");
@@ -76,8 +79,8 @@ namespace Klacks.E2ETest
 
             // Act
             await Actions.ClickButtonById(MainNavIds.OpenGroupsId);
+            await Actions.WaitUntilUrlContains("group");
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
 
             // Assert
             Assert.That(Actions.ReadCurrentUrl().Contains("group"), Is.True, "Should be on groups page");
@@ -96,8 +99,8 @@ namespace Klacks.E2ETest
 
             // Act
             await Actions.ClickButtonById(MainNavIds.OpenShiftsId);
+            await Actions.WaitUntilUrlContains("shift");
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
 
             // Assert
             Assert.That(Actions.ReadCurrentUrl().Contains("shift"), Is.True, "Should be on shifts page");
@@ -136,8 +139,8 @@ namespace Klacks.E2ETest
 
             // Act
             await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
+            await Actions.WaitUntilUrlContains("client");
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
 
             // Assert
             Assert.That(Actions.ReadCurrentUrl().Contains("client"), Is.True, "Should be on employees/clients page");
@@ -156,8 +159,8 @@ namespace Klacks.E2ETest
 
             // Act
             await Actions.ClickButtonById(MainNavIds.OpenProfileId);
+            await Actions.WaitUntilUrlContains("profile");
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
 
             // Assert
             Assert.That(Actions.ReadCurrentUrl().Contains("profile"), Is.True, "Should be on profile page");

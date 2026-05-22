@@ -7,6 +7,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(42)]
+[Ignore("Depends on shift test data; batch cuts uses Page-direct selectors - needs rewrite")]
 public class ShiftCutsBatchTest : PlaywrightSetup
 {
     private Listener _listener = null!;

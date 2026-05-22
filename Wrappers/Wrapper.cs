@@ -71,13 +71,14 @@ public sealed class Wrapper
     }
 
     /// <summary>
-    /// Reloads the current page and waits until network activity is idle.
+    /// Reloads the current page and waits until DOM is loaded.
+    /// SignalR/long-poll keep network busy so NetworkIdle is unreliable here.
     /// </summary>
     public async Task Reload()
     {
         await _page.ReloadAsync(new PageReloadOptions
         {
-            WaitUntil = WaitUntilState.NetworkIdle
+            WaitUntil = WaitUntilState.DOMContentLoaded
         });
     }
 

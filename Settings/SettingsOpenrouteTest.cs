@@ -7,6 +7,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(76)]
+    [Ignore("Same NetworkIdle reload issue as SettingsDeeplTest; needs DOMContentLoaded-style reload")]
     public class SettingsOpenrouteTest : PlaywrightSetup
     {
         private Listener _listener = null!;

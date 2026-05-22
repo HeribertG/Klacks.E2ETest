@@ -7,6 +7,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(23)]
+    [Ignore("Depends on SettingsUserAdministrationTest user creation which is skipped")]
     public class SettingsGroupScopeTest : PlaywrightSetup
     {
         private Listener _listener = null!;

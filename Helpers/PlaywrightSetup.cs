@@ -31,7 +31,7 @@ public class PlaywrightSetup : PageTest
 
     public PlaywrightSetup()
     {
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+        var environment = (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development").Trim();
 
         _configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -270,6 +270,7 @@ public class PlaywrightSetup : PageTest
         _browser = await _playwright.Chromium.LaunchAsync(launchOptions);
         var contextOptions = new BrowserNewContextOptions();
         contextOptions.IgnoreHTTPSErrors = true;
+        contextOptions.Locale = "de-CH";
         contextOptions.ViewportSize = new ViewportSize
         {
             Width = 1280,   // Statt 1920

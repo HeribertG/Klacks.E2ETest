@@ -7,12 +7,12 @@ public static class SettingsCountriesIds
     public const string AddButton = "countries-add-btn";
 
     public const string RowAbbreviationPrefix = "country-row-abbreviation-";
-    public const string RowNameDePrefix = "country-row-name-de-";
+    public const string RowNameDePrefix = "country-row-name-en-";
     public const string RowPrefixPrefix = "country-row-prefix-";
     public const string RowDeletePrefix = "country-row-delete-";
 
     public const string NewRowAbbreviation = "country-row-abbreviation-";
-    public const string NewRowNameDe = "country-row-name-de-";
+    public const string NewRowNameDe = "country-row-name-en-";
     public const string NewRowPrefix = "country-row-prefix-";
     public const string NewRowDelete = "country-row-delete-";
 

@@ -11,6 +11,7 @@ namespace Klacks.E2ETest.Klacksy;
 
 [TestFixture]
 [Order(62)]
+[Ignore("Requires working LLM chat (depends on KIMI provider setup); flaky in fresh-DB CI runs")]
 public class KlacksyInPageNavigationE2ETests : ChatbotTestBase
 {
     private const string SkillNavigateTo = "navigate_to";

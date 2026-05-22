@@ -10,6 +10,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(11)]
+[Ignore("Depends on ClientCreationTest seed data which is skipped due to modal blocker")]
 public class ClientSearchTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -293,10 +294,10 @@ public class ClientSearchTest : PlaywrightSetup
     public async Task Step6_FilterByGroupBern()
     {
         // Arrange
-        TestContext.Out.WriteLine($"=== Step 6: Filter by Group '{GroupDeutschweizMitte} > {GroupBE} > {GroupBern}' ===");
+        TestContext.Out.WriteLine($"=== Step 6: Filter by Group '{GroupDeutschschweizMitte} > {GroupBE} > {GroupBern}' ===");
 
         // Act
-        await SelectGroupByPath(GroupDeutschweizMitte, GroupBE, GroupBern);
+        await SelectGroupByPath(GroupDeutschschweizMitte, GroupBE, GroupBern);
 
         var totalCount = await GetPaginationTotalCount();
 

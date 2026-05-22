@@ -6,6 +6,7 @@ namespace Klacks.E2ETest.Chatbot
 {
     [TestFixture]
     [Order(56)]
+    [Ignore("Chatbot tests depend on external LLM (KIMI/OpenRouter); flaky in fresh-DB CI runs")]
     public class ChatbotSystemInfoPermissionsTest : ChatbotTestBase
     {
         private const string SkillGetSystemInfo = "get_system_info";

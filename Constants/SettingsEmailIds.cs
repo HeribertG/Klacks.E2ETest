@@ -18,6 +18,6 @@ public static class SettingsEmailIds
     public const string Mark = "mark";
     public const string SmtpAuthUser = "outgoingServerAuthUser";
     public const string SmtpAuthKey = "outgoingServerAuthKey";
-    public const string PasswordToggle = "setting-email-password-toggle";
+    public const string PasswordToggle = "outgoingServerAuthKey-toggle";
     public const string TestButton = "setting-email-test-btn";
 }
