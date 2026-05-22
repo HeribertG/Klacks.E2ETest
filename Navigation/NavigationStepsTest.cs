@@ -116,8 +116,8 @@ namespace Klacks.E2ETest
 
             // Act
             await Actions.ClickButtonById(MainNavIds.OpenSchedulesId);
+            await Actions.WaitUntilUrlContains("schedule");
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
 
             // Assert
             Assert.That(Actions.ReadCurrentUrl().Contains("schedule"), Is.True, "Should be on schedules page");
@@ -176,8 +176,8 @@ namespace Klacks.E2ETest
 
             // Act
             await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
+            await Actions.WaitUntilUrlContains("settings");
             await Actions.WaitForSpinnerToDisappear();
-            await Actions.Wait1000();
 
             // Assert
             Assert.That(Actions.ReadCurrentUrl().Contains("settings"), Is.True, "Should be on settings page");

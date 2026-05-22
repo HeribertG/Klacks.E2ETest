@@ -74,10 +74,6 @@ public static class GroupIds
     public const string TreeNodeDeleteBtnPrefix = "tree-node-delete-btn-";
     public const string TreeNodeViewBtnPrefix = "tree-node-view-btn-";
 
-    // Legacy (for backwards compatibility)
-    public const string AllGroupTreeView = "all-group-tree-view";
-    public const string AllGroupTree = "tree-group-tree-container";
-
     // Helper methods
     public static string GetRowId(int index) => $"{RowPrefix}{index}";
 

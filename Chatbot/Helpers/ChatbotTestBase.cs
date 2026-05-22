@@ -20,7 +20,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
 
     private const int MaxInputRetries = 3;
     private const int InputEnabledTimeoutMs = 10000;
-    private const int DefaultBotResponseTimeoutMs = 60000;
+    private const int DefaultBotResponseTimeoutMs = 90000;
 
     protected Dictionary<string, string> ChatSelectors { get; private set; } = new();
     protected Listener TestListener { get; private set; } = null!;

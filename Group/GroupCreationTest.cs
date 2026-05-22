@@ -125,7 +125,7 @@ public class GroupCreationTest : PlaywrightSetup
     private async Task CreateGroup(GroupData groupData, string? parentName)
     {
         // Navigate to edit-group page
-        await Page.GotoAsync("http://localhost:4200/workplace/edit-group");
+        await Actions.NavigateTo($"{BaseUrl}workplace/edit-group");
         await Actions.WaitForSpinnerToDisappear();
         await Actions.Wait1000();
         TestContext.Out.WriteLine("Navigated to edit-group page");
@@ -145,7 +145,7 @@ public class GroupCreationTest : PlaywrightSetup
             if (!parentSelected)
             {
                 TestContext.Out.WriteLine($"Retrying parent selection after page refresh...");
-                await Page.ReloadAsync();
+                await Actions.Reload();
                 await Actions.WaitForSpinnerToDisappear();
                 await WaitForGroupForm();
                 await Actions.ClearInputById(GroupIds.EditGroupItemName);
@@ -163,7 +163,7 @@ public class GroupCreationTest : PlaywrightSetup
         TestContext.Out.WriteLine("Clicked Save button");
 
         // Navigate back to group list to ensure the new group is in the cache
-        await Page.GotoAsync("http://localhost:4200/workplace/group");
+        await Actions.NavigateTo($"{BaseUrl}workplace/group");
         await Actions.WaitForSpinnerToDisappear();
         await WaitForGroupTableData();
 

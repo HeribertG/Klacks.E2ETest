@@ -78,17 +78,16 @@ namespace Klacks.E2ETest
             TestContext.Out.WriteLine("Verifying navigation tooltips");
 
             // Act
-            await VerifyTooltip(MainNavIds.OpenAbsenceId, "Alt+1");
+            await VerifyTooltip(MainNavIds.OpenSchedulesId, "Alt+1");
+            await VerifyTooltip(MainNavIds.OpenAbsenceId, "Alt+2");
+            await VerifyTooltip(MainNavIds.OpenShiftsId, "Alt+4");
+            await VerifyTooltip(MainNavIds.OpenEmployeesId, "Alt+5");
 
             var groupsButton = await Actions.FindElementById(MainNavIds.OpenGroupsId);
             if (groupsButton != null)
             {
-                await VerifyTooltip(MainNavIds.OpenGroupsId, "Alt+2");
+                await VerifyTooltip(MainNavIds.OpenGroupsId, "Alt+6");
             }
-
-            await VerifyTooltip(MainNavIds.OpenShiftsId, "Alt+3");
-            await VerifyTooltip(MainNavIds.OpenSchedulesId, "Alt+4");
-            await VerifyTooltip(MainNavIds.OpenEmployeesId, "Alt+5");
 
             // Assert
             TestContext.Out.WriteLine("Tooltip verification completed");
@@ -107,15 +106,15 @@ namespace Klacks.E2ETest
             await Actions.Wait500();
 
             // Assert
-            Assert.That(Actions.ReadCurrentUrl().Contains("absence"), Is.True, "Alt+1 should navigate to Absence page");
+            Assert.That(Actions.ReadCurrentUrl().Contains("schedule"), Is.True, "Alt+1 should navigate to Schedules page");
 
             // Act
-            await Actions.PressKey("Alt+3");
+            await Actions.PressKey("Alt+2");
             await Actions.WaitForSpinnerToDisappear();
             await Actions.Wait500();
 
             // Assert
-            Assert.That(Actions.ReadCurrentUrl().Contains("shift"), Is.True, "Alt+3 should navigate to Shifts page");
+            Assert.That(Actions.ReadCurrentUrl().Contains("absence"), Is.True, "Alt+2 should navigate to Absence page");
 
             // Act
             await Actions.PressKey("Alt+4");
@@ -123,7 +122,7 @@ namespace Klacks.E2ETest
             await Actions.Wait500();
 
             // Assert
-            Assert.That(Actions.ReadCurrentUrl().Contains("schedule"), Is.True, "Alt+4 should navigate to Schedules page");
+            Assert.That(Actions.ReadCurrentUrl().Contains("shift"), Is.True, "Alt+4 should navigate to Shifts page");
 
             // Act
             await Actions.PressKey("Alt+5");

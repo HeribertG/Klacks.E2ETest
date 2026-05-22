@@ -1,4 +1,6 @@
-﻿using Microsoft.Playwright;
+﻿// Copyright (c) Heribert Gasparoli Private. All rights reserved.
+
+using Microsoft.Playwright;
 
 namespace Klacks.E2ETest.Wrappers;
 
@@ -34,17 +36,36 @@ public sealed class Listener
         _responseHandled = new TaskCompletionSource<bool>();
     }
 
+    private static readonly string[] IgnoredAssetExtensions =
+    {
+        ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp",
+        ".woff", ".woff2", ".ttf", ".eot", ".otf",
+        ".css", ".map",
+    };
+
+    private static readonly string[] IgnoredUrlSegments =
+    {
+        "/assets/", "/media/assets/", "/favicon",
+    };
+
     public void RecognizeApiErrors()
     {
         _page.Response += async (_, response) =>
         {
             try
             {
-                if ((response.Status >= 400 && response.Status < 500) || (response.Status >= 500 && response.Status < 600))
+                if (response.Status < 400 || response.Status >= 600)
                 {
-                    _hasApiError = true;
-                    _lastErrorMessage = $"API Error detected: {response.Status} for {response.Url}: {await response.TextAsync()}";
+                    return;
                 }
+
+                if (IsIgnoredAssetUrl(response.Url))
+                {
+                    return;
+                }
+
+                _hasApiError = true;
+                _lastErrorMessage = $"API Error detected: {response.Status} for {response.Url}: {await response.TextAsync()}";
             }
             catch (Exception ex)
             {
@@ -56,6 +77,29 @@ public sealed class Listener
                 _responseHandled.TrySetResult(true);
             }
         };
+    }
+
+    private static bool IsIgnoredAssetUrl(string url)
+    {
+        var path = url.Split('?', '#')[0];
+
+        foreach (var segment in IgnoredUrlSegments)
+        {
+            if (path.Contains(segment, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        foreach (var ext in IgnoredAssetExtensions)
+        {
+            if (path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

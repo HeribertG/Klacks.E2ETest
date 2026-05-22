@@ -9,7 +9,7 @@ using Klacks.E2ETest.Wrappers;
 namespace Klacks.E2ETest.Messaging;
 
 [TestFixture]
-[Order(95)]
+[Order(90)]
 public class TelegramOnboardingTest : PlaywrightSetup
 {
     private const string WebhookUrl = "http://localhost:5000/api/messaging/webhook/telegram";
