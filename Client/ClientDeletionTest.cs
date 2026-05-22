@@ -11,7 +11,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(14)]
-[Ignore("Depends on ClientCreationTest seed data which is skipped due to modal blocker")]
+[Ignore("Count-based assertions conflict with seeded clients in Bern group (5 seeded + 5 test = 10); needs unique test group or GTE assertions")]
 public class ClientDeletionTest : PlaywrightSetup
 {
     private Listener _listener = null!;

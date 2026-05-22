@@ -10,7 +10,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(11)]
-[Ignore("Depends on ClientCreationTest seed data which is skipped due to modal blocker")]
+[Ignore("Count-based assertions conflict with seeded clients in Bern group (5 seeded + 5 test = 10); needs unique test group or GTE assertions")]
 public class ClientSearchTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -305,8 +305,8 @@ public class ClientSearchTest : PlaywrightSetup
         Assert.That(_listener.HasApiErrors(), Is.False,
             $"No API errors should occur during group filter. Error: {_listener.GetLastErrorMessage()}");
 
-        Assert.That(totalCount, Is.EqualTo(5),
-            $"Should find exactly 5 clients in group 'Bern' (all created clients). Found: {totalCount}");
+        Assert.That(totalCount, Is.GreaterThanOrEqualTo(ClientTestData.Clients.Length),
+            $"Should find at least the {ClientTestData.Clients.Length} created clients in group 'Bern'. Found: {totalCount}");
 
         TestContext.Out.WriteLine($"=== Group filter test completed successfully. Found {totalCount} matching clients ===");
 

@@ -7,7 +7,6 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(10)]
-[Ignore("Modal (ngb-modal-window custom-class) intercepts pointer events on edit-address page in fresh-DB runs; needs UI investigation")]
 public class ClientCreationTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -322,14 +321,37 @@ public class ClientCreationTest : PlaywrightSetup
         await Actions.Wait1000();
         TestContext.Out.WriteLine("Clicked Save button");
 
-        // Assert
-        Assert.That(_listener.HasApiErrors(), Is.False,
-            $"No API errors should occur during client creation. Error: {_listener.GetLastErrorMessage()}");
+        await DismissAddressValidationToastIfPresent();
+
+        // Assert: ignore the 400 address.validation.failed error that the toast handles.
+        if (_listener.HasApiErrors() && !_listener.GetLastErrorMessage().Contains("address.validation.failed"))
+        {
+            Assert.Fail($"Unexpected API error during client creation: {_listener.GetLastErrorMessage()}");
+        }
+        _listener.ResetErrors();
 
         var finalUrl = Actions.ReadCurrentUrl();
         _createdClientIds.Add(finalUrl.Split('/').Last());
         TestContext.Out.WriteLine($"=== Client created successfully: {clientData.FirstName} {clientData.LastName} ===");
         TestContext.Out.WriteLine($"Current URL: {finalUrl}");
+    }
+
+    private async Task DismissAddressValidationToastIfPresent()
+    {
+        var saveAnywayButton = await Page.QuerySelectorAsync(
+            "app-toasts .reply-chip-btn:has-text(\"Trotzdem speichern\"), app-toasts .reply-chip-btn:has-text(\"Save anyway\")");
+
+        if (saveAnywayButton == null)
+        {
+            return;
+        }
+
+        TestContext.Out.WriteLine("Address validation toast detected - clicking 'Save anyway'");
+        await saveAnywayButton.ClickAsync();
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
+        await Actions.Wait1000();
+        TestContext.Out.WriteLine("Address validation bypassed");
     }
 
     private async Task WaitForCountriesToLoad()
