@@ -37,7 +37,7 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
         await RunReliabilityLoopAsync("multi-turn", EditIterations, CreateMultiTurnAsync, AssertFullOnboardingAsync);
     }
 
-    private static readonly string[] EditOps = { "phone", "email", "note", "group_add", "group_remove" };
+    private static readonly string[] EditOps = { "phone", "email", "note", "group_add", "group_remove", "birthdate", "gender", "assign_contract" };
     private static readonly string[] FirstNamePool =
         { "Heribert", "Anna", "Marco", "Lisa", "Tobias", "Sara", "Yasmine", "Pascal", "Nadia", "Bruno" };
     private static readonly Random Rnd = new();
@@ -50,6 +50,9 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
         var groupName = await GetRandomGroupNameAsync();
         Assert.That(groupName, Is.Not.Empty, "Need at least one real group in the database for the group ops.");
         TestContext.Out.WriteLine($"[edit-rot] using real group: '{groupName}'");
+
+        var contractName = await GetRandomContractNameAsync();
+        TestContext.Out.WriteLine($"[edit-rot] using real contract: '{(string.IsNullOrEmpty(contractName) ? "(none)" : contractName)}'");
 
         var successes = 0;
         var failures = new List<string>();
@@ -70,7 +73,7 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
                 continue;
             }
 
-            var (ok, detail) = await RunEditOpAsync(op, firstName, lastName, groupName);
+            var (ok, detail) = await RunEditOpAsync(op, firstName, lastName, groupName, contractName);
             if (ok)
             {
                 successes++;
@@ -104,7 +107,7 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
         return await ClientExistsAsync(lastName);
     }
 
-    private async Task<(bool ok, string detail)> RunEditOpAsync(string op, string firstName, string lastName, string groupName)
+    private async Task<(bool ok, string detail)> RunEditOpAsync(string op, string firstName, string lastName, string groupName, string contractName)
     {
         await EnsureChatOpen();
         await ClearChatAndWait();
@@ -153,6 +156,39 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
                 await ConfirmUntilAsync(async () => !await HasGroupAsync(lastName, groupName));
                 var ok = !await HasGroupAsync(lastName, groupName);
                 return (ok, ok ? $"removed from group {groupName}" : $"still in group {groupName}");
+            }
+            case "birthdate":
+            {
+                var year = Rnd.Next(1960, 2000);
+                var month = Rnd.Next(1, 13);
+                var day = Rnd.Next(1, 29);
+                var date = $"{year:D4}-{month:D2}-{day:D2}";
+                await SendEditAsync($"Setze das Geburtsdatum von {firstName} {lastName} auf {date}. Bitte direkt speichern.");
+                await ConfirmUntilAsync(() => HasBirthdateAsync(lastName, date));
+                var ok = await HasBirthdateAsync(lastName, date);
+                return (ok, ok ? $"birthdate {date}" : $"birthdate {date} not set");
+            }
+            case "gender":
+            {
+                var isFemale = Rnd.Next(2) == 0;
+                var genderWord = isFemale ? "weiblich" : "maennlich";
+                var genderInt = isFemale ? 0 : 1;
+                await SendEditAsync($"Setze das Geschlecht von {firstName} {lastName} auf {genderWord}. Bitte direkt speichern.");
+                await ConfirmUntilAsync(() => HasGenderAsync(lastName, genderInt));
+                var ok = await HasGenderAsync(lastName, genderInt);
+                return (ok, ok ? $"gender {genderWord}" : $"gender {genderWord} not set");
+            }
+            case "assign_contract":
+            {
+                if (string.IsNullOrEmpty(contractName))
+                {
+                    return (true, "skipped (no contract in DB)");
+                }
+                var fromDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                await SendEditAsync($"Weise {firstName} {lastName} den Vertrag '{contractName}' zu, gueltig ab {fromDate}. Bitte direkt speichern.");
+                await ConfirmUntilAsync(() => HasContractAsync(lastName, contractName));
+                var ok = await HasContractAsync(lastName, contractName);
+                return (ok, ok ? $"contract '{contractName}'" : $"contract '{contractName}' not assigned");
             }
             default:
                 return (false, $"unknown op {op}");
@@ -345,6 +381,39 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
     {
         var sql = "SELECT name FROM \"group\" WHERE NOT is_deleted AND name ~ '^[A-Za-z0-9 ]+$' ORDER BY random() LIMIT 1";
         return (await DbHelper.ExecuteSqlAsync(sql)).Trim();
+    }
+
+    private static async Task<string> GetRandomContractNameAsync()
+    {
+        var sql = "SELECT name FROM contract WHERE NOT is_deleted ORDER BY random() LIMIT 1";
+        return (await DbHelper.ExecuteSqlAsync(sql)).Trim();
+    }
+
+    private static async Task<bool> HasBirthdateAsync(string lastName, string isoDate)
+    {
+        var sql =
+            $"SELECT count(*) FROM client WHERE name='{Escape(lastName)}' AND NOT is_deleted " +
+            $"AND birthdate::date = '{Escape(isoDate)}'::date";
+        return ParseInt((await DbHelper.ExecuteSqlAsync(sql)).Trim()) > 0;
+    }
+
+    private static async Task<bool> HasGenderAsync(string lastName, int genderInt)
+    {
+        var sql =
+            $"SELECT count(*) FROM client WHERE name='{Escape(lastName)}' AND NOT is_deleted " +
+            $"AND gender = {genderInt}";
+        return ParseInt((await DbHelper.ExecuteSqlAsync(sql)).Trim()) > 0;
+    }
+
+    private static async Task<bool> HasContractAsync(string lastName, string contractName)
+    {
+        var sql =
+            "SELECT count(*) FROM client_contract cc " +
+            "JOIN client c ON c.id = cc.client_id " +
+            "JOIN contract ct ON ct.id = cc.contract_id " +
+            $"WHERE c.name='{Escape(lastName)}' AND NOT c.is_deleted " +
+            $"AND ct.name ILIKE '%{Escape(contractName)}%'";
+        return ParseInt((await DbHelper.ExecuteSqlAsync(sql)).Trim()) > 0;
     }
 
     private static async Task SetupGroupMembershipAsync(string lastName, string groupName)
