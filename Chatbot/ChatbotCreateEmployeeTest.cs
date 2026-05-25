@@ -35,6 +35,7 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
     private const string ModelClaudeHaiku = "claude-haiku-4-5-20251001";
     private const string ModelClaudeSonnet = "claude-sonnet-4-6";
     private const string ModelDeepseekPro = "deepseek-v4-pro";
+    private const string ModelSwissAiApertus = "swissai-apertus-70b";
 
     private const string PhonePrefix = "+41";
     private const string CountryCodeCh = "CH";
@@ -47,7 +48,8 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
         ModelGeminiFlash35,
         ModelClaudeHaiku,
         ModelClaudeSonnet,
-        ModelDeepseekPro
+        ModelDeepseekPro,
+        ModelSwissAiApertus
     };
 
     private static readonly string[] EditOps = { "phone", "email", "note", "group_add", "group_remove", "birthdate", "gender", "assign_contract" };
