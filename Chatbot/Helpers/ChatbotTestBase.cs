@@ -19,6 +19,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
     private const string CssMessageText = ".message-text";
 
     private const int MaxInputRetries = 3;
+    private const int MaxNavigationRetries = 5;
     private const int InputEnabledTimeoutMs = 10000;
     private const int DefaultBotResponseTimeoutMs = 90000;
 
@@ -107,9 +108,25 @@ public abstract class ChatbotTestBase : PlaywrightSetup
     protected async Task<int> GetMessageCount()
     {
         var messagesSelector = GetChatSelector(ControlKeyMessages);
-        var messages = await Actions.QuerySelectorAll($"#{messagesSelector} {CssAssistantMessage}");
-        return messages.Count;
+        for (var attempt = 0; attempt < MaxNavigationRetries; attempt++)
+        {
+            try
+            {
+                var messages = await Actions.QuerySelectorAll($"#{messagesSelector} {CssAssistantMessage}");
+                return messages.Count;
+            }
+            catch (Exception ex) when (IsNavigationRace(ex))
+            {
+                await Actions.Wait500();
+            }
+        }
+
+        return 0;
     }
+
+    private static bool IsNavigationRace(Exception ex) =>
+        ex.Message.Contains("Execution context was destroyed", StringComparison.OrdinalIgnoreCase)
+        || ex.Message.Contains("because of a navigation", StringComparison.OrdinalIgnoreCase);
 
     protected async Task<string> WaitForBotResponse(int previousMessageCount, int timeoutMs = DefaultBotResponseTimeoutMs)
     {
@@ -121,22 +138,29 @@ public abstract class ChatbotTestBase : PlaywrightSetup
 
         while (DateTime.UtcNow - startTime < timeout)
         {
-            var typingIndicator = await Actions.QuerySelector($"#{messagesSelector} {CssTypingIndicator}");
-            var currentMessages = await Actions.QuerySelectorAll($"#{messagesSelector} {CssAssistantMessage}");
-
-            if (typingIndicator == null && currentMessages.Count > previousMessageCount)
+            try
             {
-                var lastMessage = currentMessages[currentMessages.Count - 1];
-                var messageText = await Actions.QueryChildSelector(lastMessage, CssMessageText);
-                if (messageText != null)
+                var typingIndicator = await Actions.QuerySelector($"#{messagesSelector} {CssTypingIndicator}");
+                var currentMessages = await Actions.QuerySelectorAll($"#{messagesSelector} {CssAssistantMessage}");
+
+                if (typingIndicator == null && currentMessages.Count > previousMessageCount)
                 {
-                    var text = await Actions.GetElementText(messageText);
-                    if (!string.IsNullOrWhiteSpace(text))
+                    var lastMessage = currentMessages[currentMessages.Count - 1];
+                    var messageText = await Actions.QueryChildSelector(lastMessage, CssMessageText);
+                    if (messageText != null)
                     {
-                        TestContext.Out.WriteLine($"Bot responded after {(DateTime.UtcNow - startTime).TotalSeconds:F1}s");
-                        return text.Trim();
+                        var text = await Actions.GetElementText(messageText);
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            TestContext.Out.WriteLine($"Bot responded after {(DateTime.UtcNow - startTime).TotalSeconds:F1}s");
+                            return text.Trim();
+                        }
                     }
                 }
+            }
+            catch (Exception ex) when (IsNavigationRace(ex))
+            {
+                TestContext.Out.WriteLine("Navigation in progress while reading chat; retrying...");
             }
 
             await Actions.Wait500();

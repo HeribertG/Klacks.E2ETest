@@ -1,51 +1,136 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
+/**
+ * Multi-LLM reliability test for Klacksy creating a client (employee) end-to-end via the
+ * chat UI. Each test case runs against a specific LLM model and verifies clean data in the
+ * database: system-generated id_number, unique id_number, type=Employee, membership, email,
+ * phone (with correct prefix/value split), address with country=CH and non-empty state.
+ * Hard-deletes test clients between runs; restores the original default LLM model on teardown.
+ * @param model - The api_model_id of the LLM model under test (drives default-model switching)
+ */
+
 using Klacks.E2ETest.Chatbot.Helpers;
 
 namespace Klacks.E2ETest.Chatbot;
 
-/// <summary>
-/// Reliability test for Klacksy creating and updating a client (employee) end-to-end via the
-/// chat UI. Verifies each run against the database: client with system-generated id_number,
-/// mandatory membership, email + phone communications, correct entity type, and (for the edit
-/// flow) a newly added phone. Hard-deletes the test client between runs so each iteration is clean.
-/// </summary>
 [TestFixture]
 [Order(59)]
 public class ChatbotCreateEmployeeTest : ChatbotTestBase
 {
     private const string SkillCreateEmployee = "create_employee";
+    private const string SkillAddClientPhone = "add_client_phone";
     private const int CreateTimeoutMs = 120000;
-    private const int Iterations = 3;
-    private const int EditIterations = 2;
     private const int MaxConfirmTurns = 6;
 
     private const int CommTypePhone = 1;
     private const int CommTypeEmail = 4;
+    private const int ClientTypeEmployee = 0;
+    private const int MembershipCountExpected = 1;
+    private const int DelayAfterModelSwitchMs = 1000;
+    private const int ConfirmLoopDelayMs = 2500;
+    private const int TurnDelayMs = 1500;
 
-    [Test]
-    public async Task Klacksy_CreatesEmployee_SingleMessage_Reliably()
-    {
-        await AssertSkillEnabled(SkillCreateEmployee);
-        await RunReliabilityLoopAsync("single-message", Iterations, CreateSingleMessageAsync, AssertFullOnboardingAsync);
-    }
+    private const string ModelGeminiFlash25 = "gemini-2.5-flash";
+    private const string ModelGeminiFlash35 = "gemini-3.5-flash";
+    private const string ModelClaudeHaiku = "claude-haiku-4-5-20251001";
+    private const string ModelClaudeSonnet = "claude-sonnet-4-6";
+    private const string ModelDeepseekPro = "deepseek-v4-pro";
 
-    [Test]
-    public async Task Klacksy_CreatesEmployee_MultiTurn_Reliably()
+    private const string PhonePrefix = "+41";
+    private const string CountryCodeCh = "CH";
+
+    private static string _originalDefaultModel = string.Empty;
+
+    public static readonly string[] LlmModels =
     {
-        await AssertSkillEnabled(SkillCreateEmployee);
-        await RunReliabilityLoopAsync("multi-turn", EditIterations, CreateMultiTurnAsync, AssertFullOnboardingAsync);
-    }
+        ModelGeminiFlash25,
+        ModelGeminiFlash35,
+        ModelClaudeHaiku,
+        ModelClaudeSonnet,
+        ModelDeepseekPro
+    };
 
     private static readonly string[] EditOps = { "phone", "email", "note", "group_add", "group_remove", "birthdate", "gender", "assign_contract" };
     private static readonly string[] FirstNamePool =
         { "Heribert", "Anna", "Marco", "Lisa", "Tobias", "Sara", "Yasmine", "Pascal", "Nadia", "Bruno" };
     private static readonly Random Rnd = new();
 
+    [OneTimeSetUp]
+    public async Task SnapshotDefaultModel()
+    {
+        var sql = "SELECT api_model_id FROM llm_models WHERE is_default = true LIMIT 1";
+        _originalDefaultModel = (await DbHelper.ExecuteSqlAsync(sql)).Trim();
+        TestContext.Out.WriteLine($"[matrix] original default model: '{_originalDefaultModel}'");
+    }
+
+    [OneTimeTearDown]
+    public async Task RestoreDefaultModel()
+    {
+        if (string.IsNullOrEmpty(_originalDefaultModel))
+            return;
+
+        var esc = Escape(_originalDefaultModel);
+        var sql = $"UPDATE llm_models SET is_default = (api_model_id = '{esc}') WHERE is_enabled = true;";
+        await DbHelper.ExecuteSqlAsync(sql);
+        TestContext.Out.WriteLine($"[matrix] restored default model to: '{_originalDefaultModel}'");
+    }
+
+    [Test]
+    [TestCaseSource(nameof(LlmModels))]
+    public async Task Klacksy_CreatesEmployee_SingleMessage_PerModel(string model)
+    {
+        await AssertModelEnabled(model);
+        await AssertSkillEnabled(SkillCreateEmployee);
+        await SwitchDefaultModelAsync(model);
+
+        var firstName = FirstNamePool[Rnd.Next(FirstNamePool.Length)];
+        var lastName = $"Etest{Rnd.Next(10000, 99999)}";
+        TestContext.Out.WriteLine($"=== [single-msg/{model}] '{firstName} {lastName}' ===");
+
+        await CleanupClientAsync(lastName);
+        try
+        {
+            await CreateSingleMessageAsync(firstName, lastName);
+            var (ok, detail) = await AssertCleanDataAsync(lastName);
+            TestContext.Out.WriteLine($"[single-msg/{model}] result: ok={ok} detail={detail}");
+            Assert.That(ok, Is.True, $"[{model}] clean-data check failed: {detail}");
+        }
+        finally
+        {
+            await CleanupClientAsync(lastName);
+        }
+    }
+
+    [Test]
+    [TestCaseSource(nameof(LlmModels))]
+    public async Task Klacksy_CreatesEmployee_MultiTurn_PerModel(string model)
+    {
+        await AssertModelEnabled(model);
+        await AssertSkillEnabled(SkillCreateEmployee);
+        await SwitchDefaultModelAsync(model);
+
+        var firstName = FirstNamePool[Rnd.Next(FirstNamePool.Length)];
+        var lastName = $"Etest{Rnd.Next(10000, 99999)}";
+        TestContext.Out.WriteLine($"=== [multi-turn/{model}] '{firstName} {lastName}' ===");
+
+        await CleanupClientAsync(lastName);
+        try
+        {
+            await CreateMultiTurnAsync(firstName, lastName);
+            var (ok, detail) = await AssertCleanDataAsync(lastName);
+            TestContext.Out.WriteLine($"[multi-turn/{model}] result: ok={ok} detail={detail}");
+            Assert.That(ok, Is.True, $"[{model}] clean-data check failed: {detail}");
+        }
+        finally
+        {
+            await CleanupClientAsync(lastName);
+        }
+    }
+
     [Test]
     public async Task Klacksy_EditOperations_Rotating_Reliably()
     {
-        await AssertSkillEnabled("add_client_phone");
+        await AssertSkillEnabled(SkillAddClientPhone);
 
         var groupName = await GetRandomGroupNameAsync();
         Assert.That(groupName, Is.Not.Empty, "Need at least one real group in the database for the group ops.");
@@ -91,6 +176,23 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
         TestContext.Out.WriteLine($"[edit-rot] {successes}/{EditOps.Length} edit ops succeeded.");
         Assert.That(successes, Is.EqualTo(EditOps.Length),
             $"All rotating edit ops must succeed. Failures: {string.Join(" | ", failures)}");
+    }
+
+    private static async Task AssertModelEnabled(string model)
+    {
+        var sql = $"SELECT is_enabled FROM llm_models WHERE api_model_id = '{Escape(model)}' LIMIT 1";
+        var result = (await DbHelper.ExecuteSqlAsync(sql)).Trim();
+        if (result != "t")
+            Assert.Inconclusive($"Model '{model}' is not enabled in llm_models — skipping.");
+    }
+
+    private static async Task SwitchDefaultModelAsync(string model)
+    {
+        var esc = Escape(model);
+        var sql = $"UPDATE llm_models SET is_default = (api_model_id = '{esc}') WHERE is_enabled = true;";
+        await DbHelper.ExecuteSqlAsync(sql);
+        TestContext.Out.WriteLine($"[matrix] switched default model to: '{model}'");
+        await Task.Delay(DelayAfterModelSwitchMs);
     }
 
     private async Task<bool> CreateBaseClientAsync(string firstName, string lastName)
@@ -200,46 +302,7 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
         var before = await GetMessageCount();
         await SendChatMessage(message);
         var response = await WaitForBotResponse(before, CreateTimeoutMs);
-        TestContext.Out.WriteLine($"Edit bot: {Trim(response)}");
-    }
-
-    private async Task RunReliabilityLoopAsync(
-        string label,
-        int iterations,
-        Func<string, string, Task> flow,
-        Func<string, Task<(bool ok, string detail)>> verify)
-    {
-        var successes = 0;
-        var failures = new List<string>();
-
-        for (var i = 1; i <= iterations; i++)
-        {
-            var firstName = FirstNamePool[Rnd.Next(FirstNamePool.Length)];
-            var lastName = $"Etest{Rnd.Next(10000, 99999)}";
-            TestContext.Out.WriteLine($"=== [{label}] Iteration {i}/{iterations}: '{firstName} {lastName}' ===");
-
-            await CleanupClientAsync(lastName);
-
-            await flow(firstName, lastName);
-            var (ok, detail) = await verify(lastName);
-
-            if (ok)
-            {
-                successes++;
-                TestContext.Out.WriteLine($"[{label}] Iteration {i}: SUCCESS ({detail})");
-            }
-            else
-            {
-                failures.Add($"Iter {i}: {detail}");
-                TestContext.Out.WriteLine($"[{label}] Iteration {i}: FAILED ({detail})");
-            }
-
-            await CleanupClientAsync(lastName);
-        }
-
-        TestContext.Out.WriteLine($"[{label}] Reliability: {successes}/{iterations} succeeded.");
-        Assert.That(successes, Is.EqualTo(iterations),
-            $"[{label}] must succeed in all {iterations} runs. Failures: {string.Join(" | ", failures)}");
+        TestContext.Out.WriteLine($"Edit bot: {TrimText(response)}");
     }
 
     private async Task CreateSingleMessageAsync(string firstName, string lastName)
@@ -253,7 +316,7 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
             "Geschlecht maennlich, Geburtsdatum 1959-10-25, Adresse Kirchstrasse 52, 3097 Liebefeld, Kanton BE, Schweiz, " +
             $"Email {EmailFor(lastName)}, Telefon 079 555 11 22. Bitte lege ihn direkt an.");
         var response = await WaitForBotResponse(before, CreateTimeoutMs);
-        TestContext.Out.WriteLine($"Bot: {Trim(response)}");
+        TestContext.Out.WriteLine($"Bot: {TrimText(response)}");
 
         await ConfirmUntilAsync(() => ClientExistsAsync(lastName));
     }
@@ -282,8 +345,8 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
             await SendChatMessage(turn);
             var response = await WaitForBotResponse(before, CreateTimeoutMs);
             TestContext.Out.WriteLine($"User: {turn}");
-            TestContext.Out.WriteLine($"Bot: {Trim(response)}");
-            await Task.Delay(1500);
+            TestContext.Out.WriteLine($"Bot: {TrimText(response)}");
+            await Task.Delay(TurnDelayMs);
         }
 
         await ConfirmUntilAsync(() => ClientExistsAsync(lastName));
@@ -293,7 +356,7 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
     {
         for (var turn = 0; turn < MaxConfirmTurns; turn++)
         {
-            await Task.Delay(2500);
+            await Task.Delay(ConfirmLoopDelayMs);
             if (await done())
             {
                 return;
@@ -303,37 +366,87 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
             await SendChatMessage(
                 "Ja, bitte jetzt direkt ausfuehren und speichern. Frag nicht weiter nach und navigiere nicht.");
             var response = await WaitForBotResponse(before, CreateTimeoutMs);
-            TestContext.Out.WriteLine($"Confirm {turn + 1}: {Trim(response)}");
+            TestContext.Out.WriteLine($"Confirm {turn + 1}: {TrimText(response)}");
         }
 
-        await Task.Delay(2500);
+        await Task.Delay(ConfirmLoopDelayMs);
     }
 
-    private static async Task<(bool ok, string detail)> AssertFullOnboardingAsync(string lastName)
+    private static async Task<(bool ok, string detail)> AssertCleanDataAsync(string lastName)
     {
-        var sql =
+        var clientSql =
             "SELECT c.id_number, c.type, " +
             "(SELECT count(*) FROM membership m WHERE m.client_id=c.id AND NOT m.is_deleted), " +
-            $"(SELECT count(*) FROM communication co WHERE co.client_id=c.id AND co.type={CommTypeEmail}), " +
-            $"(SELECT count(*) FROM communication co WHERE co.client_id=c.id AND co.type={CommTypePhone}), " +
-            "(SELECT count(*) FROM address a WHERE a.client_id=c.id AND NOT a.is_deleted) " +
+            $"(SELECT count(*) FROM communication co WHERE co.client_id=c.id AND co.type={CommTypeEmail} AND NOT co.is_deleted), " +
+            $"(SELECT count(*) FROM communication co WHERE co.client_id=c.id AND co.type={CommTypePhone} AND NOT co.is_deleted), " +
+            "(SELECT count(*) FROM address a WHERE a.client_id=c.id AND NOT a.is_deleted), " +
+            "(SELECT COALESCE(a.country,'') FROM address a WHERE a.client_id=c.id AND NOT a.is_deleted LIMIT 1), " +
+            "(SELECT COALESCE(a.state,'') FROM address a WHERE a.client_id=c.id AND NOT a.is_deleted LIMIT 1) " +
             $"FROM client c WHERE c.name='{Escape(lastName)}' AND NOT c.is_deleted LIMIT 1";
-        var result = (await DbHelper.ExecuteSqlAsync(sql)).Trim();
-        var parts = result.Split('|');
-        if (parts.Length < 6)
+
+        var clientResult = (await DbHelper.ExecuteSqlAsync(clientSql)).Trim();
+        var parts = clientResult.Split('|');
+        if (parts.Length < 8)
         {
-            return (false, $"client not found (raw='{result}')");
+            return (false, $"client not found or query error (raw='{clientResult}')");
         }
 
         var idNumber = ParseInt(parts[0]);
         var type = ParseInt(parts[1]);
-        var membership = ParseInt(parts[2]);
-        var emails = ParseInt(parts[3]);
-        var phones = ParseInt(parts[4]);
-        var addresses = ParseInt(parts[5]);
+        var membershipCount = ParseInt(parts[2]);
+        var emailCount = ParseInt(parts[3]);
+        var phoneCount = ParseInt(parts[4]);
+        var addressCount = ParseInt(parts[5]);
+        var country = parts[6].Trim();
+        var state = parts[7].Trim();
 
-        var detail = $"id_number={idNumber}, type={type}, membership={membership}, email={emails}, phone={phones}, address={addresses}";
-        var ok = idNumber > 0 && type == 0 && membership == 1 && emails >= 1 && phones >= 1 && addresses >= 1;
+        string phonePrefix = string.Empty;
+        string phoneValue = string.Empty;
+        if (phoneCount > 0)
+        {
+            var phoneSql =
+                $"SELECT COALESCE(co.prefix,''), COALESCE(co.value,'') FROM communication co " +
+                $"JOIN client c ON c.id=co.client_id " +
+                $"WHERE c.name='{Escape(lastName)}' AND co.type={CommTypePhone} AND NOT co.is_deleted LIMIT 1";
+            var phoneResult = (await DbHelper.ExecuteSqlAsync(phoneSql)).Trim();
+            var phoneParts = phoneResult.Split('|');
+            if (phoneParts.Length >= 2)
+            {
+                phonePrefix = phoneParts[0].Trim();
+                phoneValue = phoneParts[1].Trim();
+            }
+        }
+
+        string idUniqueness = string.Empty;
+        if (idNumber > 0)
+        {
+            var uniqueSql = $"SELECT count(*) FROM client WHERE id_number = {idNumber} AND NOT is_deleted";
+            idUniqueness = (await DbHelper.ExecuteSqlAsync(uniqueSql)).Trim();
+        }
+
+        var idUnique = idUniqueness == "1";
+        var phonePrefixOk = phonePrefix == PhonePrefix;
+        var phoneValueOk = phoneCount == 0 || (!phoneValue.StartsWith("+") && !phoneValue.StartsWith("0"));
+
+        var detail =
+            $"id_number={idNumber}(unique_count={idUniqueness}), type={type}, membership={membershipCount}, " +
+            $"email={emailCount}, phone={phoneCount}, address={addressCount}, " +
+            $"country='{country}', state='{state}', " +
+            $"phone_prefix='{phonePrefix}', phone_value='{phoneValue}'";
+
+        var ok =
+            idNumber > 0 &&
+            idUnique &&
+            type == ClientTypeEmployee &&
+            membershipCount == MembershipCountExpected &&
+            emailCount >= 1 &&
+            phoneCount >= 1 &&
+            addressCount >= 1 &&
+            country == CountryCodeCh &&
+            !string.IsNullOrEmpty(state) &&
+            phonePrefixOk &&
+            phoneValueOk;
+
         return (ok, detail);
     }
 
@@ -451,5 +564,5 @@ public class ChatbotCreateEmployeeTest : ChatbotTestBase
 
     private static string Escape(string value) => value.Replace("'", "''");
 
-    private static string Trim(string text) => text[..Math.Min(160, text.Length)];
+    private static string TrimText(string text) => text[..Math.Min(160, text.Length)];
 }

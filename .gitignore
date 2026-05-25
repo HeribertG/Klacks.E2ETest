@@ -33,3 +33,4 @@ nunit_random_seed.tmp
 # Debug files
 debug_*.png
 /TestResults/results.trx
+TestResults/
