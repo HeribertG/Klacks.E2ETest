@@ -1,6 +1,7 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
 using Klacks.E2ETest.Chatbot.Helpers;
+using Klacks.E2ETest.Constants;
 
 namespace Klacks.E2ETest.Chatbot
 {
@@ -77,6 +78,7 @@ namespace Klacks.E2ETest.Chatbot
             await WaitForBotResponse(_messageCountBefore, 90000);
             await Actions.Wait2000();
 
+            await NavigateToMacrosSectionAsync();
             var macroExists = await MacroExistsInDom(MacroName);
             TestContext.Out.WriteLine($"  {MacroName}: {(macroExists ? "FOUND in DOM" : "NOT FOUND in DOM")}");
 
@@ -121,6 +123,7 @@ namespace Klacks.E2ETest.Chatbot
             await WaitForBotResponse(_messageCountBefore, 90000);
             await Actions.Wait2000();
 
+            await NavigateToMacrosSectionAsync();
             var macroExists = await MacroExistsInDom(MacroName);
             TestContext.Out.WriteLine($"  {MacroName}: {(macroExists ? "STILL EXISTS" : "DELETED")}");
 
@@ -187,9 +190,22 @@ namespace Klacks.E2ETest.Chatbot
             Assert.Fail($"Macro '{macroName}' was not deleted after {MaxRetries} attempts");
         }
 
+        private async Task NavigateToMacrosSectionAsync()
+        {
+            // create_macro / delete_macro persist via the backend skill; the macro rows only render on
+            // the Settings -> Macros page, so navigate there (which reloads the list) before asserting
+            // the DOM. Mirrors the ChatbotKimiProviderTest open-settings + scroll-to-section pattern.
+            await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait500();
+            await Actions.ScrollIntoViewById(SettingsMacroIds.MacroSection);
+            await Actions.Wait500();
+        }
+
         private async Task<bool> WaitForMacroInDom(string macroName)
         {
             TestContext.Out.WriteLine($"Waiting for macro '{macroName}' to appear in DOM...");
+            await NavigateToMacrosSectionAsync();
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < WaitDomTimeoutMs)
             {
@@ -222,6 +238,7 @@ namespace Klacks.E2ETest.Chatbot
         private async Task<bool> WaitForMacroRemovedFromDom(string macroName)
         {
             TestContext.Out.WriteLine($"Waiting for macro '{macroName}' to be removed from DOM...");
+            await NavigateToMacrosSectionAsync();
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < WaitRemovedTimeoutMs)
             {
