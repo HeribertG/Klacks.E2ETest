@@ -7,7 +7,6 @@ namespace Klacks.E2ETest.Chatbot
 {
     [TestFixture]
     [Order(54)]
-    [Ignore("Chatbot tests depend on external LLM; verify locally then unignore. Nav-fix + tool-budget cap fix landed; live green pending.")]
     public class ChatbotMacrosTest : ChatbotTestBase
     {
         private const string CssMacroRowName = "input[id^='macro-row-name-']";
@@ -193,9 +192,13 @@ namespace Klacks.E2ETest.Chatbot
         private async Task NavigateToMacrosSectionAsync()
         {
             // create_macro / delete_macro persist via the backend skill; the macro rows only render on
-            // the Settings -> Macros page, so navigate there (which reloads the list) before asserting
-            // the DOM. Mirrors the ChatbotKimiProviderTest open-settings + scroll-to-section pattern.
+            // the Settings -> Macros page. Navigating alone is not enough: if the settings page is
+            // already loaded, Angular keeps the cached macros list (a deleted macro would linger), so a
+            // hard Reload is required to force a fresh fetch from the backend.
             await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
+            await Actions.WaitForSpinnerToDisappear();
+            await Actions.Wait500();
+            await Actions.Reload();
             await Actions.WaitForSpinnerToDisappear();
             await Actions.Wait500();
             await Actions.ScrollIntoViewById(SettingsMacroIds.MacroSection);
