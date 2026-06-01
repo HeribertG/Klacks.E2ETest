@@ -26,7 +26,6 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Order(60)]
-[Ignore("planner E2E — needs running app + live model keys; verify locally then unignore")]
 public class ChatbotPlannerSkillsTest : ChatbotTestBase
 {
     private const string SkillCoverAbsence = "cover_absence";
