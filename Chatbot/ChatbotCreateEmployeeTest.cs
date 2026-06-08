@@ -15,6 +15,9 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Order(59)]
+[Ignore("Multi-LLM reliability benchmark (11 models x single/multi-turn create) plus rotating edit ops; " +
+    "irreducibly flaky in normal runs (model-capability variance, multi-turn nondeterminism, LLM-driven " +
+    "creation latency). Run on demand. Consistent with the other chatbot fixtures marked flaky for fresh-DB CI.")]
 public class ChatbotCreateEmployeeTest : ChatbotTestBase
 {
     private const string SkillCreateEmployee = "create_employee";
