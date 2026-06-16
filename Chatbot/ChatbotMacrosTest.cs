@@ -113,6 +113,45 @@ namespace Klacks.E2ETest.Chatbot
             _macroCreated = false;
         }
 
+        [Test, Order(6)]
+        public async Task Step6_AutoRefreshShowsNewMacroWithoutReload()
+        {
+            TestContext.Out.WriteLine("=== Step 6: Auto-refresh shows new macro WITHOUT manual reload ===");
+            var autoName = $"AutoRefreshMacro_{DateTime.UtcNow:yyyyMMddHHmmss}";
+
+            await NavigateToMacrosSectionAsync();
+            Assert.That(await MacroExistsInDom(autoName), Is.False, "macro must not exist before creation");
+
+            await EnsureChatOpen();
+            await ClearChatAndWait();
+            _messageCountBefore = await GetMessageCount();
+            await SendChatMessage(
+                $"Erstelle ein neues Macro mit dem Namen '{autoName}' und genau folgendem Script:\n{MacroScript}");
+            await WaitForBotResponse(_messageCountBefore, CreateTimeoutMs);
+
+            var startTime = DateTime.UtcNow;
+            var foundViaAutoRefresh = false;
+            while ((DateTime.UtcNow - startTime).TotalMilliseconds < WaitDomTimeoutMs)
+            {
+                if (await MacroExistsInDom(autoName))
+                {
+                    foundViaAutoRefresh = true;
+                    break;
+                }
+
+                await Actions.Wait500();
+            }
+
+            Assert.That(foundViaAutoRefresh, Is.True,
+                $"Macro '{autoName}' should appear via automatic page-refresh WITHOUT a manual reload (F5).");
+            Assert.That(TestListener.HasApiErrors(), Is.False,
+                $"No API errors should occur. Error: {TestListener.GetLastErrorMessage()}");
+
+            TestContext.Out.WriteLine("AUTO-REFRESH VERIFIED: macro appeared without manual reload");
+
+            await DeleteMacroWithRetry(autoName);
+        }
+
         [Test, Order(5)]
         [Ignore("Re-verifies deletion via 'list all macros' chat, which is irreducibly flaky (bot response " +
             "exceeds 90s across models). Deletion is already asserted deterministically in Step4 via the DOM " +
