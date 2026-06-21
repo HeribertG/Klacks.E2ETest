@@ -134,10 +134,17 @@ public class ChatbotCutShiftTest : ChatbotTestBase
 
     private static async Task SoftDeletePreviousOrderAsync()
     {
+        // Delete the whole order family: the SealedOrder named OrderName AND every shift whose
+        // original_id points at it. cut_shift RENAMES the split parts (Frühdienst/…), so a name-only
+        // delete would orphan the active parts in the group (they then keep showing up in
+        // find_split_shift_candidates). Match the children by original_id, not by name.
+        var esc = Escape(OrderName);
+        var family =
+            $"SELECT id FROM shift WHERE name='{esc}' " +
+            $"UNION SELECT id FROM shift WHERE original_id IN (SELECT id FROM shift WHERE name='{esc}')";
         var sql =
-            "UPDATE group_item SET is_deleted=true, deleted_time=now() WHERE shift_id IN " +
-            $"(SELECT id FROM shift WHERE name='{Escape(OrderName)}' AND NOT is_deleted);" +
-            $"UPDATE shift SET is_deleted=true, deleted_time=now() WHERE name='{Escape(OrderName)}' AND NOT is_deleted;";
+            $"UPDATE group_item SET is_deleted=true, deleted_time=now() WHERE NOT is_deleted AND shift_id IN ({family});" +
+            $"UPDATE shift SET is_deleted=true, deleted_time=now() WHERE NOT is_deleted AND id IN ({family});";
         await DbHelper.ExecuteSqlAsync(sql);
     }
 
