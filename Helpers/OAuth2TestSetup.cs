@@ -30,7 +30,7 @@ public class OAuth2TestSetup : PageTest
                 .Build();
 
         _isHeadless = bool.Parse(_configuration["PlaywrightConfig:HeadLess"] ?? "true");
-        BaseUrl = _configuration["PlaywrightConfig:BaseUrl"] ?? throw new InvalidOperationException("Can't read the base url.");
+        BaseUrl = global::Klacks.E2ETest.Helpers.PlaywrightSetup.DefaultBaseUrl;
         ApiBaseUrl = _configuration["PlaywrightConfig:ApiBaseUrl"] ?? "http://localhost:5000/api/backend/";
     }
 

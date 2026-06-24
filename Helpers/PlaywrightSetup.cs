@@ -8,6 +8,8 @@ namespace Klacks.E2ETest.Helpers;
 
 public class PlaywrightSetup : PageTest
 {
+    public const string DefaultBaseUrl = "http://localhost:4200/";
+
     public string BaseUrl { get; }
 
     public string UserName { get; }
@@ -46,7 +48,7 @@ public class PlaywrightSetup : PageTest
         _recordAllTests = bool.Parse(_configuration["PlaywrightConfig:RecordAllTests"] ?? "false");
         _isHeadless = bool.Parse(_configuration["PlaywrightConfig:HeadLess"] ?? "true");
 
-        BaseUrl = _configuration["PlaywrightConfig:BaseUrl"] ?? throw new InvalidOperationException("Can't read the base url.");
+        BaseUrl = DefaultBaseUrl;
 
         CurrentDate = DateTime.Now.ToString("dd.MM.yyyy");
         TimeStamp = DateTime.Now.Ticks.ToString();
