@@ -1,7 +1,7 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
 /**
- * Live proof of the data-driven recipe "abwesenheit-fuer-mitarbeiter-eintragen" (place an absence on an
+ * Live proof of the data-driven recipe "add-absence-for-employee" (place an absence on an
  * employee). The recipe chain is ask clientName -> search search_employees (capture clientId) ->
  * ask absenceType -> ask absenceDate -> search list_absence_types (surface the type ids, no capture) ->
  * mutate add_break (the model picks the absenceId matching the type the user named). DB-asserted via the

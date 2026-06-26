@@ -1,7 +1,7 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
 /**
- * Live proof of the data-driven recipe "externen-mitarbeiter-zu-naechster-gruppe" (add an external
+ * Live proof of the data-driven recipe "add-extern-employee-to-nearest-group" (add an external
  * employee to the geographically nearest group). The recipe chain is ask clientName ->
  * search search_employees(entityType=ExternEmp) (capture clientId) -> mutate add_client_to_nearest_group.
  * DB-asserted via the group_item row that links the external employee to a group carrying coordinates

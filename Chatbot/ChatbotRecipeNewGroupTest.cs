@@ -1,7 +1,7 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
 /**
- * Live proof of the data-driven recipe "neue-gruppe-erstellen" (create a new group). The recipe chain is
+ * Live proof of the data-driven recipe "create-group" (create a new group). The recipe chain is
  * ask groupName -> ask validFrom -> ask placement (root or parent group) -> ask calendarName ->
  * search list_calendars (capture calendarId) -> search list_groups (surface parent candidates, no capture)
  * -> mutate create_group. Two flows, both DB-asserted:

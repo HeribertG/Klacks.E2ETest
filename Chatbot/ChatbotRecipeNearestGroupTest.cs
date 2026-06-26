@@ -1,7 +1,7 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
 /**
- * Live proof of the data-driven recipe "kunde-zu-naechster-gruppe" (add a customer to the geographically
+ * Live proof of the data-driven recipe "add-customer-to-nearest-group" (add a customer to the geographically
  * nearest group). The recipe chain is ask clientName -> search search_employees(entityType=Customer)
  * (capture clientId) -> mutate add_client_to_nearest_group. The nearest group is derived from group
  * coordinates (geocoded from the group's city name). DB-asserted via the group_item row that links the

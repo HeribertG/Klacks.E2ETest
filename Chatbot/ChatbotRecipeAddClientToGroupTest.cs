@@ -1,7 +1,7 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
 /**
- * Live proof of the data-driven recipe engine on the "mitarbeiter-in-gruppe-aufnehmen" recipe
+ * Live proof of the data-driven recipe engine on the "add-employee-to-group" recipe
  * (ask / search+capture / mutate, with a durable slot bag across turns). Two flows, both DB-asserted
  * via the group_item row that links the employee to the group:
  *   - Single-turn (extraction): the opening message names group, employee and start date, so the

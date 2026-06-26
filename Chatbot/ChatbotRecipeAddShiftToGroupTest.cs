@@ -1,7 +1,7 @@
 // Copyright (c) Heribert Gasparoli Private. All rights reserved.
 
 /**
- * Live proof of the data-driven recipe "dienst-in-gruppe-aufnehmen" (add a shift/order to a group). The
+ * Live proof of the data-driven recipe "add-shift-to-group" (add a shift/order to a group). The
  * recipe chain is ask shiftName -> search search_shifts (capture shiftId) -> ask groupName ->
  * search list_groups (capture groupId) -> mutate add_shift_to_group. DB-asserted via the group_item row
  * that links the shift to the group. Single-turn (extraction): the opening message names the shift and the
