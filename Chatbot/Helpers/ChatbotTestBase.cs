@@ -23,6 +23,17 @@ public abstract class ChatbotTestBase : PlaywrightSetup
     private const int InputEnabledTimeoutMs = 10000;
     private const int DefaultBotResponseTimeoutMs = 90000;
 
+    // AsideComponent only renders the classic aside panel (#assistant-chat-input etc.) when
+    // outputMode is NOT audio/both-auto — those route the chat into the floating voice shell
+    // instead, leaving the selectors these tests drive absent/hidden. Force text mode for the
+    // fixture's duration so the suite runs deterministically regardless of the current
+    // Klacksy voice-output setting, and restore it afterward since that setting is also used
+    // interactively outside these tests.
+    private const string OutputModeSettingType = "ASSISTANT_OUTPUT_MODE";
+    private const string NonFloatingOutputMode = "text";
+
+    private string? _originalOutputMode;
+
     protected Dictionary<string, string> ChatSelectors { get; private set; } = new();
     protected Listener TestListener { get; private set; } = null!;
 
@@ -31,7 +42,42 @@ public abstract class ChatbotTestBase : PlaywrightSetup
     {
         ChatSelectors = await DbHelper.GetUiControlSelectorsAsync(PageKeyLlmChat);
         Assert.That(ChatSelectors, Is.Not.Empty, "Chat selectors must be loaded from ui_controls");
+
+        await ForceNonFloatingOutputModeAsync();
     }
+
+    [OneTimeTearDown]
+    public async Task ChatbotOneTimeTearDown() => await RestoreOutputModeAsync();
+
+    private async Task ForceNonFloatingOutputModeAsync()
+    {
+        var current = (await DbHelper.ExecuteSqlAsync(
+            $"SELECT value FROM settings WHERE type = '{OutputModeSettingType}'")).Trim();
+        var rowExists = current.Length > 0 && !current.StartsWith("ERROR:");
+        _originalOutputMode = rowExists ? current : null;
+
+        if (_originalOutputMode == NonFloatingOutputMode)
+            return;
+
+        var sql = rowExists
+            ? $"UPDATE settings SET value = '{NonFloatingOutputMode}' WHERE type = '{OutputModeSettingType}'"
+            : $"INSERT INTO settings (id, type, value) VALUES (gen_random_uuid(), '{OutputModeSettingType}', '{NonFloatingOutputMode}')";
+        await DbHelper.ExecuteSqlAsync(sql);
+
+        await Actions.Reload();
+        await Actions.Wait1000();
+    }
+
+    private async Task RestoreOutputModeAsync()
+    {
+        if (_originalOutputMode == null || _originalOutputMode == NonFloatingOutputMode)
+            return;
+
+        await DbHelper.ExecuteSqlAsync(
+            $"UPDATE settings SET value = '{Escape(_originalOutputMode)}' WHERE type = '{OutputModeSettingType}'");
+    }
+
+    private static string Escape(string value) => value.Replace("'", "''");
 
     [SetUp]
     public async Task ChatbotSetUp()

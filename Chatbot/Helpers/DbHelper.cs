@@ -25,6 +25,11 @@ public static class DbHelper
                 Arguments = $"-h {Host} -p {Port} -U {User} -d {Database} -t -A -f \"{tempFile}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                // psql writes UTF-8 (the database's encoding); without this, .NET decodes the redirected
+                // stream using the Windows console's OEM codepage, mangling every non-ASCII character
+                // (e.g. "ü" becomes "├╝") before it ever reaches the chat message being sent.
+                StandardOutputEncoding = System.Text.Encoding.UTF8,
+                StandardErrorEncoding = System.Text.Encoding.UTF8,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };

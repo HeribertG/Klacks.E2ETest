@@ -1267,6 +1267,23 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Writes a value into the browser's localStorage by key (e.g. to switch the app's display/chat
+    /// language before a test). Does not reload the page — call Reload() afterward if the app only
+    /// reads the key at bootstrap.
+    /// </summary>
+    public async Task SetLocalStorage(string key, string value)
+    {
+        try
+        {
+            await _page.EvaluateAsync("([k, v]) => localStorage.setItem(k, v)", new[] { key, value });
+        }
+        catch (Exception ex)
+        {
+            TestContext.Out.WriteLine($"SetLocalStorage: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Reads the already selected text of a mat-select element
     /// </summary>
     /// <param name="elementId">The ID of the mat-select element.</param>
