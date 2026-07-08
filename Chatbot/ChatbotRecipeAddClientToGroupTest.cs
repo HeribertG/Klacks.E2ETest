@@ -21,6 +21,7 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Explicit("LLM-driven live recipe-engine proof; slow and nondeterministic. Run on demand.")]
+[Category("Klacksy")]
 public class ChatbotRecipeAddClientToGroupTest : ChatbotTestBase
 {
     private const string SkillListGroups = "list_groups";

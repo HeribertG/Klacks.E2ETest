@@ -106,7 +106,7 @@ public sealed class Wrapper
     /// </summary>
     /// <param name="id">The ID of the element to find</param>
     /// <returns>The element handle if found, null otherwise</returns>
-    public async Task<IElementHandle?> FindElementById(string id)
+    public async Task<IElementHandle?> FindElementById(string id, int timeoutMs = WrapperConstants.DEFAULT_TIMEOUT)
     {
         try
         {
@@ -115,7 +115,7 @@ public sealed class Wrapper
            new()
            {
                State = WaitForSelectorState.Attached,
-               Timeout = WrapperConstants.DEFAULT_TIMEOUT
+               Timeout = timeoutMs
            });
         }
         catch (TimeoutException ex)
@@ -137,14 +137,14 @@ public sealed class Wrapper
     /// <summary>
     /// Finds an element using a CSS selector. Returns the element handle if found, null otherwise.
     /// </summary>
-    public async Task<IElementHandle?> FindElementByCssSelector(string id)
+    public async Task<IElementHandle?> FindElementByCssSelector(string id, int timeoutMs = WrapperConstants.DEFAULT_TIMEOUT)
     {
         try
         {
             return await _page.WaitForSelectorAsync(id, new()
             {
                 State = WaitForSelectorState.Attached,
-                Timeout = WrapperConstants.DEFAULT_TIMEOUT
+                Timeout = timeoutMs
             });
         }
         catch (TimeoutException ex)

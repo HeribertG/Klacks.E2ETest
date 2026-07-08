@@ -8,6 +8,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(29)]
+[Category("Input")]
 public class SettingsAbsenceTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -125,17 +126,27 @@ public class SettingsAbsenceTest : PlaywrightSetup
         TestContext.Out.WriteLine("Absence section loaded successfully");
     }
 
-    [Test]
-    [Order(2)]
-    public async Task Step2_CreateNewAbsence()
+    /// <summary>
+    /// Ensures a test absence exists and is known via <see cref="_createdAbsenceName"/>/<see cref="_createdAbsenceIndex"/>.
+    /// Self-healing: creates a fresh one if this step (or a prior one) hasn't already, so every step in
+    /// this file can run standalone via --filter without depending on Step2 having run first.
+    /// </summary>
+    private async Task EnsureAbsenceCreated()
     {
-        // Arrange
-        TestContext.Out.WriteLine("=== Step 2: Create New Absence ===");
+        if (!string.IsNullOrEmpty(_createdAbsenceName))
+        {
+            var existingIndex = await FindAbsenceWithPagination(_createdAbsenceName);
+            if (existingIndex != null)
+            {
+                _createdAbsenceIndex = existingIndex;
+                return;
+            }
+        }
+
         var timestamp = DateTime.Now.Ticks.ToString().Substring(10, 6);
         _createdAbsenceName = $"{TestAbsenceName} {timestamp}";
         TestContext.Out.WriteLine($"Creating absence: {_createdAbsenceName}");
 
-        // Act
         var addButton = await Actions.FindElementById(AddBtn);
         Assert.That(addButton, Is.Not.Null, "Add button should exist");
 
@@ -186,6 +197,17 @@ public class SettingsAbsenceTest : PlaywrightSetup
 
         TestContext.Out.WriteLine($"Searching for absence: {_createdAbsenceName}");
         _createdAbsenceIndex = await FindAbsenceWithPagination(_createdAbsenceName);
+    }
+
+    [Test]
+    [Order(2)]
+    public async Task Step2_CreateNewAbsence()
+    {
+        // Arrange
+        TestContext.Out.WriteLine("=== Step 2: Create New Absence ===");
+
+        // Act
+        await EnsureAbsenceCreated();
 
         // Assert
         Assert.That(_createdAbsenceIndex, Is.Not.Null, "Created absence should be found in the list");
@@ -202,21 +224,8 @@ public class SettingsAbsenceTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 3: Open and Verify Absence Modal ===");
 
-        if (string.IsNullOrEmpty(_createdAbsenceName))
-        {
-            TestContext.Out.WriteLine("No absence was created in Step2 - skipping");
-            Assert.Inconclusive("No absence was created in previous step");
-            return;
-        }
-
-        _createdAbsenceIndex = await FindAbsenceWithPagination(_createdAbsenceName);
-
-        if (_createdAbsenceIndex == null)
-        {
-            TestContext.Out.WriteLine($"Absence '{_createdAbsenceName}' not found - skipping");
-            Assert.Inconclusive("Absence not found in list");
-            return;
-        }
+        await EnsureAbsenceCreated();
+        Assert.That(_createdAbsenceIndex, Is.Not.Null, "A test absence should exist (self-created if needed)");
 
         // Act
         var editBtn = await Actions.FindElementById(GetEditBtnId(_createdAbsenceIndex.Value));
@@ -271,21 +280,8 @@ public class SettingsAbsenceTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 4: Update Absence ===");
 
-        if (string.IsNullOrEmpty(_createdAbsenceName))
-        {
-            TestContext.Out.WriteLine("No absence was created - skipping");
-            Assert.Inconclusive("No absence was created in previous step");
-            return;
-        }
-
-        _createdAbsenceIndex = await FindAbsenceWithPagination(_createdAbsenceName);
-
-        if (_createdAbsenceIndex == null)
-        {
-            TestContext.Out.WriteLine($"Absence '{_createdAbsenceName}' not found - skipping");
-            Assert.Inconclusive("Absence not found in list");
-            return;
-        }
+        await EnsureAbsenceCreated();
+        Assert.That(_createdAbsenceIndex, Is.Not.Null, "A test absence should exist (self-created if needed)");
 
         // Act
         var editBtn = await Actions.FindElementById(GetEditBtnId(_createdAbsenceIndex.Value));
@@ -345,25 +341,37 @@ public class SettingsAbsenceTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 5: Copy Absence ===");
 
-        if (string.IsNullOrEmpty(_createdAbsenceName))
-        {
-            TestContext.Out.WriteLine("No absence was created - skipping");
-            Assert.Inconclusive("No absence was created in previous step");
-            return;
-        }
-
-        _createdAbsenceIndex = await FindAbsenceWithPagination(_createdAbsenceName);
-
-        if (_createdAbsenceIndex == null)
-        {
-            TestContext.Out.WriteLine($"Absence '{_createdAbsenceName}' not found - skipping");
-            Assert.Inconclusive("Absence not found in list");
-            return;
-        }
-
-        TestContext.Out.WriteLine($"Absence to copy at index: {_createdAbsenceIndex.Value}");
-
         // Act
+        var copiedAbsenceIndex = await EnsureCopiedAbsenceCreated();
+
+        // Assert
+        Assert.That(copiedAbsenceIndex.HasValue, Is.True, "Copied absence should be found in the list");
+        Assert.That(_listener.HasApiErrors(), Is.False,
+            $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
+
+        TestContext.Out.WriteLine($"Absence '{_copiedAbsenceName}' copied successfully");
+    }
+
+    /// <summary>
+    /// Ensures a copied absence exists (self-creating the source absence first if needed), so Step5/Step6
+    /// can each run standalone. Returns the copy's current row index, or null if creation failed.
+    /// </summary>
+    private async Task<int?> EnsureCopiedAbsenceCreated()
+    {
+        if (!string.IsNullOrEmpty(_copiedAbsenceName))
+        {
+            var existingIndex = await FindAbsenceWithPagination(_copiedAbsenceName);
+            if (existingIndex != null)
+            {
+                return existingIndex;
+            }
+        }
+
+        await EnsureAbsenceCreated();
+        Assert.That(_createdAbsenceIndex, Is.Not.Null, "A test absence should exist (self-created if needed)");
+
+        TestContext.Out.WriteLine($"Absence to copy at index: {_createdAbsenceIndex!.Value}");
+
         var copyBtn = await Actions.FindElementById(GetCopyBtnId(_createdAbsenceIndex.Value));
         Assert.That(copyBtn, Is.Not.Null, "Copy button should exist");
 
@@ -397,15 +405,8 @@ public class SettingsAbsenceTest : PlaywrightSetup
         }
 
         var copiedAbsenceIndex = await FindAbsenceWithPagination(_copiedAbsenceName);
-
         TestContext.Out.WriteLine($"Copied absence found: {copiedAbsenceIndex.HasValue}");
-
-        // Assert
-        Assert.That(copiedAbsenceIndex.HasValue, Is.True, "Copied absence should be found in the list");
-        Assert.That(_listener.HasApiErrors(), Is.False,
-            $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
-
-        TestContext.Out.WriteLine($"Absence '{_copiedAbsenceName}' copied successfully");
+        return copiedAbsenceIndex;
     }
 
     [Test]
@@ -415,23 +416,10 @@ public class SettingsAbsenceTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 6: Delete Copied Absence ===");
 
-        if (string.IsNullOrEmpty(_copiedAbsenceName))
-        {
-            TestContext.Out.WriteLine("No copied absence name - skipping");
-            Assert.Inconclusive("No copied absence to delete - copy may have failed");
-            return;
-        }
+        var copiedAbsenceIndex = await EnsureCopiedAbsenceCreated();
+        Assert.That(copiedAbsenceIndex, Is.Not.Null, "A copied test absence should exist (self-created if needed)");
 
-        var copiedAbsenceIndex = await FindAbsenceWithPagination(_copiedAbsenceName);
-
-        if (copiedAbsenceIndex == null)
-        {
-            TestContext.Out.WriteLine($"Copied absence '{_copiedAbsenceName}' not found - skipping");
-            Assert.Inconclusive("Copied absence not found in list");
-            return;
-        }
-
-        TestContext.Out.WriteLine($"Found copied absence at index: {copiedAbsenceIndex.Value}");
+        TestContext.Out.WriteLine($"Found copied absence at index: {copiedAbsenceIndex!.Value}");
 
         // Act
         var deleteBtn = await Actions.FindElementById(GetDeleteBtnId(copiedAbsenceIndex.Value));
@@ -472,26 +460,14 @@ public class SettingsAbsenceTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 7: Delete Created Absence ===");
 
-        if (string.IsNullOrEmpty(_createdAbsenceName))
-        {
-            TestContext.Out.WriteLine("No absence was created - skipping delete");
-            Assert.Inconclusive("No absence was created in previous step");
-            return;
-        }
+        await EnsureAbsenceCreated();
+        Assert.That(_createdAbsenceIndex, Is.Not.Null, "A test absence should exist (self-created if needed)");
+        var absenceToDeleteIndex = _createdAbsenceIndex!.Value;
 
-        var absenceToDeleteIndex = await FindAbsenceWithPagination(_createdAbsenceName);
-
-        if (absenceToDeleteIndex == null)
-        {
-            TestContext.Out.WriteLine($"Absence '{_createdAbsenceName}' not found - may have been deleted already");
-            Assert.Pass("Absence not found - possibly already deleted");
-            return;
-        }
-
-        TestContext.Out.WriteLine($"Found absence to delete at index: {absenceToDeleteIndex.Value}");
+        TestContext.Out.WriteLine($"Found absence to delete at index: {absenceToDeleteIndex}");
 
         // Act
-        var deleteBtn = await Actions.FindElementById(GetDeleteBtnId(absenceToDeleteIndex.Value));
+        var deleteBtn = await Actions.FindElementById(GetDeleteBtnId(absenceToDeleteIndex));
         Assert.That(deleteBtn, Is.Not.Null, "Delete button should exist");
 
         await deleteBtn!.ClickAsync();

@@ -11,6 +11,7 @@ namespace Klacks.E2ETest.Chatbot;
 [TestFixture]
 [Order(52)]
 [Explicit]
+[Category("Klacksy")]
 public class ChatbotGreetingNavigationTest : ChatbotTestBase
 {
     private const string CssReplyChipBtn = ".reply-chip-btn";

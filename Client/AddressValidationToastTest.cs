@@ -6,6 +6,7 @@ using Microsoft.Playwright;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(17)]
 public class AddressValidationToastTest : PlaywrightSetup
 {
@@ -199,11 +200,13 @@ public class AddressValidationToastTest : PlaywrightSetup
         await Actions.Wait500();
     }
 
+    private const int PollAttemptTimeoutMs = 500;
+
     private async Task<IElementHandle?> PollForSaveAnywayChipAsync(int maxAttempts = 12)
     {
         for (var i = 0; i < maxAttempts; i++)
         {
-            var chip = await Actions.FindElementByCssSelector(SaveAnywaySelector);
+            var chip = await Actions.FindElementByCssSelector(SaveAnywaySelector, PollAttemptTimeoutMs);
             if (chip != null)
             {
                 return chip;

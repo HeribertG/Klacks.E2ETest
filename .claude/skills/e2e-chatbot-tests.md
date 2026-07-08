@@ -15,20 +15,16 @@ Playwright + NUnit, sequentiell via `[Order]` Attribut.
 
 | Klasse | Order | Testet |
 |--------|-------|--------|
-| `ChatbotKimiProviderTest` | 48 | LLM Provider/Model Setup |
-| `ChatbotDiagnosticTest` | 49 | Chat-Initialisierung |
 | `ChatbotSettingsGeneralTest` | 50 | `get_general_settings`, `update_general_settings` (UiAction) |
 | `ChatbotNavigationTest` | 51 | `navigate_to` (UiAction) |
 | `ChatbotSoulMemoryTest` | 52 | `get_ai_soul`, `update_ai_soul`, `add_ai_memory` |
 | `ChatbotBranchesTest` | 53 | Branch CRUD (UiPassthrough) |
 | `ChatbotMacrosTest` | 54 | Macro CRUD |
 | `ChatbotAiGuidelinesTest` | 55 | `get_ai_guidelines`, `update_ai_guidelines` |
-| `ChatbotSystemInfoPermissionsTest` | 56 | `get_system_info`, `get_user_permissions` |
 | `ChatbotOwnerAddressTest` | 57 | `get_owner_address`, `update_owner_address` (UiAction) |
 | `ChatbotUserAdministrationTest` | 58 | User CRUD (UiPassthrough) |
 | `ChatbotCalendarRulesJapanTest` | 59 | Calendar Rules CRUD |
-| `ChatbotEmailSettingTest` | 60 | `get/update_email_settings`, `get/update_imap_settings` (UiAction) |
-| `ChatbotEmailSetupWizardTest` | 61 | Email Wizard mit SMTP/IMAP |
+| `ChatbotEmailSetupWizardTest` | 61 | Email Wizard mit SMTP/IMAP (`get/update_email_settings`, `get/update_imap_settings`) |
 
 ## Test-Infrastruktur
 

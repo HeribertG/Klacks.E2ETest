@@ -9,6 +9,7 @@ using static Klacks.E2ETest.Constants.TestClientData;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(11)]
 [Ignore("Count-based assertions conflict with seeded clients in Bern group (5 seeded + 5 test = 10); needs unique test group or GTE assertions")]
 public class ClientSearchTest : PlaywrightSetup

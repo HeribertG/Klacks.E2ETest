@@ -14,6 +14,7 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Explicit("LLM-driven live scheduled-task proof; slow and nondeterministic. Run on demand.")]
+[Category("Klacksy")]
 public class ChatbotScheduledTaskTest : ChatbotTestBase
 {
     private const string SkillSchedule = "schedule_recurring_task";

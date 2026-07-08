@@ -6,6 +6,7 @@ using Npgsql;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(38)]
 [Ignore("Tree creation via add buttons is flaky against fresh DB - parent loading and tree-toggle are unreliable")]
 public class GroupTreeCreationTest : PlaywrightSetup

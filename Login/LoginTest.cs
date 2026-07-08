@@ -6,6 +6,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(1)]
+    [Category("Navigation")]
     public class LoginTest : PlaywrightSetup
     {
         private Listener? _listener;

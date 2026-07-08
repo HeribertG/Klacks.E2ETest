@@ -10,6 +10,7 @@ using static Klacks.E2ETest.Constants.PaginationIds;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(14)]
 [Ignore("Count-based assertions conflict with seeded clients in Bern group (5 seeded + 5 test = 10); needs unique test group or GTE assertions")]
 public class ClientDeletionTest : PlaywrightSetup

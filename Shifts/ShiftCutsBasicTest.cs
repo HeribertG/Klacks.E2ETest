@@ -5,8 +5,12 @@ using Microsoft.Playwright;
 
 namespace Klacks.E2ETest;
 
+// SKIPPED (not atomized): this class already needs a full rewrite (see [Ignore] reason below) because
+// it predates the Actions-wrapper conventions. Atomizing the Step1-7 chain now would be wasted effort;
+// do it as part of that rewrite instead.
 [TestFixture]
 [Order(40)]
+[Category("Input")]
 [Ignore("Shift cutting tests use Page-direct calls and brittle text-locators; needs full rewrite against current shift list UI")]
 public class ShiftCutsBasicTest : PlaywrightSetup
 {

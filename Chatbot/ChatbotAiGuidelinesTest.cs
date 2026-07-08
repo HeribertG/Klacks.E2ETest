@@ -7,6 +7,7 @@ namespace Klacks.E2ETest.Chatbot
     [TestFixture]
     [Order(55)]
     [Ignore("Chatbot tests depend on external LLM (KIMI/OpenRouter); flaky in fresh-DB CI runs")]
+    [Category("Klacksy")]
     public class ChatbotAiGuidelinesTest : ChatbotTestBase
     {
         private const string SkillGetGuidelines = "get_ai_guidelines";

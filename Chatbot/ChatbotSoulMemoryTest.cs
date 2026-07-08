@@ -7,6 +7,7 @@ namespace Klacks.E2ETest.Chatbot
     [TestFixture]
     [Order(52)]
     [Ignore("Chatbot tests depend on external LLM (KIMI/OpenRouter); flaky in fresh-DB CI runs")]
+    [Category("Klacksy")]
     public class ChatbotSoulMemoryTest : ChatbotTestBase
     {
         private const string SkillUpdateSoul = "update_ai_soul";

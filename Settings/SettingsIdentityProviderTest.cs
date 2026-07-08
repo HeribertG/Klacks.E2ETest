@@ -8,6 +8,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(28)]
+    [Category("Input")]
     public class SettingsIdentityProviderTest : PlaywrightSetup
     {
         private Listener _listener = null!;
@@ -61,17 +62,26 @@ namespace Klacks.E2ETest
             TestContext.Out.WriteLine("Identity Provider section loaded successfully");
         }
 
-        [Test]
-        [Order(2)]
-        public async Task Step2_CreateNewProvider()
+        /// <summary>
+        /// Ensures a test identity provider exists and is known via <see cref="_createdProviderId"/>/
+        /// <see cref="_createdProviderName"/>. Self-healing: creates a fresh one if this step (or a prior
+        /// one) hasn't already, so every step in the general CRUD sub-chain (Steps 2-5) can run standalone.
+        /// </summary>
+        private async Task EnsureProviderCreated()
         {
-            // Arrange
-            TestContext.Out.WriteLine("=== Step 2: Create New Identity Provider ===");
+            if (!string.IsNullOrEmpty(_createdProviderId))
+            {
+                var stillExists = await Actions.FindElementById(GetRowNameId(_createdProviderId));
+                if (stillExists != null)
+                {
+                    return;
+                }
+            }
+
             var timestamp = DateTime.Now.Ticks.ToString().Substring(10, 6);
             _createdProviderName = $"TestProvider{timestamp}";
             TestContext.Out.WriteLine($"Creating provider: {_createdProviderName}");
 
-            // Act
             var addButton = await Actions.FindElementById(AddBtn);
             Assert.That(addButton, Is.Not.Null, "Add button should exist");
 
@@ -118,12 +128,22 @@ namespace Klacks.E2ETest
                 }
             }
 
-            // Assert
             Assert.That(_createdProviderId, Is.Not.Null, "Created provider should be found in the list");
             Assert.That(_listener.HasApiErrors(), Is.False,
                 $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
             TestContext.Out.WriteLine($"Provider created successfully: {_createdProviderName}");
+        }
+
+        [Test]
+        [Order(2)]
+        public async Task Step2_CreateNewProvider()
+        {
+            // Arrange
+            TestContext.Out.WriteLine("=== Step 2: Create New Identity Provider ===");
+
+            // Act
+            await EnsureProviderCreated();
         }
 
         [Test]
@@ -133,12 +153,7 @@ namespace Klacks.E2ETest
             // Arrange
             TestContext.Out.WriteLine("=== Step 3: Open and Close Provider Modal ===");
 
-            if (string.IsNullOrEmpty(_createdProviderId))
-            {
-                TestContext.Out.WriteLine("No provider was created in Step2 - skipping");
-                Assert.Inconclusive("No provider was created in previous step");
-                return;
-            }
+            await EnsureProviderCreated();
 
             // Act
             var providerNameId = GetRowNameId(_createdProviderId);
@@ -193,12 +208,7 @@ namespace Klacks.E2ETest
             // Arrange
             TestContext.Out.WriteLine("=== Step 5: Delete Created Provider ===");
 
-            if (string.IsNullOrEmpty(_createdProviderId))
-            {
-                TestContext.Out.WriteLine("No provider was created - skipping delete");
-                Assert.Inconclusive("No provider was created in previous step");
-                return;
-            }
+            await EnsureProviderCreated();
 
             // Act
             var deleteButtonId = GetRowDeleteId(_createdProviderId);
@@ -225,6 +235,12 @@ namespace Klacks.E2ETest
             _createdProviderName = null;
         }
 
+        // SKIPPED (not atomized): Steps 6-10 chain against the live external ldap.forumsys.com demo
+        // server and Steps 11-15 (Zflex, already [Ignore]d) perform a multi-stage LDAP sync/import
+        // against real client data. Making these self-healing would mean re-triggering an external
+        // LDAP sync from inside a verification/delete step, which cannot be safely authored or verified
+        // without a live run against that external server. Left as an execution-order-dependent chain;
+        // revisit with a live test pass if this needs to become re-run-safe.
         [Test]
         [Order(6)]
         public async Task Step6_CreateLdapProviderWithConnectionData()

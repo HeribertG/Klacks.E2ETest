@@ -8,6 +8,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(74)]
+    [Category("Input")]
     public class SettingsAbsenceDetailTest : PlaywrightSetup
     {
         private Listener _listener = null!;
@@ -58,11 +59,24 @@ namespace Klacks.E2ETest
             TestContext.Out.WriteLine("AbsenceDetail section loaded successfully");
         }
 
-        [Test]
-        [Order(2)]
-        public async Task Step2_CreateNewAbsenceDetail()
+        /// <summary>
+        /// Ensures a test absence detail exists and is known via <see cref="_createdDetailName"/>.
+        /// Self-healing: creates a fresh one if this step (or a prior one) hasn't already, so every step
+        /// in this file can run standalone via --filter without depending on Step2 having run first.
+        /// </summary>
+        private async Task EnsureAbsenceDetailCreated()
         {
-            TestContext.Out.WriteLine("=== Step 2: Create New Absence Detail ===");
+            if (!string.IsNullOrEmpty(_createdDetailName))
+            {
+                await Actions.ScrollPageDown(scrollToBottom: true);
+                await Actions.Wait500();
+                var existingRow = await FindDetailRowByName(_createdDetailName);
+                if (existingRow != null)
+                {
+                    return;
+                }
+            }
+
             var timestamp = DateTime.Now.Ticks.ToString().Substring(10, 6);
             _createdDetailName = $"{TestDetailName} {timestamp}";
             TestContext.Out.WriteLine($"Creating absence detail: {_createdDetailName}");
@@ -122,17 +136,20 @@ namespace Klacks.E2ETest
         }
 
         [Test]
+        [Order(2)]
+        public async Task Step2_CreateNewAbsenceDetail()
+        {
+            TestContext.Out.WriteLine("=== Step 2: Create New Absence Detail ===");
+            await EnsureAbsenceDetailCreated();
+        }
+
+        [Test]
         [Order(3)]
         public async Task Step3_VerifyCreatedDetailInList()
         {
             TestContext.Out.WriteLine("=== Step 3: Verify Created Detail In List ===");
 
-            if (string.IsNullOrEmpty(_createdDetailName))
-            {
-                TestContext.Out.WriteLine("No detail was created in Step2 - skipping");
-                Assert.Inconclusive("No absence detail was created in previous step");
-                return;
-            }
+            await EnsureAbsenceDetailCreated();
 
             await Actions.ScrollPageDown(scrollToBottom: true);
             await Actions.Wait500();
@@ -152,12 +169,7 @@ namespace Klacks.E2ETest
         {
             TestContext.Out.WriteLine("=== Step 4: Delete Created Absence Detail ===");
 
-            if (string.IsNullOrEmpty(_createdDetailName))
-            {
-                TestContext.Out.WriteLine("No detail was created - skipping delete");
-                Assert.Inconclusive("No absence detail was created in previous step");
-                return;
-            }
+            await EnsureAbsenceDetailCreated();
 
             await Actions.ScrollPageDown(scrollToBottom: true);
             await Actions.Wait500();

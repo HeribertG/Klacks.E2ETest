@@ -6,6 +6,7 @@ using Microsoft.Playwright;
 namespace Klacks.E2ETest.Login;
 
 [TestFixture]
+[Category("Navigation")]
 public class OAuth2SsoTest : OAuth2TestSetup
 {
     private Listener? _listener;
@@ -23,11 +24,10 @@ public class OAuth2SsoTest : OAuth2TestSetup
         if (_listener != null)
         {
             await _listener.WaitForResponseHandlingAsync();
-            if (_listener.HasApiErrors())
-            {
-                TestContext.WriteLine(_listener.GetLastErrorMessage());
-            }
-            _listener?.ResetErrors();
+            var hadApiErrors = _listener.HasApiErrors();
+            var lastErrorMessage = _listener.GetLastErrorMessage();
+            _listener.ResetErrors();
+            Assert.That(hadApiErrors, Is.False, $"API errors during OAuth2 flow: {lastErrorMessage}");
         }
         _listener = null;
     }

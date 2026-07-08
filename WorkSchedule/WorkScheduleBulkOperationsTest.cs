@@ -7,6 +7,8 @@ namespace Klacks.E2ETest.WorkSchedule;
 
 [TestFixture]
 [Order(100)]
+[Category("Input")]
+[Explicit("Manual-observation diagnostic: waits 60s for a human to click through the browser, always Assert.Pass()s regardless of outcome. Not a real regression check.")]
 public class WorkScheduleBulkOperationsTest : PlaywrightSetup
 {
     private Listener _listener = null!;

@@ -6,6 +6,7 @@ namespace Klacks.E2ETest.Chatbot
 {
     [TestFixture]
     [Order(51)]
+    [Category("Klacksy")]
     public class ChatbotNavigationTest : ChatbotTestBase
     {
         private const string SkillNavigateTo = "navigate_to";

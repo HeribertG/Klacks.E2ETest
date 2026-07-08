@@ -7,6 +7,7 @@ namespace Klacks.E2ETest.Chatbot
 {
     [TestFixture]
     [Order(54)]
+    [Category("Klacksy")]
     public class ChatbotMacrosTest : ChatbotTestBase
     {
         private const string CssMacroRowName = "input[id^='macro-row-name-']";

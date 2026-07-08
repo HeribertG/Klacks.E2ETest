@@ -7,6 +7,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(72)]
+[Category("Input")]
 public class SettingsSchedulingDefaultsTest : PlaywrightSetup
 {
     private Listener _listener = null!;

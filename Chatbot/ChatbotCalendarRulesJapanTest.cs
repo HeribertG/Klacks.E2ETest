@@ -10,6 +10,7 @@ namespace Klacks.E2ETest.Chatbot
     [TestFixture]
     [Order(59)]
     [Ignore("Chatbot tests depend on external LLM (KIMI/OpenRouter); flaky in fresh-DB CI runs")]
+    [Category("Klacksy")]
     public class ChatbotCalendarRulesJapanTest : ChatbotTestBase
     {
         private const string SkillValidateCalendarRule = "validate_calendar_rule";
@@ -791,7 +792,7 @@ namespace Klacks.E2ETest.Chatbot
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var confirmBtn = await Actions.FindElementById("modal-delete-confirm");
+                var confirmBtn = await Actions.FindElementById("modal-delete-confirm", 500);
                 if (confirmBtn != null)
                     return confirmBtn;
                 await Actions.Wait500();

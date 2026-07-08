@@ -14,6 +14,7 @@ namespace Klacks.E2ETest.Login;
 [TestFixture]
 [Order(43)]
 [Ignore("Live spinner/re-login flow: requires the running app (frontend 4200 + backend 5001). Run on demand, not in fresh-DB CI.")]
+[Category("Navigation")]
 public class SpinnerClearsAfterReloginTest : PlaywrightSetup
 {
     private const string SpinnerSelector = ".lds-ripple";

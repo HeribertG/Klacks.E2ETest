@@ -26,6 +26,7 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Order(60)]
+[Category("Klacksy")]
 public class ChatbotPlannerSkillsTest : ChatbotTestBase
 {
     private const string SkillCoverAbsence = "cover_absence";
@@ -93,6 +94,7 @@ public class ChatbotPlannerSkillsTest : ChatbotTestBase
 
     [Test]
     [TestCaseSource(nameof(LlmModels))]
+    [Explicit("Sweeps 11 LLM models sequentially (~10-15 min each); run on demand for model-reliability comparisons, not in default suite runs.")]
     public async Task Klacksy_CoversAbsence_PerModel(string model)
     {
         await AssertModelEnabled(model);

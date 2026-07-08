@@ -12,6 +12,7 @@ namespace Klacks.E2ETest.WorkSchedule;
 /// </summary>
 [TestFixture]
 [Order(104)]
+[Category("Input")]
 [Ignore("Diagnostic trace test that requires existing schedule data; spinner-OFF log only fires when data loads")]
 public class WorkScheduleCollisionTraceTest : PlaywrightSetup
 {

@@ -16,6 +16,7 @@ namespace Klacks.E2ETest.WorkSchedule;
 /// </summary>
 [TestFixture]
 [Order(103)]
+[Category("Stress")]
 public class WorkScheduleGroupSwitchStressTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -42,6 +43,8 @@ public class WorkScheduleGroupSwitchStressTest : PlaywrightSetup
     public async Task TearDown()
     {
         await _listener.WaitForResponseHandlingAsync();
+        Assert.That(_listener.HasApiErrors(), Is.False,
+            $"API errors during rapid group switching: {_listener.GetLastErrorMessage()}");
     }
 
     [Test, Order(1)]

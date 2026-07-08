@@ -7,6 +7,7 @@ namespace Klacks.E2ETest
     [TestFixture]
     [Order(3)]
     [NonParallelizable]
+    [Category("Navigation")]
     public class NavigationTest : PlaywrightSetup
     {
         private PageUrlTracker _pageTracker;

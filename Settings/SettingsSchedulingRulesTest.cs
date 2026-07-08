@@ -7,6 +7,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(73)]
+[Category("Input")]
 public class SettingsSchedulingRulesTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -58,13 +59,14 @@ public class SettingsSchedulingRulesTest : PlaywrightSetup
         return null;
     }
 
-    [Test]
-    [Order(1)]
-    public async Task Step1_VerifySchedulingRulesLoaded()
+    /// <summary>
+    /// Deletes every rule currently named <paramref name="ruleName"/>. Used both as Step1's leftover
+    /// cleanup and by Step6 so it can independently verify a clean post-delete state without depending
+    /// on Step5 having actually run first.
+    /// </summary>
+    private async Task DeleteAllRulesNamed(string ruleName)
     {
-        TestContext.Out.WriteLine("=== Step 1: Verify Scheduling Rules Section Loaded ===");
-
-        var leftoverId = await FindRuleIdByName(TestRuleName);
+        var leftoverId = await FindRuleIdByName(ruleName);
         while (leftoverId != null)
         {
             TestContext.Out.WriteLine($"Cleaning up leftover rule: {leftoverId}");
@@ -80,8 +82,17 @@ public class SettingsSchedulingRulesTest : PlaywrightSetup
                 await Actions.WaitForSpinnerToDisappear();
                 await Actions.Wait2000();
             }
-            leftoverId = await FindRuleIdByName(TestRuleName);
+            leftoverId = await FindRuleIdByName(ruleName);
         }
+    }
+
+    [Test]
+    [Order(1)]
+    public async Task Step1_VerifySchedulingRulesLoaded()
+    {
+        TestContext.Out.WriteLine("=== Step 1: Verify Scheduling Rules Section Loaded ===");
+
+        await DeleteAllRulesNamed(TestRuleName);
 
         var addButton = await Actions.FindElementById(AddBtn);
         Assert.That(addButton, Is.Not.Null, "Add rule button should be visible");
@@ -92,11 +103,19 @@ public class SettingsSchedulingRulesTest : PlaywrightSetup
         TestContext.Out.WriteLine("Scheduling Rules section loaded successfully");
     }
 
-    [Test]
-    [Order(2)]
-    public async Task Step2_CreateNewSchedulingRule()
+    /// <summary>
+    /// Ensures the test rule exists and is known via <see cref="_createdRuleId"/>. Self-healing:
+    /// creates it via the modal if it doesn't already exist, so every step in this file can run
+    /// standalone via --filter without depending on Step2 having run first.
+    /// </summary>
+    private async Task EnsureRuleCreated()
     {
-        TestContext.Out.WriteLine("=== Step 2: Create New Scheduling Rule ===");
+        var existingId = await FindRuleIdByName(TestRuleName);
+        if (!string.IsNullOrEmpty(existingId))
+        {
+            _createdRuleId = existingId;
+            return;
+        }
 
         await Actions.ClickButtonById(AddBtn);
         await Actions.Wait1000();
@@ -135,17 +154,21 @@ public class SettingsSchedulingRulesTest : PlaywrightSetup
     }
 
     [Test]
+    [Order(2)]
+    public async Task Step2_CreateNewSchedulingRule()
+    {
+        TestContext.Out.WriteLine("=== Step 2: Create New Scheduling Rule ===");
+
+        await EnsureRuleCreated();
+    }
+
+    [Test]
     [Order(3)]
     public async Task Step3_VerifyCreatedRuleInList()
     {
         TestContext.Out.WriteLine("=== Step 3: Verify Created Rule in List ===");
 
-        if (string.IsNullOrEmpty(_createdRuleId))
-        {
-            TestContext.Out.WriteLine("No rule was created in Step 2 - skipping");
-            Assert.Inconclusive("No rule was created in previous step");
-            return;
-        }
+        await EnsureRuleCreated();
 
         var ruleNameElement = await Actions.FindElementById($"{RowNamePrefix}{_createdRuleId}");
         Assert.That(ruleNameElement, Is.Not.Null, "Rule name element should be visible in the list");
@@ -173,12 +196,7 @@ public class SettingsSchedulingRulesTest : PlaywrightSetup
     {
         TestContext.Out.WriteLine("=== Step 4: Edit Created Rule ===");
 
-        if (string.IsNullOrEmpty(_createdRuleId))
-        {
-            TestContext.Out.WriteLine("No rule was created - skipping");
-            Assert.Inconclusive("No rule was created in previous step");
-            return;
-        }
+        await EnsureRuleCreated();
 
         var ruleNameElement = await Actions.FindElementById($"{RowNamePrefix}{_createdRuleId}");
         Assert.That(ruleNameElement, Is.Not.Null, "Rule name element should exist for clicking");
@@ -211,12 +229,7 @@ public class SettingsSchedulingRulesTest : PlaywrightSetup
     {
         TestContext.Out.WriteLine("=== Step 5: Delete Created Rule ===");
 
-        if (string.IsNullOrEmpty(_createdRuleId))
-        {
-            TestContext.Out.WriteLine("No rule was created - skipping delete");
-            Assert.Inconclusive("No rule was created in previous step");
-            return;
-        }
+        await EnsureRuleCreated();
 
         var deleteButtonId = $"{RowDeletePrefix}{_createdRuleId}";
         TestContext.Out.WriteLine($"Clicking delete button: {deleteButtonId}");
@@ -256,6 +269,9 @@ public class SettingsSchedulingRulesTest : PlaywrightSetup
     public async Task Step6_VerifyDeletionPersisted()
     {
         TestContext.Out.WriteLine("=== Step 6: Verify Deletion Persisted After Reload ===");
+
+        // Self-contained: ensure the rule is actually deleted here rather than assuming Step5 ran first.
+        await DeleteAllRulesNamed(TestRuleName);
 
         TestContext.Out.WriteLine("Reloading page...");
         await Actions.Reload();

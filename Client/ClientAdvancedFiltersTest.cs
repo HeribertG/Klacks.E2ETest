@@ -9,6 +9,7 @@ using static Klacks.E2ETest.Constants.TestClientData;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(13)]
 [Ignore("Count-based assertions conflict with seeded clients in Bern group (5 seeded + 5 test = 10); needs unique test group or GTE assertions")]
 public class ClientAdvancedFiltersTest : PlaywrightSetup
@@ -23,6 +24,12 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
 
         await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
         await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait500();
+
+        // Every step is self-contained: start from a known group filter regardless of what a
+        // previously run step (or a standalone re-run of just this step) left behind.
+        await ResetGroupFilterToAllGroups();
+        await SelectGroupByPath(GroupDeutschschweizMitte, GroupBE, GroupBern);
         await Actions.Wait500();
     }
 
@@ -103,6 +110,37 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         return 0;
     }
 
+    private async Task SetCheckboxState(string id, bool desiredChecked)
+    {
+        var checkbox = await Actions.FindElementById(id);
+        var isChecked = await checkbox!.IsCheckedAsync();
+        if (isChecked != desiredChecked)
+        {
+            await Actions.ClickCheckBoxById(id);
+            await Actions.Wait500();
+        }
+    }
+
+    /// <summary>
+    /// Opens the validity dropdown and sets it to show ONLY the given validity, reading the current
+    /// checkbox state first so this works regardless of what a previous step left the filter in.
+    /// </summary>
+    private async Task FilterByOnlyValidity(string keepCheckedId, params string[] uncheckIds)
+    {
+        await Actions.ClickButtonById(DropdownValidityId);
+        await Actions.Wait500();
+
+        await SetCheckboxState(keepCheckedId, true);
+        foreach (var uncheckId in uncheckIds)
+        {
+            await SetCheckboxState(uncheckId, false);
+        }
+
+        await Actions.ClickButtonById(CloseValidityDropdownId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
+    }
+
     [Test]
     [Order(1)]
     public async Task Step1_FilterByValidityActive()
@@ -110,27 +148,9 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 1: Filter by Validity 'Aktive' (Active) ===");
 
-        TestContext.Out.WriteLine("Resetting to All Groups first");
-        await ResetGroupFilterToAllGroups();
-
-        await SelectGroupByPath(GroupDeutschschweizMitte, GroupBE, GroupBern);
-        await Actions.Wait500();
-
         // Act
         TestContext.Out.WriteLine("Opening validity dropdown and selecting only Active");
-        await Actions.ClickButtonById(DropdownValidityId);
-        await Actions.Wait500();
-
-        await Actions.ClickCheckBoxById(FilterValidityFormerId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterValidityFutureId);
-        await Actions.Wait500();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(CloseValidityDropdownId);
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
+        await FilterByOnlyValidity(FilterValidityActiveId, FilterValidityFormerId, FilterValidityFutureId);
 
         var totalCount = await GetPaginationTotalCount();
 
@@ -150,23 +170,10 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
     {
         // Arrange
         TestContext.Out.WriteLine("=== Step 2: Filter by Validity 'Ehemalige' (Former) ===");
-        TestContext.Out.WriteLine("Note: Group filter 'Bern' is already set from Step 1");
 
         // Act
         TestContext.Out.WriteLine("Opening validity dropdown and selecting only Former");
-        await Actions.ClickButtonById(DropdownValidityId);
-        await Actions.Wait500();
-
-        await Actions.ClickCheckBoxById(FilterValidityActiveId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterValidityFormerId);
-        await Actions.Wait500();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(CloseValidityDropdownId);
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
+        await FilterByOnlyValidity(FilterValidityFormerId, FilterValidityActiveId, FilterValidityFutureId);
 
         var totalCount = await GetPaginationTotalCount();
 
@@ -186,23 +193,10 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
     {
         // Arrange
         TestContext.Out.WriteLine("=== Step 3: Filter by Validity 'Zukünftige' (Future) ===");
-        TestContext.Out.WriteLine("Note: Group filter 'Bern' is already set from Step 1");
 
         // Act
         TestContext.Out.WriteLine("Opening validity dropdown and selecting only Future");
-        await Actions.ClickButtonById(DropdownValidityId);
-        await Actions.Wait500();
-
-        await Actions.ClickCheckBoxById(FilterValidityFormerId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterValidityFutureId);
-        await Actions.Wait500();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(CloseValidityDropdownId);
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
+        await FilterByOnlyValidity(FilterValidityFutureId, FilterValidityActiveId, FilterValidityFormerId);
 
         var totalCount = await GetPaginationTotalCount();
 
@@ -214,17 +208,6 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
             $"Should find 0 future clients in group 'Bern'. Found: {totalCount}");
 
         TestContext.Out.WriteLine($"=== Future validity filter test completed successfully. Found {totalCount} matching clients ===");
-
-        TestContext.Out.WriteLine("Resetting validity to Active for next tests");
-        await Actions.ClickButtonById(DropdownValidityId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterValidityActiveId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterValidityFutureId);
-        await Actions.Wait500();
-        await Actions.ClickButtonById(CloseValidityDropdownId);
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
     }
 
     [Test]
@@ -233,7 +216,6 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
     {
         // Arrange
         TestContext.Out.WriteLine("=== Step 4: Deselect All Countries ===");
-        TestContext.Out.WriteLine("Note: Group filter 'Bern' is already set from Step 1");
 
         // Act
         TestContext.Out.WriteLine("Opening countries dropdown");
@@ -265,7 +247,6 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
     {
         // Arrange
         TestContext.Out.WriteLine("=== Step 5: Select All Countries ===");
-        TestContext.Out.WriteLine("Note: Group filter 'Bern' is already set from Step 1");
 
         // Act
         TestContext.Out.WriteLine("Opening countries dropdown and selecting all");
@@ -299,15 +280,13 @@ public class ClientAdvancedFiltersTest : PlaywrightSetup
     {
         // Arrange
         TestContext.Out.WriteLine("=== Step 6: Filter by Scope 'Eintritt' (Entry Date) ===");
-        TestContext.Out.WriteLine("Note: Group filter 'Bern' is already set from Step 1");
 
         // Act
         TestContext.Out.WriteLine("Opening scope dropdown and enabling Entry date");
         await Actions.ClickButtonById(DropdownScopeId);
         await Actions.Wait500();
 
-        await Actions.ClickCheckBoxById(FilterScopeFromFlagId);
-        await Actions.Wait500();
+        await SetCheckboxState(FilterScopeFromFlagId, true);
 
         TestContext.Out.WriteLine($"Setting date range");
         await Actions.FillInputById(FilterDateFromId, "01.01.2020");

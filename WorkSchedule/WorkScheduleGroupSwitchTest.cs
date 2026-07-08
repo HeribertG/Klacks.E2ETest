@@ -13,6 +13,7 @@ namespace Klacks.E2ETest.WorkSchedule;
 /// </summary>
 [TestFixture]
 [Order(102)]
+[Category("Stress")]
 public class WorkScheduleGroupSwitchTest : PlaywrightSetup
 {
     private Listener _listener = null!;

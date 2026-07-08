@@ -6,11 +6,11 @@ using Microsoft.Playwright;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(10)]
 public class ClientCreationTest : PlaywrightSetup
 {
     private Listener _listener = null!;
-    private List<string> _createdClientIds = new();
 
     [SetUp]
     public async Task Setup()
@@ -74,31 +74,27 @@ public class ClientCreationTest : PlaywrightSetup
         TestContext.Out.WriteLine($"Successfully navigated to client page: {currentUrl}");
     }
 
+    private static IEnumerable<TestCaseData> ClientCases()
+    {
+        foreach (var clientData in ClientTestData.Clients)
+        {
+            yield return new TestCaseData(clientData)
+                .SetName($"Step2_CreateClient_{clientData.FirstName}_{clientData.LastName}");
+        }
+    }
+
     [Test]
     [Order(2)]
-    public async Task Step2_CreateMultipleClients()
+    [TestCaseSource(nameof(ClientCases))]
+    public async Task Step2_CreateClient(ClientData clientData)
     {
         // Arrange
-        TestContext.Out.WriteLine("=== Step 2: Create Multiple Clients ===");
+        TestContext.Out.WriteLine($"=== Step 2: Create Client {clientData.FirstName} {clientData.LastName} ===");
 
         // Act & Assert
-        for (int i = 0; i < ClientTestData.Clients.Length; i++)
-        {
-            var clientData = ClientTestData.Clients[i];
-            TestContext.Out.WriteLine($"\n--- Creating Client {i + 1}/{ClientTestData.Clients.Length}: {clientData.FirstName} {clientData.LastName} ---");
+        await CreateClient(clientData);
 
-            await CreateClient(clientData);
-
-            // Navigate back to client page for next client
-            if (i < ClientTestData.Clients.Length - 1)
-            {
-                await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
-                await Actions.WaitForSpinnerToDisappear();
-                await Actions.Wait1000();
-            }
-        }
-
-        TestContext.Out.WriteLine($"\n=== All {ClientTestData.Clients.Length} clients created successfully ===");
+        TestContext.Out.WriteLine($"=== Client {clientData.FirstName} {clientData.LastName} created successfully ===");
     }
 
     private async Task CreateClient(ClientData clientData)
@@ -330,7 +326,6 @@ public class ClientCreationTest : PlaywrightSetup
         _listener.ResetErrors();
 
         var finalUrl = Actions.ReadCurrentUrl();
-        _createdClientIds.Add(finalUrl.Split('/').Last());
         TestContext.Out.WriteLine($"=== Client created successfully: {clientData.FirstName} {clientData.LastName} ===");
         TestContext.Out.WriteLine($"Current URL: {finalUrl}");
     }

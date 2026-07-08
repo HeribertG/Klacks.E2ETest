@@ -17,9 +17,6 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgefuehrt, gesteuert dur
 | 12 | `Client/ClientTypeFilterTest.cs` | Client Type Filter |
 | 13 | `Client/ClientAdvancedFiltersTest.cs` | Client Advanced Filters |
 | 14 | `Client/ClientDeletionTest.cs` | Client loeschen |
-| 20 | `Settings/SettingsGeneralTest.cs` | Settings General |
-| 21 | `Settings/SettingsOwnerAddressTest.cs` | Settings Owner Address |
-| 22 | `Settings/SettingsUserAdministrationTest.cs` | Settings User Administration |
 | 23 | `Settings/SettingsGroupScopeTest.cs` | Settings Group Scope |
 | 24 | `Settings/SettingsGridColorTest.cs` | Settings Grid Color |
 | 25 | `Settings/SettingsStateTest.cs` | Settings State |
@@ -27,31 +24,24 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgefuehrt, gesteuert dur
 | 27 | `Settings/SettingsEmailTest.cs` | Settings Email |
 | 28 | `Settings/SettingsIdentityProviderTest.cs` | Settings Identity Provider |
 | 29 | `Settings/SettingsAbsenceTest.cs` | Settings Absence (CRUD) |
-| 30 | `Settings/SettingsCalendarRulesTest.cs` | Settings Calendar Rules (CRUD + API Validation) |
 | 31 | `Settings/SettingsLlmProvidersTest.cs` | Settings LLM Providers (CRUD) |
 | 32 | `Settings/SettingsLlmModelsTest.cs` | Settings LLM Models (CRUD) |
 | 33 | `Gantt/GanttGroupFilterTest.cs` | Gantt Group Filter |
-| 35 | `Group/GroupCreationTest.cs` | Group erstellen |
-| 36 | `Group/GroupSearchTest.cs` | Group Suche |
-| 37 | `Group/GroupDeletionTest.cs` | Group loeschen |
-| 38 | `Group/GroupTreeCreationTest.cs` | Group Tree erstellen |
+| 38 | `Group/GroupTreeCreationTest.cs` | Group Tree erstellen (Create/Verify/Delete) |
 | 40 | `Shifts/ShiftCutsBasicTest.cs` | Shift Cuts Basic |
 | 41 | `Shifts/ShiftCutsNestedTest.cs` | Shift Cuts Nested |
 | 42 | `Shifts/ShiftCutsBatchTest.cs` | Shift Cuts Batch |
 | 43 | `Shifts/ShiftOrderCreationTest.cs` | Shift Order Creation |
-| 48 | `Chatbot/ChatbotKimiProviderTest.cs` | Chat: KIMI Provider Setup (muss vor Chatbot-Tests laufen) |
 | 50 | `Chatbot/ChatbotSettingsGeneralTest.cs` | Chat: Settings General (App-Name, Icon, Logo) |
 | 51 | `Chatbot/ChatbotNavigationTest.cs` | Chat: Navigation zu Settings/Seiten via Chat |
 | 52 | `Chatbot/ChatbotSoulMemoryTest.cs` | Chat: AI Soul & Memory (CRUD) |
 | 53 | `Chatbot/ChatbotBranchesTest.cs` | Chat: Filialen CRUD |
 | 54 | `Chatbot/ChatbotMacrosTest.cs` | Chat: Macro CRUD mit Script |
 | 55 | `Chatbot/ChatbotAiGuidelinesTest.cs` | Chat: AI Guidelines |
-| 56 | `Chatbot/ChatbotSystemInfoPermissionsTest.cs` | Chat: Systeminfo & Berechtigungen |
 | 57 | `Chatbot/ChatbotOwnerAddressTest.cs` | Chat: Owner Address (Validierung, CRUD) |
 | 58 | `Chatbot/ChatbotUserAdministrationTest.cs` | Chat: User CRUD |
 | 59 | `Chatbot/ChatbotCalendarRulesJapanTest.cs` | Chat: Japan Feiertage + Country/States CRUD |
-| 60 | `Chatbot/ChatbotEmailSettingTest.cs` | Chat: Email Settings (SMTP/IMAP) |
-| 61 | `Chatbot/ChatbotEmailSetupWizardTest.cs` | Chat: Email Setup Wizard (GMX) |
+| 61 | `Chatbot/ChatbotEmailSetupWizardTest.cs` | Chat: Email Setup Wizard (GMX, inkl. SMTP/IMAP Settings) |
 | 62 | `Klacksy/KlacksyInPageNavigationE2ETests.cs` | Klacksy: In-Page Navigation Highlights |
 | 64 | `Settings/UserGroupVisibilityTest.cs` | LLM Chat: Gruppen-Sichtbarkeit (Login als neuer User) |
 | 70 | `Settings/SettingsWorkSettingTest.cs` | Settings Work-Setting |
@@ -59,9 +49,7 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgefuehrt, gesteuert dur
 | 72 | `Settings/SettingsSchedulingDefaultsTest.cs` | Settings Scheduling Defaults |
 | 73 | `Settings/SettingsSchedulingRulesTest.cs` | Settings Scheduling Rules |
 | 74 | `Settings/SettingsAbsenceDetailTest.cs` | Settings Absence Detail |
-| 75 | `Settings/SettingsDeeplTest.cs` | Settings DeepL |
-| 76 | `Settings/SettingsOpenrouteTest.cs` | Settings OpenRoute |
-| 90 | `Messaging/TelegramOnboardingTest.cs` | Telegram Webhook Onboarding |
+| 90 | `Messaging/TelegramOnboardingTest.cs` | Telegram Button Visibility (Webhook-HTTP-Tests siehe Klacks.IntegrationTest/Messaging/) |
 | 95 | `VoiceOnlyShellTests.cs` | Voice-Only Shell (Audio/Text Mode Switch) |
 | 100 | `WorkSchedule/WorkScheduleBulkOperationsTest.cs` | Schedule Bulk Operations |
 | 101 | `WorkSchedule/WorkScheduleGridTest.cs` | Schedule Canvas Grid |
@@ -77,13 +65,13 @@ Die E2E-Tests werden in einer definierten Reihenfolge ausgefuehrt, gesteuert dur
 |-------|-----------|--------------|
 | 1-9 | Login & Navigation | Grundlegende Anmeldung und Navigation |
 | 10-19 | Client | Client-Verwaltung |
-| 20-32 | Settings | Settings (General, Owner, Users, Absence, CalendarRules, LLM Providers/Models) |
+| 20-32 | Settings | Settings (Users, Absence, CalendarRules, LLM Providers/Models) |
 | 33-34 | Gantt | Gantt-Diagramm Tests |
 | 35-39 | Group | Gruppen-Verwaltung |
 | 40-49 | Shifts | Shift-Verwaltung (Cuts, Orders) |
-| 48-61 | Chatbot | Chatbot-Tests (KIMI Provider Setup, Settings, AI Soul, Branches, Macros, Email) |
+| 48-61 | Chatbot | Chatbot-Tests (Settings, AI Soul, Branches, Macros, Email) |
 | 62-69 | Klacksy / Visibility | In-Page Nav, Group Visibility |
-| 70-76 | Settings (Advanced) | Work-Setting, Contracts, Scheduling, DeepL, OpenRoute |
+| 70-74 | Settings (Advanced) | Work-Setting, Contracts, Scheduling |
 | 90-99 | Messaging / Shell | Telegram, Voice Shell |
 | 100-119 | WorkSchedule | Schedule Canvas Grid, Group Switch, Wizard |
 

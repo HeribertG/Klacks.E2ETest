@@ -8,6 +8,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(31)]
+[Category("Input")]
 public class SettingsLlmProvidersTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -107,21 +108,27 @@ public class SettingsLlmProvidersTest : PlaywrightSetup
         TestContext.Out.WriteLine("LLM Providers section loaded successfully");
     }
 
-    [Test]
-    [Order(2)]
-    public async Task Step2_CreateNewProvider()
+    /// <summary>
+    /// Ensures a test provider exists and is known via <see cref="_createdProviderId"/>/<see cref="_createdProviderName"/>.
+    /// Self-healing: creates a fresh one if this step (or a prior one) hasn't already, so every step in
+    /// this file can run standalone via --filter without depending on Step2 having run first.
+    /// </summary>
+    private async Task EnsureProviderCreated()
     {
-        // Arrange
-        TestContext.Out.WriteLine("=== Step 2: Create New LLM Provider ===");
+        if (!string.IsNullOrEmpty(_createdProviderName))
+        {
+            var existingId = await FindProviderRowByName(_createdProviderName);
+            if (existingId != null)
+            {
+                return;
+            }
+        }
+
         var timestamp = DateTime.Now.Ticks.ToString().Substring(10, 6);
         _createdProviderId = $"{TestProviderId}-{timestamp}";
         _createdProviderName = $"{TestProviderName} {timestamp}";
         TestContext.Out.WriteLine($"Creating provider: {_createdProviderName} (ID: {_createdProviderId})");
 
-        var rowCountBefore = await GetProviderRowCount();
-        TestContext.Out.WriteLine($"Providers before: {rowCountBefore}");
-
-        // Act
         var addButton = await FindAddButton();
         Assert.That(addButton, Is.Not.Null, "Add button should exist");
 
@@ -170,6 +177,19 @@ public class SettingsLlmProvidersTest : PlaywrightSetup
         {
             TestContext.Out.WriteLine($"API Error after create: {_listener.GetLastErrorMessage()}");
         }
+    }
+
+    [Test]
+    [Order(2)]
+    public async Task Step2_CreateNewProvider()
+    {
+        // Arrange
+        TestContext.Out.WriteLine("=== Step 2: Create New LLM Provider ===");
+        var rowCountBefore = await GetProviderRowCount();
+        TestContext.Out.WriteLine($"Providers before: {rowCountBefore}");
+
+        // Act
+        await EnsureProviderCreated();
 
         var rowCountAfter = await GetProviderRowCount();
         TestContext.Out.WriteLine($"Providers after: {rowCountAfter}");
@@ -189,12 +209,7 @@ public class SettingsLlmProvidersTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 3: Verify Created Provider Exists ===");
 
-        if (string.IsNullOrEmpty(_createdProviderName))
-        {
-            TestContext.Out.WriteLine("No provider was created in Step2 - skipping");
-            Assert.Inconclusive("No provider was created in previous step");
-            return;
-        }
+        await EnsureProviderCreated();
 
         // Act
         var foundProviderId = await FindProviderRowByName(_createdProviderName);
@@ -214,12 +229,7 @@ public class SettingsLlmProvidersTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 4: Open and Verify Provider Modal ===");
 
-        if (string.IsNullOrEmpty(_createdProviderId))
-        {
-            TestContext.Out.WriteLine("No provider was created - skipping");
-            Assert.Inconclusive("No provider was created in previous step");
-            return;
-        }
+        await EnsureProviderCreated();
 
         // Act
         var displayId = GetRowDisplayId(_createdProviderId);
@@ -278,12 +288,7 @@ public class SettingsLlmProvidersTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 5: Update Provider ===");
 
-        if (string.IsNullOrEmpty(_createdProviderId))
-        {
-            TestContext.Out.WriteLine("No provider was created - skipping");
-            Assert.Inconclusive("No provider was created in previous step");
-            return;
-        }
+        await EnsureProviderCreated();
 
         // Act
         var displayId = GetRowDisplayId(_createdProviderId);
@@ -347,12 +352,7 @@ public class SettingsLlmProvidersTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 6: Delete Created Provider ===");
 
-        if (string.IsNullOrEmpty(_createdProviderId))
-        {
-            TestContext.Out.WriteLine("No provider was created - skipping delete");
-            Assert.Inconclusive("No provider was created in previous step");
-            return;
-        }
+        await EnsureProviderCreated();
 
         var rowCountBefore = await GetProviderRowCount();
         TestContext.Out.WriteLine($"Providers before delete: {rowCountBefore}");

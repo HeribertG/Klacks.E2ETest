@@ -5,8 +5,11 @@ using Microsoft.Playwright;
 
 namespace Klacks.E2ETest;
 
+// SKIPPED (not atomized): this class already needs a full rewrite (see [Ignore] reason below).
+// Atomize the Step1-3 chain (shared _testOrderName field) as part of that rewrite instead.
 [TestFixture]
 [Order(43)]
+[Category("Input")]
 [Ignore("Uses Page-direct calls and depends on missing shift list elements - needs full rewrite")]
 public class ShiftOrderCreationTest : PlaywrightSetup
 {

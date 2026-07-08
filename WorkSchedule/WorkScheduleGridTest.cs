@@ -22,6 +22,7 @@ namespace Klacks.E2ETest.WorkSchedule;
 /// </summary>
 [TestFixture]
 [Order(101)]
+[Category("Input")]
 public class WorkScheduleGridTest : PlaywrightSetup
 {
     private Listener _listener = null!;

@@ -13,6 +13,7 @@ namespace Klacks.E2ETest.Shifts;
 /// </summary>
 [TestFixture]
 [Order(42)]
+[Category("Input")]
 [Ignore("Live session-recovery flow: requires the running app (frontend 4200 + backend 5001) and an editable status=0 shift via KLACKS_E2E_SHIFT_ID. Run on demand, not in fresh-DB CI.")]
 public class SessionRecoveryAfterReloginTest : PlaywrightSetup
 {
@@ -98,11 +99,12 @@ public class SessionRecoveryAfterReloginTest : PlaywrightSetup
     {
         for (var i = 0; i < attempts; i++)
         {
-            var el = await Actions.FindElementById(id);
+            var el = await Actions.FindElementById(id, 500);
             if (el != null)
             {
                 return el;
             }
+            await Actions.Wait500();
         }
         return null;
     }

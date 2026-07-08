@@ -22,6 +22,7 @@ namespace Klacks.E2ETest.WorkSchedule;
 
 [TestFixture]
 [Order(110)]
+[Category("Stress")]
 [Explicit("One-click AutoWizard smoke — self-seeds an under-limit group in the Dev DB (5434) and needs a live Dev API (5001) + UI (4200); local-only, never green in CI")]
 public class WizardAutofillTest : PlaywrightSetup
 {

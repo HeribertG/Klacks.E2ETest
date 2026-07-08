@@ -5,8 +5,11 @@ using Microsoft.Playwright;
 
 namespace Klacks.E2ETest;
 
+// SKIPPED (not atomized): this class already needs a full rewrite (see [Ignore] reason below); its
+// Step3 also re-invokes Step2 inline instead of NUnit ordering. Atomize as part of that rewrite instead.
 [TestFixture]
 [Order(42)]
+[Category("Input")]
 [Ignore("Depends on shift test data; batch cuts uses Page-direct selectors - needs rewrite")]
 public class ShiftCutsBatchTest : PlaywrightSetup
 {
@@ -292,38 +295,5 @@ public class ShiftCutsBatchTest : PlaywrightSetup
             $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
         TestContext.Out.WriteLine("Batch save verification completed!");
-    }
-
-    [Test, Order(5)]
-    public async Task Step5_VerifyTopologicalSortWorked()
-    {
-        TestContext.Out.WriteLine("=== Step 5: Verify Topological Sort Worked Correctly ===");
-        TestContext.Out.WriteLine("");
-        TestContext.Out.WriteLine("The PostBatchCutsCommandHandler should have:");
-        TestContext.Out.WriteLine("1. Received operations in random order:");
-        TestContext.Out.WriteLine("   - UPDATE: Original shift → EBENE 0 Cut A");
-        TestContext.Out.WriteLine("   - CREATE: EBENE 0 Cut B (depends on nothing)");
-        TestContext.Out.WriteLine("   - CREATE: EBENE 0 Cut C (depends on nothing)");
-        TestContext.Out.WriteLine("   - CREATE: EBENE 1 Cut A1 (depends on temp-ID of A)");
-        TestContext.Out.WriteLine("   - CREATE: EBENE 1 Cut A2 (depends on temp-ID of A)");
-        TestContext.Out.WriteLine("   - CREATE: EBENE 1 Cut B1 (depends on temp-ID of B)");
-        TestContext.Out.WriteLine("   - CREATE: EBENE 1 Cut B2 (depends on temp-ID of B)");
-        TestContext.Out.WriteLine("");
-        TestContext.Out.WriteLine("2. Done Topological Sort to ensure parents before children:");
-        TestContext.Out.WriteLine("   Order: UPDATE(A) → CREATE(B) → CREATE(C) → CREATE(A1) → CREATE(A2) → CREATE(B1) → CREATE(B2)");
-        TestContext.Out.WriteLine("");
-        TestContext.Out.WriteLine("3. Resolved temp-IDs:");
-        TestContext.Out.WriteLine("   - temp-1 (Cut A) → real ID after UPDATE");
-        TestContext.Out.WriteLine("   - temp-2 (Cut B) → real ID after CREATE");
-        TestContext.Out.WriteLine("   - A1's parentId: temp-1 → resolved to real Cut A ID");
-        TestContext.Out.WriteLine("   - A2's parentId: temp-1 → resolved to real Cut A ID");
-        TestContext.Out.WriteLine("   - B1's parentId: temp-2 → resolved to real Cut B ID");
-        TestContext.Out.WriteLine("   - B2's parentId: temp-2 → resolved to real Cut B ID");
-        TestContext.Out.WriteLine("");
-        TestContext.Out.WriteLine("4. Called ShiftTreeService for correct tree values:");
-        TestContext.Out.WriteLine("   - EBENE 0: AddRootNodeAsync() → lft=1, rgt=2 (initially)");
-        TestContext.Out.WriteLine("   - EBENE 1: AddChildNodeAsync() → calculates lft/rgt, updates parent");
-
-        Assert.Pass("Topological Sort documentation provided");
     }
 }

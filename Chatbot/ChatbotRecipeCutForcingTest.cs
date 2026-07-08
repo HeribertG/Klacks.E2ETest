@@ -19,6 +19,7 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Explicit("LLM-driven live recipe-forcing proof; slow and nondeterministic. Run on demand, ideally 5x.")]
+[Category("Klacksy")]
 public class ChatbotRecipeCutForcingTest : ChatbotTestBase
 {
     private const string SkillFindCustomer = "find_customer_candidates";

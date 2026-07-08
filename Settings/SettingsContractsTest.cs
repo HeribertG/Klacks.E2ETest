@@ -7,6 +7,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(71)]
+[Category("Input")]
 public class SettingsContractsTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -80,11 +81,19 @@ public class SettingsContractsTest : PlaywrightSetup
         TestContext.Out.WriteLine("Contract modal opened successfully");
     }
 
-    [Test]
-    [Order(3)]
-    public async Task Step3_FillAndSaveContract()
+    /// <summary>
+    /// Ensures the test contract exists and is known via <see cref="_createdContractId"/>.
+    /// Self-healing: creates it via the modal if it doesn't already exist, so every step in this file
+    /// can run standalone via --filter without depending on Step2/Step3 having run first.
+    /// </summary>
+    private async Task EnsureContractCreated()
     {
-        TestContext.Out.WriteLine("=== Step 3: Fill contract form and save ===");
+        var existingId = await FindContractIdByName(TestContractName);
+        if (!string.IsNullOrEmpty(existingId))
+        {
+            _createdContractId = existingId;
+            return;
+        }
 
         await Actions.ClickButtonById(MainNavIds.OpenSettingsId);
         await Actions.WaitForSpinnerToDisappear();
@@ -116,6 +125,20 @@ public class SettingsContractsTest : PlaywrightSetup
             $"No API errors should occur. Error: {_listener.GetLastErrorMessage()}");
 
         TestContext.Out.WriteLine("Contract form filled and saved");
+
+        var contractId = await FindContractIdByName(TestContractName);
+        Assert.That(contractId, Is.Not.Null.And.Not.Empty,
+            $"Contract '{TestContractName}' should appear in the contracts list");
+        _createdContractId = contractId!;
+    }
+
+    [Test]
+    [Order(3)]
+    public async Task Step3_FillAndSaveContract()
+    {
+        TestContext.Out.WriteLine("=== Step 3: Fill contract form and save ===");
+
+        await EnsureContractCreated();
     }
 
     [Test]
@@ -124,13 +147,11 @@ public class SettingsContractsTest : PlaywrightSetup
     {
         TestContext.Out.WriteLine("=== Step 4: Verify new contract appears in list ===");
 
-        await Actions.Wait1000();
+        await EnsureContractCreated();
 
-        var contractId = await FindContractIdByName(TestContractName);
-        Assert.That(contractId, Is.Not.Null.And.Not.Empty,
+        Assert.That(_createdContractId, Is.Not.Null.And.Not.Empty,
             $"Contract '{TestContractName}' should appear in the contracts list");
 
-        _createdContractId = contractId!;
         TestContext.Out.WriteLine($"Contract found in list with ID: {_createdContractId}");
 
         Assert.That(_listener.HasApiErrors(), Is.False,
@@ -145,16 +166,7 @@ public class SettingsContractsTest : PlaywrightSetup
     {
         TestContext.Out.WriteLine("=== Step 5: Delete the created contract ===");
 
-        if (string.IsNullOrEmpty(_createdContractId))
-        {
-            var contractId = await FindContractIdByName(TestContractName);
-            if (string.IsNullOrEmpty(contractId))
-            {
-                Assert.Inconclusive("No contract found to delete - contract may not have been created");
-                return;
-            }
-            _createdContractId = contractId;
-        }
+        await EnsureContractCreated();
 
         var deleteButtonId = RowDeletePrefix + _createdContractId;
 

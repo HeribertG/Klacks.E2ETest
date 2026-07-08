@@ -7,6 +7,7 @@ namespace Klacks.E2ETest.Chatbot
     [TestFixture]
     [Order(62)]
     [Ignore("Chatbot tests depend on external LLM (KIMI/OpenRouter); flaky in fresh-DB CI runs. Live-verified 7/7 green 2026-06-10.")]
+    [Category("Klacksy")]
     public class ChatbotAutonomyConfirmationTest : ChatbotTestBase
     {
         private const string SkillSetAutonomyLevel = "set_autonomy_level";

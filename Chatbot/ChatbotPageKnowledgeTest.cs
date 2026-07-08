@@ -6,6 +6,7 @@ namespace Klacks.E2ETest.Chatbot
 {
     [TestFixture]
     [Order(62)]
+    [Category("Klacksy")]
     public class ChatbotPageKnowledgeTest : ChatbotTestBase
     {
         private const string SkillExplainDashboard = "explain_page_dashboard";

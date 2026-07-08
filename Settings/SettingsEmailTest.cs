@@ -7,6 +7,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(27)]
+    [Category("Input")]
     public class SettingsEmailTest : PlaywrightSetup
     {
         private Listener _listener;

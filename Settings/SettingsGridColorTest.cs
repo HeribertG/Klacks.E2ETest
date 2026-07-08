@@ -7,6 +7,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(24)]
+    [Category("Input")]
     public class SettingsGridColorTest : PlaywrightSetup
     {
         private Listener _listener;

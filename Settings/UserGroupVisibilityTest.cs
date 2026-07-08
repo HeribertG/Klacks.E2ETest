@@ -10,6 +10,7 @@ namespace Klacks.E2ETest
     [TestFixture]
     [Order(64)]
     [Ignore("Requires working LLM chat for user creation; depends on Chatbot tests that are skipped due to LLM dependency")]
+    [Category("Input")]
     public class UserGroupVisibilityTest : PlaywrightSetup
     {
         private Listener _listener = null!;
@@ -482,7 +483,7 @@ namespace Klacks.E2ETest
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
             {
-                var chatInput = await Actions.FindElementById(ChatInput);
+                var chatInput = await Actions.FindElementById(ChatInput, 500);
                 if (chatInput != null)
                 {
                     var isDisabled = await chatInput.IsDisabledAsync();

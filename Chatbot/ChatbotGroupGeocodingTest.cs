@@ -22,6 +22,7 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Order(61)]
+[Category("Klacksy")]
 public class ChatbotGroupGeocodingTest : ChatbotTestBase
 {
     private const string SkillGeocode = "geocode_location_groups";

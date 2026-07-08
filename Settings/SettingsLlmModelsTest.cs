@@ -8,6 +8,7 @@ namespace Klacks.E2ETest;
 
 [TestFixture]
 [Order(32)]
+[Category("Input")]
 public class SettingsLlmModelsTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -107,21 +108,27 @@ public class SettingsLlmModelsTest : PlaywrightSetup
         TestContext.Out.WriteLine("LLM Models section loaded successfully");
     }
 
-    [Test]
-    [Order(2)]
-    public async Task Step2_CreateNewModel()
+    /// <summary>
+    /// Ensures a test model exists and is known via <see cref="_createdModelId"/>/<see cref="_createdModelName"/>.
+    /// Self-healing: creates a fresh one if this step (or a prior one) hasn't already, so every step in
+    /// this file can run standalone via --filter without depending on Step2 having run first.
+    /// </summary>
+    private async Task EnsureModelCreated()
     {
-        // Arrange
-        TestContext.Out.WriteLine("=== Step 2: Create New LLM Model ===");
+        if (!string.IsNullOrEmpty(_createdModelName))
+        {
+            var existingId = await FindModelRowByName(_createdModelName);
+            if (existingId != null)
+            {
+                return;
+            }
+        }
+
         var timestamp = DateTime.Now.Ticks.ToString().Substring(10, 6);
         _createdModelId = $"{TestModelId}-{timestamp}";
         _createdModelName = $"{TestModelName} {timestamp}";
         TestContext.Out.WriteLine($"Creating model: {_createdModelName} (ID: {_createdModelId})");
 
-        var rowCountBefore = await GetModelRowCount();
-        TestContext.Out.WriteLine($"Models before: {rowCountBefore}");
-
-        // Act
         var addButton = await FindAddButton();
         Assert.That(addButton, Is.Not.Null, "Add button should exist");
 
@@ -186,6 +193,19 @@ public class SettingsLlmModelsTest : PlaywrightSetup
         {
             TestContext.Out.WriteLine($"API Error after create: {_listener.GetLastErrorMessage()}");
         }
+    }
+
+    [Test]
+    [Order(2)]
+    public async Task Step2_CreateNewModel()
+    {
+        // Arrange
+        TestContext.Out.WriteLine("=== Step 2: Create New LLM Model ===");
+        var rowCountBefore = await GetModelRowCount();
+        TestContext.Out.WriteLine($"Models before: {rowCountBefore}");
+
+        // Act
+        await EnsureModelCreated();
 
         var rowCountAfter = await GetModelRowCount();
         TestContext.Out.WriteLine($"Models after: {rowCountAfter}");
@@ -205,12 +225,7 @@ public class SettingsLlmModelsTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 3: Verify Created Model Exists ===");
 
-        if (string.IsNullOrEmpty(_createdModelName))
-        {
-            TestContext.Out.WriteLine("No model was created in Step2 - skipping");
-            Assert.Inconclusive("No model was created in previous step");
-            return;
-        }
+        await EnsureModelCreated();
 
         // Act
         var foundModelId = await FindModelRowByName(_createdModelName);
@@ -230,12 +245,7 @@ public class SettingsLlmModelsTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 4: Open and Verify Model Modal ===");
 
-        if (string.IsNullOrEmpty(_createdModelId))
-        {
-            TestContext.Out.WriteLine("No model was created - skipping");
-            Assert.Inconclusive("No model was created in previous step");
-            return;
-        }
+        await EnsureModelCreated();
 
         // Act
         var displayId = GetRowDisplayId(_createdModelId);
@@ -294,12 +304,7 @@ public class SettingsLlmModelsTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 5: Update Model ===");
 
-        if (string.IsNullOrEmpty(_createdModelId))
-        {
-            TestContext.Out.WriteLine("No model was created - skipping");
-            Assert.Inconclusive("No model was created in previous step");
-            return;
-        }
+        await EnsureModelCreated();
 
         // Act
         var displayId = GetRowDisplayId(_createdModelId);
@@ -363,12 +368,7 @@ public class SettingsLlmModelsTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 6: Delete Created Model ===");
 
-        if (string.IsNullOrEmpty(_createdModelId))
-        {
-            TestContext.Out.WriteLine("No model was created - skipping delete");
-            Assert.Inconclusive("No model was created in previous step");
-            return;
-        }
+        await EnsureModelCreated();
 
         var rowCountBefore = await GetModelRowCount();
         TestContext.Out.WriteLine($"Models before delete: {rowCountBefore}");

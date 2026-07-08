@@ -15,6 +15,7 @@ namespace Klacks.E2ETest.WorkSchedule;
 /// </summary>
 [TestFixture]
 [Order(102)]
+[Category("Stress")]
 public class ScheduleParallelLoadTest : PlaywrightSetup
 {
     private const string WorkScheduleMarker = "Works/Schedule";

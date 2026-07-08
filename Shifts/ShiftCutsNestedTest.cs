@@ -5,9 +5,14 @@ using Microsoft.Playwright;
 
 namespace Klacks.E2ETest;
 
+// SKIPPED (not atomized): this class already needs a full rewrite (see [Ignore] reason below).
+// Note the reason text below is stale - each test method seeds its own unique _testShiftName in
+// Setup(), it does NOT actually depend on ShiftCutsBasicTest data. Corrected here so the next person
+// working on the rewrite doesn't chase a cross-class dependency that doesn't exist in the code.
 [TestFixture]
 [Order(41)]
-[Ignore("Depends on ShiftCutsBasicTest test data; nested cuts test uses Page-direct text locators - needs rewrite")]
+[Category("Input")]
+[Ignore("Nested cuts test uses Page-direct text locators - needs rewrite")]
 public class ShiftCutsNestedTest : PlaywrightSetup
 {
     private Listener _listener = null!;
@@ -229,28 +234,6 @@ public class ShiftCutsNestedTest : PlaywrightSetup
 
         TestContext.Out.WriteLine("Nested cutting tested as far as possible");
         Assert.Pass("EBENE 1 cutting flow tested");
-    }
-
-    [Test, Order(4)]
-    public async Task Step4_VerifyNestedTreeStructure()
-    {
-        TestContext.Out.WriteLine("=== Step 4: Verify Nested Tree Structure ===");
-        TestContext.Out.WriteLine("");
-        TestContext.Out.WriteLine("Expected structure:");
-        TestContext.Out.WriteLine("EBENE 0 (Root):");
-        TestContext.Out.WriteLine("  - Cut A (07-12): lft=1, rgt=6, parent_id=NULL, root_id=own ID");
-        TestContext.Out.WriteLine("    └─ EBENE 1:");
-        TestContext.Out.WriteLine("       - Cut A1 (07-09:30): lft=2, rgt=3, parent_id=Cut A, root_id=Cut A");
-        TestContext.Out.WriteLine("       - Cut A2 (09:30-12): lft=4, rgt=5, parent_id=Cut A, root_id=Cut A");
-        TestContext.Out.WriteLine("  - Cut B (12-15): lft=1, rgt=2, parent_id=NULL, root_id=own ID");
-        TestContext.Out.WriteLine("  - Cut C (15-19): lft=1, rgt=2, parent_id=NULL, root_id=own ID");
-        TestContext.Out.WriteLine("");
-        TestContext.Out.WriteLine("WICHTIG:");
-        TestContext.Out.WriteLine("- EBENE 0: root_id = eigene ID, parent_id = NULL");
-        TestContext.Out.WriteLine("- EBENE 1: root_id = EBENE 0 ID, parent_id = EBENE 0 ID");
-        TestContext.Out.WriteLine("- Nested Set Model: Lft/Rgt werden vom Backend berechnet");
-
-        Assert.Pass("Tree structure documentation provided");
     }
 
     [Test, Order(5)]

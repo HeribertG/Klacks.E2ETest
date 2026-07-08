@@ -5,6 +5,7 @@ using Klacks.E2ETest.Wrappers;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(16)]
 public class ClientQualificationsTest : PlaywrightSetup
 {

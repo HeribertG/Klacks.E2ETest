@@ -9,6 +9,7 @@ using static Klacks.E2ETest.Constants.TestClientData;
 namespace Klacks.E2ETest;
 
 [TestFixture]
+[Category("Input")]
 [Order(12)]
 [Ignore("Count-based assertions conflict with seeded clients in Bern group (5 seeded + 5 test = 10); needs unique test group or GTE assertions")]
 public class ClientTypeFilterTest : PlaywrightSetup
@@ -23,6 +24,12 @@ public class ClientTypeFilterTest : PlaywrightSetup
 
         await Actions.ClickButtonById(MainNavIds.OpenEmployeesId);
         await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait500();
+
+        // Every step is self-contained: start from a known group filter regardless of what a
+        // previously run step (or a standalone re-run of just this step) left behind.
+        await ResetGroupFilterToAllGroups();
+        await SelectGroupByPath(GroupDeutschschweizMitte, GroupBE, GroupBern);
         await Actions.Wait500();
     }
 
@@ -103,6 +110,38 @@ public class ClientTypeFilterTest : PlaywrightSetup
         return 0;
     }
 
+    private async Task SetCheckboxState(string id, bool desiredChecked)
+    {
+        var checkbox = await Actions.FindElementById(id);
+        var isChecked = await checkbox!.IsCheckedAsync();
+        if (isChecked != desiredChecked)
+        {
+            await Actions.ClickCheckBoxById(id);
+            await Actions.Wait500();
+        }
+    }
+
+    /// <summary>
+    /// Opens the client-type dropdown and sets it to show ONLY the given type, reading the current
+    /// checkbox state first so this works regardless of what a previous step (or a fresh page load)
+    /// left the filter in.
+    /// </summary>
+    private async Task FilterByOnlyClientType(string keepCheckedId, params string[] uncheckIds)
+    {
+        await Actions.ClickButtonById(DropdownTypeId);
+        await Actions.Wait500();
+
+        await SetCheckboxState(keepCheckedId, true);
+        foreach (var uncheckId in uncheckIds)
+        {
+            await SetCheckboxState(uncheckId, false);
+        }
+
+        await Actions.ClickButtonById(CloseTypeDropdownId);
+        await Actions.WaitForSpinnerToDisappear();
+        await Actions.Wait1000();
+    }
+
     [Test]
     [Order(1)]
     public async Task Step1_FilterByClientTypeEmployee()
@@ -110,29 +149,10 @@ public class ClientTypeFilterTest : PlaywrightSetup
         // Arrange
         TestContext.Out.WriteLine("=== Step 1: Filter by Client Type 'Employee' ===");
 
-        TestContext.Out.WriteLine("Resetting to All Groups first");
-        await ResetGroupFilterToAllGroups();
-
-        await SelectGroupByPath(GroupDeutschschweizMitte, GroupBE, GroupBern);
-        await Actions.Wait500();
-
         // Act
         TestContext.Out.WriteLine("Opening client type dropdown and selecting Employee only");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait500();
+        await FilterByOnlyClientType(FilterTypeEmployeeId, FilterTypeExternEmpId, FilterTypeCustomerId);
 
-        await Actions.ClickCheckBoxById(FilterTypeExternEmpId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterTypeCustomerId);
-        await Actions.Wait500();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(CloseTypeDropdownId);
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-
-        // Act
         var totalCount = await GetPaginationTotalCount();
 
         // Assert
@@ -151,25 +171,11 @@ public class ClientTypeFilterTest : PlaywrightSetup
     {
         // Arrange
         TestContext.Out.WriteLine("=== Step 2: Filter by Client Type 'External Employee' ===");
-        TestContext.Out.WriteLine("Note: Group filter 'Bern' is already set from Step 1");
 
         // Act
         TestContext.Out.WriteLine("Opening client type dropdown and selecting ExternEmp only");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait500();
+        await FilterByOnlyClientType(FilterTypeExternEmpId, FilterTypeEmployeeId, FilterTypeCustomerId);
 
-        await Actions.ClickCheckBoxById(FilterTypeEmployeeId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterTypeExternEmpId);
-        await Actions.Wait500();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(CloseTypeDropdownId);
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-
-        // Act
         var totalCount = await GetPaginationTotalCount();
 
         // Assert
@@ -195,25 +201,11 @@ public class ClientTypeFilterTest : PlaywrightSetup
     {
         // Arrange
         TestContext.Out.WriteLine("=== Step 3: Filter by Client Type 'Customer' ===");
-        TestContext.Out.WriteLine("Note: Group filter 'Bern' is already set from Step 1");
 
         // Act
         TestContext.Out.WriteLine("Opening client type dropdown and selecting Customer only");
-        await Actions.ClickButtonById(DropdownTypeId);
-        await Actions.Wait500();
+        await FilterByOnlyClientType(FilterTypeCustomerId, FilterTypeEmployeeId, FilterTypeExternEmpId);
 
-        await Actions.ClickCheckBoxById(FilterTypeExternEmpId);
-        await Actions.Wait500();
-        await Actions.ClickCheckBoxById(FilterTypeCustomerId);
-        await Actions.Wait500();
-
-        TestContext.Out.WriteLine("Clicking dropdown toggle again to close and trigger filter");
-        await Actions.ClickButtonById(CloseTypeDropdownId);
-
-        await Actions.WaitForSpinnerToDisappear();
-        await Actions.Wait1000();
-
-        // Act
         var totalCount = await GetPaginationTotalCount();
 
         // Assert

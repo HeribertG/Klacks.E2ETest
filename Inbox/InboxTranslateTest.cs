@@ -7,6 +7,7 @@ namespace Klacks.E2ETest.Inbox;
 
 [TestFixture]
 [Order(95)]
+[Category("Input")]
 public class InboxTranslateTest : PlaywrightSetup
 {
     private Listener? _listener;

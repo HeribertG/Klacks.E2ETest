@@ -246,7 +246,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
         var startTime = DateTime.UtcNow;
         while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
         {
-            var chatInput = await Actions.FindElementById(inputSelector);
+            var chatInput = await Actions.FindElementById(inputSelector, 500);
             if (chatInput != null)
             {
                 var isDisabled = await chatInput.IsDisabledAsync();

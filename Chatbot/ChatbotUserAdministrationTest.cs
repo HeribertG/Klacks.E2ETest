@@ -8,6 +8,7 @@ namespace Klacks.E2ETest.Chatbot
     [TestFixture]
     [Order(58)]
     [Ignore("Chatbot tests depend on external LLM (KIMI/OpenRouter); flaky in fresh-DB CI runs")]
+    [Category("Klacksy")]
     public class ChatbotUserAdministrationTest : ChatbotTestBase
     {
         private const string SkillGetPermissions = "get_user_permissions";
@@ -292,7 +293,7 @@ namespace Klacks.E2ETest.Chatbot
             var startTime = DateTime.UtcNow;
             while ((DateTime.UtcNow - startTime).TotalMilliseconds < WaitDomTimeoutMs)
             {
-                var userAdminSection = await Actions.FindElementById(SettingsUserAdministrationIds.UserAdminSection);
+                var userAdminSection = await Actions.FindElementById(SettingsUserAdministrationIds.UserAdminSection, 1000);
                 if (userAdminSection == null)
                 {
                     TestContext.Out.WriteLine("Settings closed during delete wait, reopening...");

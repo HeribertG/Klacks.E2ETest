@@ -6,6 +6,7 @@ namespace Klacks.E2ETest
 {
     [TestFixture]
     [Order(33)]
+    [Category("Navigation")]
     public class GanttGroupFilterTest : PlaywrightSetup
     {
         private Listener _listener;

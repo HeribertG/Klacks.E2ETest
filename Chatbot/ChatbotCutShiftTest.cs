@@ -16,6 +16,7 @@ namespace Klacks.E2ETest.Chatbot;
 
 [TestFixture]
 [Explicit("LLM-driven live 24h split flow; slow and nondeterministic. Run on demand to verify cut_shift is invoked.")]
+[Category("Klacksy")]
 public class ChatbotCutShiftTest : ChatbotTestBase
 {
     private const string SkillCreateShift = "create_shift";
