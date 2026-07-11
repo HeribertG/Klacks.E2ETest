@@ -21,6 +21,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
     private const int MaxInputRetries = 3;
     private const int MaxNavigationRetries = 5;
     private const int InputEnabledTimeoutMs = 10000;
+    private const int PresenceProbeTimeoutMs = 2000;
     private const int DefaultBotResponseTimeoutMs = 90000;
 
     // AsideComponent only renders the classic aside panel (#assistant-chat-input etc.) when
@@ -103,7 +104,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
 
     protected async Task EnsureChatOpen()
     {
-        var chatInput = await Actions.FindElementById(GetChatSelector(ControlKeyInput));
+        var chatInput = await Actions.FindElementById(GetChatSelector(ControlKeyInput), PresenceProbeTimeoutMs);
         if (chatInput == null)
         {
             await Actions.ClickButtonById(GetChatSelector(ControlKeyToggleBtn));
@@ -115,7 +116,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
 
     protected async Task CloseChatIfOpen()
     {
-        var chatInput = await Actions.FindElementById(GetChatSelector(ControlKeyInput));
+        var chatInput = await Actions.FindElementById(GetChatSelector(ControlKeyInput), PresenceProbeTimeoutMs);
         if (chatInput != null)
         {
             await Actions.ClickButtonById(GetChatSelector(ControlKeyToggleBtn));
@@ -219,7 +220,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
 
     protected async Task ClearChat()
     {
-        var clearBtn = await Actions.FindElementById(GetChatSelector(ControlKeyClearBtn));
+        var clearBtn = await Actions.FindElementById(GetChatSelector(ControlKeyClearBtn), PresenceProbeTimeoutMs);
         if (clearBtn != null)
         {
             await Actions.ClickButtonById(GetChatSelector(ControlKeyClearBtn));

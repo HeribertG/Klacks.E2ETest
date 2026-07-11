@@ -1393,7 +1393,16 @@ public sealed class Wrapper
         }
         catch (TimeoutException ex)
         {
-            TestContext.Out.WriteLine($"The element with the ID '{id}' was not found or is not visible. {ex.Message}");
+            var attached = await _page.QuerySelectorAsync(CssSelectorWrapper.Wrap(AttributesAndElements.Id, id));
+            if (attached != null)
+            {
+                TestContext.Out.WriteLine(
+                    $"Element '{id}' is attached but not judged visible by Playwright — proceeding, force interactions handle this.");
+            }
+            else
+            {
+                TestContext.Out.WriteLine($"The element with the ID '{id}' was not found or is not visible. {ex.Message}");
+            }
         }
     }
 
