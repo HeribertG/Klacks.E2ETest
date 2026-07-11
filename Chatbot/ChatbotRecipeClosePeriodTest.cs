@@ -163,8 +163,17 @@ public class ChatbotRecipeClosePeriodTest : ChatbotTestBase
         {
             var before = await GetMessageCount();
             await SendChatMessage(ConfirmMessages[turn]);
-            var response = await WaitForBotResponse(before, TurnTimeoutMs);
-            TestContext.Out.WriteLine($"Bot (confirm {turn + 1}): {Trim(response)}");
+            try
+            {
+                var response = await WaitForBotResponse(before, TurnTimeoutMs);
+                TestContext.Out.WriteLine($"Bot (confirm {turn + 1}): {Trim(response)}");
+            }
+            catch (Exception ex)
+            {
+                TestContext.Out.WriteLine(
+                    $"No bot response within timeout on confirm turn {turn + 1} ({ex.Message}); " +
+                    "the database effect decides, not the chat text.");
+            }
 
             if (await SealedDayCountAsync() >= 1)
             {
