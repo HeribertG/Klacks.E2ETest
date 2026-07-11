@@ -110,8 +110,8 @@ public class ChatbotRecipeClosePeriodTest : ChatbotTestBase
         TestContext.Out.WriteLine(
             $"[close-period] group='{_groupName}' period={PeriodStart.ToString(DateSqlFormat)}..{PeriodEnd.ToString(DateSqlFormat)}");
 
-        await EnsureChatOpen();
-        await ClearChatAndWait();
+        await ResetChatAsync();
+        await WaitForChatInputEnabled();
 
         var issuesCallsBefore = await SuccessCallCountAsync(SkillListPeriodIssues);
 

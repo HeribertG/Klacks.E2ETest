@@ -44,6 +44,7 @@ public abstract class ChatbotTestBase : PlaywrightSetup
         Assert.That(ChatSelectors, Is.Not.Empty, "Chat selectors must be loaded from ui_controls");
 
         await ForceNonFloatingOutputModeAsync();
+        await ResetChatAsync();
     }
 
     [OneTimeTearDown]
@@ -224,6 +225,22 @@ public abstract class ChatbotTestBase : PlaywrightSetup
             await Actions.ClickButtonById(GetChatSelector(ControlKeyClearBtn));
             await Actions.Wait500();
         }
+    }
+
+    /// <summary>
+    /// Deterministic conversation reset that does not depend on the clear button being clickable:
+    /// a page reload recreates the assistant-chat component, which generates a fresh client
+    /// conversationId — the server then starts an empty conversation instead of resuming the
+    /// previous one. The clear-button click afterwards is best-effort cosmetics only. Note that
+    /// pending confirmation tokens live in backend memory per user and are NOT cleared by this;
+    /// they expire via TTL (and are parameter-bound and same-turn-blocked since 2026-07-11).
+    /// </summary>
+    protected async Task ResetChatAsync()
+    {
+        await Actions.Reload();
+        await Actions.Wait2000();
+        await EnsureChatOpen();
+        await ClearChat();
     }
 
     protected async Task ClearChatAndWait()
