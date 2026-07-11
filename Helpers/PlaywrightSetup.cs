@@ -10,6 +10,8 @@ public class PlaywrightSetup : PageTest
 {
     public const string DefaultBaseUrl = "http://localhost:4200/";
 
+    private const string FakeAudioWavEnvVar = "KLACKS_E2E_FAKE_AUDIO_WAV";
+
     public string BaseUrl { get; }
 
     public string UserName { get; }
@@ -262,6 +264,14 @@ public class PlaywrightSetup : PageTest
             args.Add("--start-fullscreen");
         }
 
+        var fakeAudioWav = Environment.GetEnvironmentVariable(FakeAudioWavEnvVar);
+        if (!string.IsNullOrWhiteSpace(fakeAudioWav))
+        {
+            args.Add("--use-fake-ui-for-media-stream");
+            args.Add("--use-fake-device-for-media-capture");
+            args.Add($"--use-file-for-fake-audio-capture={fakeAudioWav}");
+        }
+
         var launchOptions = new BrowserTypeLaunchOptions
         {
             Headless = _isHeadless,
@@ -305,6 +315,9 @@ public class PlaywrightSetup : PageTest
         _context = await _browser.NewContextAsync(contextOptions);
         _page = await _context.NewPageAsync();
 
-        await _context.GrantPermissionsAsync(Array.Empty<string>());
+        var grantedPermissions = string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(FakeAudioWavEnvVar))
+            ? Array.Empty<string>()
+            : new[] { "microphone" };
+        await _context.GrantPermissionsAsync(grantedPermissions);
     }
 }
