@@ -1284,6 +1284,23 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Removes a key from the browser's sessionStorage (e.g. to re-arm one-per-session
+    /// features like the Klacksy onboarding offer). Does not reload the page — call
+    /// Reload() afterward if the app only reads the key at bootstrap.
+    /// </summary>
+    public async Task RemoveSessionStorage(string key)
+    {
+        try
+        {
+            await _page.EvaluateAsync("(k) => sessionStorage.removeItem(k)", key);
+        }
+        catch (Exception ex)
+        {
+            TestContext.Out.WriteLine($"RemoveSessionStorage: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Reads the already selected text of a mat-select element
     /// </summary>
     /// <param name="elementId">The ID of the mat-select element.</param>
