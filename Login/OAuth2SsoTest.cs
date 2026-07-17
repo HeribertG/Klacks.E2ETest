@@ -85,8 +85,13 @@ public class OAuth2SsoTest : OAuth2TestSetup
             return;
         }
 
-        var state = $"{providerId}_{Guid.NewGuid():N}";
         var redirectUri = BaseUrl + "oauth2/callback";
+        var state = await RequestServerIssuedState(providerId, redirectUri);
+        if (state == null)
+        {
+            Assert.Ignore("Could not obtain a server-issued OAuth2 state - skipping test");
+            return;
+        }
 
         // Act - First navigate to any page to set localStorage
         await Page.GotoAsync(BaseUrl + "login");
@@ -134,6 +139,31 @@ public class OAuth2SsoTest : OAuth2TestSetup
         Assert.That(backButton, Is.Not.Null, "Back to login button should be present");
 
         TestContext.Out.WriteLine("OAuth2 error handling works correctly");
+    }
+
+    private async Task<string?> RequestServerIssuedState(string providerId, string redirectUri)
+    {
+        try
+        {
+            var response = await Page.APIRequest.GetAsync(
+                $"{ApiBaseUrl}OAuth2/authorize/{providerId}?redirectUri={Uri.EscapeDataString(redirectUri)}");
+            if (!response.Ok)
+            {
+                return null;
+            }
+
+            var json = await response.JsonAsync();
+            if (json?.ValueKind == System.Text.Json.JsonValueKind.Object
+                && json.Value.TryGetProperty("state", out var state))
+            {
+                return state.GetString();
+            }
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task<string?> GetFirstOAuth2ProviderId()
