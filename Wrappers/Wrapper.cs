@@ -1,4 +1,5 @@
 ﻿using Klacks.E2ETest.Constants;
+using Klacks.E2ETest.Helpers;
 using Microsoft.Playwright;
 using NUnit.Framework;
 
@@ -1907,4 +1908,122 @@ public sealed class Wrapper
     }
 
     #endregion Popups and Screenshots
-}
+
+    #region Synthetic Mouse Input
+
+    /// <summary>
+    /// Dispatches a synthetic MouseEvent on the first element matching the CSS selector at a pixel
+    /// offset from its top-left corner. Used to replay browser event sequences that Playwright cannot
+    /// produce itself, such as the macOS Safari Ctrl+Click (mousedown followed by contextmenu).
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the target element</param>
+    /// <param name="eventType">DOM event type, for example mousedown, mouseup, mousemove or contextmenu</param>
+    /// <param name="x">Horizontal offset in pixels from the element's top-left corner</param>
+    /// <param name="y">Vertical offset in pixels from the element's top-left corner</param>
+    /// <param name="button">Value of MouseEvent.button</param>
+    /// <param name="buttons">Value of MouseEvent.buttons</param>
+    /// <param name="ctrlKey">Value of MouseEvent.ctrlKey</param>
+    public async Task DispatchMouseEventByCssSelectorAtPosition(string cssSelector, string eventType, float x, float y, int button, int buttons, bool ctrlKey)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        await _page.Locator(cssSelector).First.EvaluateAsync(
+            MacContextClickIds.DispatchMouseEventScript,
+            new { eventType, x = (double)x, y = (double)y, button, buttons, ctrlKey });
+    }
+
+    /// <summary>
+    /// Performs a real left-click with the Control key held at a pixel offset of the first element matching the CSS selector.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the element to click</param>
+    /// <param name="x">Horizontal offset in pixels from the element's top-left corner</param>
+    /// <param name="y">Vertical offset in pixels from the element's top-left corner</param>
+    public async Task ControlClickByCssSelectorAtPosition(string cssSelector, float x, float y)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        await _page.Locator(cssSelector).First.ClickAsync(new LocatorClickOptions
+        {
+            Modifiers = new[] { KeyboardModifier.Control },
+            Position = new Position { X = x, Y = y },
+            Timeout = WrapperConstants.DEFAULT_TIMEOUT
+        });
+    }
+
+    /// <summary>
+    /// Moves the real mouse pointer (no button pressed) to a pixel offset of the first element matching the CSS selector.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the element to hover</param>
+    /// <param name="x">Horizontal offset in pixels from the element's top-left corner</param>
+    /// <param name="y">Vertical offset in pixels from the element's top-left corner</param>
+    public async Task HoverByCssSelectorAtPosition(string cssSelector, float x, float y)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        await _page.Locator(cssSelector).First.HoverAsync(new LocatorHoverOptions
+        {
+            Position = new Position { X = x, Y = y },
+            Timeout = WrapperConstants.DEFAULT_TIMEOUT
+        });
+    }
+
+    /// <summary>
+    /// Reads the inline cursor style of the document body, which the gantt drag service uses to signal a drag.
+    /// </summary>
+    public async Task<string> ReadBodyCursorStyle()
+    {
+        return await _page.EvaluateAsync<string>(MacContextClickIds.ReadBodyCursorScript) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Reads navigator.platform as seen by the page.
+    /// </summary>
+    public async Task<string> ReadNavigatorPlatform()
+    {
+        return await _page.EvaluateAsync<string>(MacContextClickIds.ReadPlatformScript) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Computes a hash over the pixels of a canvas region so that two states can be compared without a DOM oracle.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the canvas</param>
+    /// <param name="x">Left edge of the region in CSS pixels</param>
+    /// <param name="y">Top edge of the region in CSS pixels</param>
+    /// <param name="width">Width of the region in CSS pixels</param>
+    /// <param name="height">Height of the region in CSS pixels</param>
+    public async Task<string> ReadCanvasRegionSignature(string cssSelector, float x, float y, float width, float height)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        return await _page.Locator(cssSelector).First.EvaluateAsync<string>(
+            MacContextClickIds.CanvasRegionSignatureScript,
+            new { x = (double)x, y = (double)y, width = (double)width, height = (double)height }) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Scans a canvas line by line for a horizontal run of one uniform colour that differs from the line's
+    /// dominant colour (a bar or box). Returns its centre in CSS pixels relative to the canvas, or null.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the canvas</param>
+    /// <param name="fromY">First scanned line in CSS pixels</param>
+    /// <param name="toY">Last scanned line in CSS pixels</param>
+    /// <param name="stepY">Distance between scanned lines in CSS pixels</param>
+    /// <param name="minRun">Minimum run length in CSS pixels to count as a bar</param>
+    /// <param name="edgeBackground">True to take the colour of the leftmost pixel of a line as its background instead of the dominant colour, needed when the box is wider than the free area</param>
+    public async Task<(float X, float Y)?> FindUniformRunOnCanvas(string cssSelector, float fromY, float toY, float stepY, float minRun, bool edgeBackground = false)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        var result = await _page.Locator(cssSelector).First.EvaluateAsync<float[]?>(
+            MacContextClickIds.FindUniformRunScript,
+            new { fromY = (double)fromY, toY = (double)toY, stepY = (double)stepY, minRun = (double)minRun, edgeBackground });
+        return result is { Length: 2 } ? (result[0], result[1]) : null;
+    }
+
+    /// <summary>
+    /// Starts recording the bodies of outgoing requests with the given method whose URL contains the fragment.
+    /// </summary>
+    /// <param name="urlFragment">URL fragment a request must contain</param>
+    /// <param name="method">HTTP method of the requests to record</param>
+    public RequestRecorder RecordRequests(string urlFragment, string method)
+    {
+        return new RequestRecorder(_page, urlFragment, method);
+    }
+
+    #endregion Synthetic Mouse Input
+}
