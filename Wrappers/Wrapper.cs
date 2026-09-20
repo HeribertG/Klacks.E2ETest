@@ -38,6 +38,26 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Waits until the browser URL no longer contains the given text, for example after a login redirect.
+    /// </summary>
+    /// <param name="text">The text that must disappear from the URL</param>
+    /// <param name="timeoutMs">Maximum wait time in milliseconds</param>
+    public async Task WaitUntilUrlDoesNotContain(string text, int timeoutMs)
+    {
+        try
+        {
+            await _page.WaitForURLAsync(url => !url.Contains(text), new PageWaitForURLOptions
+            {
+                Timeout = timeoutMs
+            });
+        }
+        catch (Exception)
+        {
+            Assert.Fail($"url still contains '{text}'! Current: {_page.Url}");
+        }
+    }
+
+    /// <summary>
     /// Waits until the browser URL contains the expected text.
     /// </summary>
     public async Task WaitUntilUrlContains(string expectedText)
@@ -1978,6 +1998,92 @@ public sealed class Wrapper
     public async Task<string> ReadNavigatorPlatform()
     {
         return await _page.EvaluateAsync<string>(MacContextClickIds.ReadPlatformScript) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Dispatches a synthetic PointerEvent on the first element matching the CSS selector at a pixel
+    /// offset from its top-left corner. Used to replay the finger sequence of a tablet in engines whose
+    /// own gesture recognition cannot be driven from the test, such as WebKit on Windows.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the target element</param>
+    /// <param name="eventType">DOM event type, for example pointerdown or pointerup</param>
+    /// <param name="x">Horizontal offset in pixels from the element's top-left corner</param>
+    /// <param name="y">Vertical offset in pixels from the element's top-left corner</param>
+    /// <param name="pointerType">Value of PointerEvent.pointerType, for example touch or pen</param>
+    /// <param name="pointerId">Value of PointerEvent.pointerId, identical for all events of one gesture</param>
+    /// <param name="button">Value of PointerEvent.button</param>
+    /// <param name="buttons">Value of PointerEvent.buttons</param>
+    public async Task DispatchPointerEventByCssSelectorAtPosition(
+        string cssSelector, string eventType, float x, float y, string pointerType, int pointerId, int button, int buttons)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        await _page.Locator(cssSelector).First.EvaluateAsync(
+            TouchIds.DispatchPointerEventScript,
+            new { eventType, x = (double)x, y = (double)y, pointerType, pointerId, button, buttons });
+    }
+
+    /// <summary>
+    /// Holds a real finger on the first element matching the CSS selector, using the browser's own touch
+    /// input pipeline, so the engine's gesture recognition decides whether a native contextmenu follows.
+    /// Chromium only; the CDP session is opened and closed for this one gesture.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the target element</param>
+    /// <param name="x">Horizontal offset in pixels from the element's top-left corner</param>
+    /// <param name="y">Vertical offset in pixels from the element's top-left corner</param>
+    /// <param name="holdMs">Duration in milliseconds the finger stays down before it is lifted</param>
+    public async Task TouchLongPressByCssSelectorAtPosition(string cssSelector, float x, float y, int holdMs)
+    {
+        await _page.WaitForSelectorAsync(cssSelector, new() { State = WaitForSelectorState.Visible, Timeout = WrapperConstants.DEFAULT_TIMEOUT });
+        var box = await _page.Locator(cssSelector).First.BoundingBoxAsync()
+            ?? throw new InvalidOperationException($"The element '{cssSelector}' has no bounding box.");
+
+        var cdp = await _page.Context.NewCDPSessionAsync(_page);
+        try
+        {
+            await cdp.SendAsync(TouchIds.DispatchTouchEventCommand, new Dictionary<string, object>
+            {
+                [TouchIds.CdpTypeKey] = TouchIds.TouchStartType,
+                [TouchIds.CdpTouchPointsKey] = new[]
+                {
+                    new Dictionary<string, object>
+                    {
+                        [TouchIds.CdpXKey] = box.X + x,
+                        [TouchIds.CdpYKey] = box.Y + y,
+                    },
+                },
+            });
+
+            await Task.Delay(holdMs);
+
+            await cdp.SendAsync(TouchIds.DispatchTouchEventCommand, new Dictionary<string, object>
+            {
+                [TouchIds.CdpTypeKey] = TouchIds.TouchEndType,
+                [TouchIds.CdpTouchPointsKey] = Array.Empty<object>(),
+            });
+        }
+        finally
+        {
+            await cdp.DetachAsync();
+        }
+    }
+
+    /// <summary>
+    /// Reads the log of contextmenu events collected by the probe init script, one entry per event,
+    /// marked native or synthetic, so a test can report which path opened the menu.
+    /// </summary>
+    public async Task<string> ReadContextMenuTrustLog()
+    {
+        return await _page.EvaluateAsync<string>(TouchIds.ReadContextMenuLogScript) ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Reads the viewport position of the first element matching the CSS selector as "left,top", so a
+    /// test can tell whether a menu was reopened at a different place.
+    /// </summary>
+    /// <param name="cssSelector">The CSS selector of the element to measure</param>
+    public async Task<string> ReadElementPosition(string cssSelector)
+    {
+        return await _page.Locator(cssSelector).First.EvaluateAsync<string>(TouchIds.ReadMenuPositionScript) ?? string.Empty;
     }
 
     /// <summary>
