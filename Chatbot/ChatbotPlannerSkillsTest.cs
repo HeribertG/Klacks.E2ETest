@@ -6,7 +6,8 @@
  * Primary, DB-asserted test: cover_absence. Klacksy is given an absent employee (with a seeded work
  * on a date), a group and an absence type, and must call cover_absence (a single internal-orchestration
  * tool call, R1). The observable, non-flaky outcome is asserted via SQL: under the new scenario's token
- * a Break for the absent employee exists (+ an AnalyseScenario named "Absence cover ...") — never the
+ * a Break for the absent employee exists (+ an AnalyseScenario for the group covering exactly the absence day;
+ * its name is localized to the planner's language, so it is identified by group and period) — never the
  * chat wording.
  *
  * Secondary smoke test (default model, NOT a correctness assertion): read_schedule_state + detect_conflicts
@@ -14,7 +15,7 @@
  * streaming path does not log skill executions.
  *
  * Seed reuses a real (group, shift) pair and inserts only two prefixed test clients + memberships +
- * group items + one absent work; cleanup is idempotent and keyed on the test prefix + the scenario name.
+ * group items + one absent work; cleanup is idempotent and keyed on the test prefix + the scenario period.
  * Restores the original default LLM model on teardown.
  *
  * @param model - The api_model_id of the LLM model under test (drives default-model switching)
@@ -40,7 +41,6 @@ public class ChatbotPlannerSkillsTest : ChatbotTestBase
 
     private const string TestPrefix = "ETESTPLAN_";
     private const string AbsenceDate = "2099-08-17";
-    private const string ScenarioNameLike = "Absence cover%";
 
     private const string ModelGeminiFlash25 = "gemini-2.5-flash";
     private const string ModelGeminiFlash35 = "gemini-3.5-flash";
@@ -266,8 +266,7 @@ public class ChatbotPlannerSkillsTest : ChatbotTestBase
         var breakCount = ParseInt((await DbHelper.ExecuteSqlAsync(breakSql)).Trim());
 
         var scenarioSql =
-            $"SELECT count(*) FROM analyse_scenarios WHERE group_id = '{Escape(groupId)}' " +
-            $"AND name LIKE '{ScenarioNameLike}' AND NOT is_deleted";
+            $"SELECT count(*) FROM analyse_scenarios WHERE {AbsenceCoverScenarioFilter(groupId)} AND NOT is_deleted";
         var scenarioCount = ParseInt((await DbHelper.ExecuteSqlAsync(scenarioSql)).Trim());
 
         var detail = $"scenario_break(absent)={breakCount}, absence_cover_scenarios(group)={scenarioCount}";
@@ -275,10 +274,13 @@ public class ChatbotPlannerSkillsTest : ChatbotTestBase
         return (ok, detail);
     }
 
+    private static string AbsenceCoverScenarioFilter(string groupId) =>
+        $"group_id = '{Escape(groupId)}' AND from_date = '{AbsenceDate}' AND until_date = '{AbsenceDate}'";
+
     private static async Task CleanupAsync(string groupId)
     {
         var tokenSubquery =
-            $"SELECT token FROM analyse_scenarios WHERE group_id = '{Escape(groupId)}' AND name LIKE '{ScenarioNameLike}'";
+            $"SELECT token FROM analyse_scenarios WHERE {AbsenceCoverScenarioFilter(groupId)}";
         var clientSubquery = $"SELECT id FROM client WHERE name LIKE '{TestPrefix}%'";
 
         var sql =
@@ -287,7 +289,7 @@ public class ChatbotPlannerSkillsTest : ChatbotTestBase
             $"DELETE FROM break WHERE analyse_token IN ({tokenSubquery});\n" +
             $"DELETE FROM work WHERE analyse_token IN ({tokenSubquery});\n" +
             $"DELETE FROM shift WHERE analyse_token IN ({tokenSubquery});\n" +
-            $"DELETE FROM analyse_scenarios WHERE group_id = '{Escape(groupId)}' AND name LIKE '{ScenarioNameLike}';\n" +
+            $"DELETE FROM analyse_scenarios WHERE {AbsenceCoverScenarioFilter(groupId)};\n" +
             // our seeded test clients and everything keyed on them
             $"DELETE FROM work_change WHERE work_id IN (SELECT id FROM work WHERE client_id IN ({clientSubquery})) OR replace_client_id IN ({clientSubquery});\n" +
             $"DELETE FROM break WHERE client_id IN ({clientSubquery});\n" +
