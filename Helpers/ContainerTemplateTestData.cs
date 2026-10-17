@@ -11,6 +11,9 @@ namespace Klacks.E2ETest.Helpers;
 /// <summary>
 /// Creates a container shift with one container template holding two timed shift rectangles through the
 /// REST API, and removes every created row again (including soft-deleted and lock rows) on disposal.
+/// Both shifts are posted as sealed orders, the only status POST Shifts accepts besides drafts; ContainerId and TaskId
+/// are the plannable copies (status OriginalShift) the API creates and returns. The task, a sealed order without a
+/// customer, needs a group, so a throw-away root group is created first and deleted through the API again.
 /// All rows carry the INTEGRATION_TEST_ name prefix.
 /// </summary>
 /// <param name="apiBaseUrl">Base URL of the backend API, for example https://localhost:5001/api/backend/</param>
@@ -37,13 +40,16 @@ public sealed class ContainerTemplateTestData : IAsyncDisposable
 
     public Guid TaskId { get; private set; }
 
+    public Guid GroupId { get; private set; }
+
     public async Task CreateAsync()
     {
         try
         {
             await LoginAsync();
-            ContainerId = await CreateShiftAsync(ContainerTemplateTestDataIds.ContainerName, ContainerTemplateTestDataIds.ContainerAbbreviation, ContainerTemplateTestDataIds.ContainerShiftType);
-            TaskId = await CreateShiftAsync(ContainerTemplateTestDataIds.TaskName, ContainerTemplateTestDataIds.TaskAbbreviation, ContainerTemplateTestDataIds.TaskShiftType);
+            GroupId = await CreateGroupAsync();
+            ContainerId = await CreateShiftAsync(ContainerTemplateTestDataIds.ContainerName, ContainerTemplateTestDataIds.ContainerAbbreviation, ContainerTemplateTestDataIds.ContainerShiftType, null);
+            TaskId = await CreateShiftAsync(ContainerTemplateTestDataIds.TaskName, ContainerTemplateTestDataIds.TaskAbbreviation, ContainerTemplateTestDataIds.TaskShiftType, GroupId);
             await SaveTemplateAsync();
         }
         catch
@@ -55,17 +61,24 @@ public sealed class ContainerTemplateTestData : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (ContainerId != Guid.Empty || TaskId != Guid.Empty)
+        if (GroupId != Guid.Empty)
+        {
+            await _http.DeleteAsync($"{ContainerTemplateTestDataIds.GroupPathPrefix}{GroupId}");
+        }
+
+        if (ContainerId != Guid.Empty || TaskId != Guid.Empty || GroupId != Guid.Empty)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
             await using var command = new NpgsqlCommand(ContainerTemplateTestDataIds.CleanupSql, connection);
             command.Parameters.AddWithValue(ContainerTemplateTestDataIds.ContainerParameter, ContainerId);
             command.Parameters.AddWithValue(ContainerTemplateTestDataIds.TaskParameter, TaskId);
+            command.Parameters.AddWithValue(ContainerTemplateTestDataIds.GroupParameter, GroupId);
             command.Parameters.AddWithValue(ContainerTemplateTestDataIds.NamePrefixParameter, ContainerTemplateTestDataIds.NamePrefix + "%");
             await command.ExecuteNonQueryAsync();
             ContainerId = Guid.Empty;
             TaskId = Guid.Empty;
+            GroupId = Guid.Empty;
         }
 
         _http.Dispose();
@@ -80,14 +93,29 @@ public sealed class ContainerTemplateTestData : IAsyncDisposable
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(ContainerTemplateTestDataIds.BearerScheme, token);
     }
 
-    private async Task<Guid> CreateShiftAsync(string name, string abbreviation, int shiftType)
+    private async Task<Guid> CreateGroupAsync()
+    {
+        var body = new Dictionary<string, object?>
+        {
+            ["name"] = ContainerTemplateTestDataIds.GroupName,
+            ["description"] = string.Empty,
+            ["validFrom"] = ContainerTemplateTestDataIds.GroupValidFrom,
+        };
+
+        var response = await _http.PostAsJsonAsync(ContainerTemplateTestDataIds.GroupsPath, body);
+        await EnsureSuccessAsync(response);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty(ContainerTemplateTestDataIds.IdJsonKey).GetGuid();
+    }
+
+    private async Task<Guid> CreateShiftAsync(string name, string abbreviation, int shiftType, Guid? groupId)
     {
         var body = new Dictionary<string, object?>
         {
             ["name"] = name,
             ["abbreviation"] = abbreviation,
             ["description"] = string.Empty,
-            ["status"] = ContainerTemplateTestDataIds.OriginalShiftStatus,
+            ["status"] = ContainerTemplateTestDataIds.SealedOrderStatus,
             ["shiftType"] = shiftType,
             ["fromDate"] = ContainerTemplateTestDataIds.ShiftFromDate,
             ["startShift"] = ContainerTemplateTestDataIds.ContainerStart,
@@ -97,6 +125,19 @@ public sealed class ContainerTemplateTestData : IAsyncDisposable
             ["sumEmployees"] = 1,
             ["workTime"] = ContainerTemplateTestDataIds.ShiftWorkTime,
         };
+
+        if (groupId.HasValue)
+        {
+            body["groups"] = new[]
+            {
+                new Dictionary<string, object?>
+                {
+                    ["id"] = groupId.Value,
+                    ["name"] = ContainerTemplateTestDataIds.GroupName,
+                    ["validFrom"] = ContainerTemplateTestDataIds.GroupValidFrom,
+                },
+            };
+        }
 
         var response = await _http.PostAsJsonAsync(ContainerTemplateTestDataIds.ShiftsPath, body);
         await EnsureSuccessAsync(response);
