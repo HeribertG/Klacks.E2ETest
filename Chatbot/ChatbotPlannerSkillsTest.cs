@@ -236,9 +236,9 @@ public class ChatbotPlannerSkillsTest : ChatbotTestBase
             $"(gen_random_uuid(), '{absentId}', '{Escape(groupId)}', now(), false, now()), " +
             $"(gen_random_uuid(), '{candidateId}', '{Escape(groupId)}', now(), false, now());\n" +
 
-            $"INSERT INTO membership (id, client_id, type, valid_from, is_deleted, create_time) VALUES " +
-            $"(gen_random_uuid(), '{absentId}', 0, '2000-01-01', false, now()), " +
-            $"(gen_random_uuid(), '{candidateId}', 0, '2000-01-01', false, now());\n" +
+            $"INSERT INTO membership (id, client_id, valid_from, is_deleted, create_time) VALUES " +
+            $"(gen_random_uuid(), '{absentId}', '2000-01-01', false, now()), " +
+            $"(gen_random_uuid(), '{candidateId}', '2000-01-01', false, now());\n" +
 
             $"INSERT INTO work (id, shift_id, client_id, workday, work_time, surcharges, start_time, end_time, lock_level, is_deleted, create_time) VALUES " +
             $"(gen_random_uuid(), '{Escape(shiftId)}', '{absentId}', '{AbsenceDate}', 8, 0, '08:00', '16:00', 0, false, now());";

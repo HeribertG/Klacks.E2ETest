@@ -236,8 +236,8 @@ public class ChatbotRecipeClosePeriodTest : ChatbotTestBase
             "INSERT INTO client (id, name, gender, legal_entity, type, is_deleted, create_time) VALUES " +
             $"('{_clientId}', '{Escape(clientName)}', 1, false, 0, false, now());\n" +
 
-            "INSERT INTO membership (id, client_id, type, valid_from, is_deleted, create_time) VALUES " +
-            $"('{membershipId}', '{_clientId}', 0, '2000-01-01', false, now());\n" +
+            "INSERT INTO membership (id, client_id, valid_from, is_deleted, create_time) VALUES " +
+            $"('{membershipId}', '{_clientId}', '2000-01-01', false, now());\n" +
 
             "INSERT INTO group_item (id, shift_id, group_id, valid_from, is_deleted, create_time) VALUES " +
             $"('{groupItemShiftLinkId}', '{_shiftId}', '{_groupId}', now(), false, now());\n" +
