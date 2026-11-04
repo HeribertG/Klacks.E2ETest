@@ -51,7 +51,7 @@ namespace Klacks.E2ETest.Chatbot
 
         private static readonly string[] ShiftsPageAnchors =
         {
-            "Alle Dienste",
+            "Dienstverwaltung",
             "Dienst erfassen",
             "Bestellungen",
             "Planbare Dienste",
