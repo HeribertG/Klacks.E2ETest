@@ -4,7 +4,7 @@ namespace Klacks.E2ETest.Login;
 
 /// <summary>
 /// Reproduces the reported bug: after Klacks sits idle until the access AND
-/// refresh token are invalid (access token garbled, refresh-token cookie deleted), the next navigation fires a burst of parallel
+/// refresh token are invalid (both HttpOnly session cookies deleted, the stored profile kept), the next navigation fires a burst of parallel
 /// requests that all 401. The first triggers a (failing) token refresh; the
 /// others used to hang forever, leaking the global loading spinner so the
 /// dashboard spinner kept spinning after re-login. This test forces that exact
@@ -18,8 +18,6 @@ namespace Klacks.E2ETest.Login;
 public class SpinnerClearsAfterReloginTest : PlaywrightSetup
 {
     private const string SpinnerSelector = ".lds-ripple";
-    private const string AccessTokenStorageKey = "JWT_TOKEN";
-    private const string InvalidToken = "invalid-expired-token";
 
     [Test]
     public async Task ReLogin_AfterTokenInvalidation_SpinnerClearsAndDashboardLoads()
@@ -67,7 +65,6 @@ public class SpinnerClearsAfterReloginTest : PlaywrightSetup
 
     private async Task InvalidateTokens()
     {
-        await Actions.SetLocalStorage(AccessTokenStorageKey, InvalidToken);
         await Actions.ClearCookies();
     }
 }

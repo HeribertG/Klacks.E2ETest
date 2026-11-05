@@ -18,8 +18,6 @@ namespace Klacks.E2ETest.Shifts;
 public class SessionRecoveryAfterReloginTest : PlaywrightSetup
 {
     private const string NameInputId = "name";
-    private const string AccessTokenStorageKey = "JWT_TOKEN";
-    private const string InvalidToken = "invalid-expired-token";
     private const string ApiBaseUrl = "https://localhost:5001/api/backend/";
 
     private Listener _listener = null!;
@@ -91,7 +89,6 @@ public class SessionRecoveryAfterReloginTest : PlaywrightSetup
 
     private async Task InvalidateTokens()
     {
-        await Actions.SetLocalStorage(AccessTokenStorageKey, InvalidToken);
         await Actions.ClearCookies();
     }
 
@@ -113,7 +110,6 @@ public class SessionRecoveryAfterReloginTest : PlaywrightSetup
     {
         var apiUrl = ApiBaseUrl + "Shifts/GetSimpleList/";
         var diag = await Page.EvaluateAsync<string>(@"async (apiUrl) => {
-            const token = localStorage.getItem('JWT_TOKEN');
             const filter = {
                 searchString: '', orderBy: 'name', sortOrder: 'asc',
                 numberOfItemsPerPage: 5, requiredPage: 0,
@@ -125,7 +121,8 @@ public class SessionRecoveryAfterReloginTest : PlaywrightSetup
             try {
                 const res = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                     body: JSON.stringify(filter)
                 });
                 const text = await res.text();

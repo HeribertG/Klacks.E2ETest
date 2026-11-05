@@ -758,22 +758,19 @@ public sealed class Wrapper
     }
 
     /// <summary>
-    /// Reads a setting value directly via the API from the browser context using fetch.
+    /// Reads a setting value directly via the API from the browser context using fetch (with the session cookies).
     /// </summary>
     public async Task<string?> ReadSettingViaApi(string settingType)
     {
         var result = await _page.EvaluateAsync<string?>(@"
             async (args) => {
-                const token = localStorage.getItem('JWT_TOKEN');
-                if (!token) return null;
-
                 const baseUrl = 'https://localhost:5001/api/backend/GeneralSettings';
                 const headers = {
-                    'Authorization': 'Bearer ' + token,
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Content-Type': 'application/json'
                 };
 
-                const listResp = await fetch(baseUrl + '/GetSettingsList', { headers });
+                const listResp = await fetch(baseUrl + '/GetSettingsList', { headers, credentials: 'include' });
                 if (!listResp.ok) return null;
                 const settings = await listResp.json();
                 const existing = settings.find(s => s.type === args.type);
@@ -792,16 +789,13 @@ public sealed class Wrapper
     {
         var result = await _page.EvaluateAsync<bool>(@"
             async (args) => {
-                const token = localStorage.getItem('JWT_TOKEN');
-                if (!token) return false;
-
                 const baseUrl = 'https://localhost:5001/api/backend/GeneralSettings';
                 const headers = {
-                    'Authorization': 'Bearer ' + token,
+                    'X-Requested-With': 'XMLHttpRequest',
                     'Content-Type': 'application/json'
                 };
 
-                const listResp = await fetch(baseUrl + '/GetSettingsList', { headers });
+                const listResp = await fetch(baseUrl + '/GetSettingsList', { headers, credentials: 'include' });
                 if (!listResp.ok) return false;
                 const settings = await listResp.json();
                 const existing = settings.find(s => s.type === args.type);
@@ -810,6 +804,7 @@ public sealed class Wrapper
                     const putResp = await fetch(baseUrl + '/PutSetting', {
                         method: 'PUT',
                         headers,
+                        credentials: 'include',
                         body: JSON.stringify({ id: existing.id, type: args.type, value: args.value })
                     });
                     return putResp.ok;
@@ -817,6 +812,7 @@ public sealed class Wrapper
                     const postResp = await fetch(baseUrl + '/AddSetting', {
                         method: 'POST',
                         headers,
+                        credentials: 'include',
                         body: JSON.stringify({ type: args.type, value: args.value })
                     });
                     return postResp.ok;

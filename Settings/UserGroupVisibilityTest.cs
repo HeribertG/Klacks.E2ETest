@@ -128,10 +128,9 @@ namespace Klacks.E2ETest
 
                     // Verify via API
                     var apiResult = await Page.EvaluateAsync<string>(@"async (userId) => {
-                        const token = localStorage.getItem('JWT_TOKEN');
-                        if (!token) return JSON.stringify({ error: 'No token' });
                         const response = await fetch('https://localhost:5001/api/backend/GroupVisibilities/GetSimpleList/' + userId, {
-                            headers: { 'Authorization': 'Bearer ' + token }
+                            credentials: 'include',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                         });
                         return response.status + ': ' + (await response.text()).substring(0, 500);
                     }", _createdUserId);
@@ -197,10 +196,9 @@ namespace Klacks.E2ETest
 
             // Act - get group visibilities for the created user via API
             var apiResult = await Page.EvaluateAsync<string>(@"async (userId) => {
-                const token = localStorage.getItem('JWT_TOKEN');
-                if (!token) return JSON.stringify({ error: 'No token' });
                 const response = await fetch('https://localhost:5001/api/backend/GroupVisibilities/GetSimpleList/' + userId, {
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    credentials: 'include',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 if (!response.ok) return JSON.stringify({ error: response.status + ' ' + response.statusText });
                 const data = await response.json();
@@ -362,13 +360,12 @@ namespace Klacks.E2ETest
         {
             TestContext.Out.WriteLine($"Assigning Admin role to user {userId}...");
             var result = await Page.EvaluateAsync<string>(@"async (userId) => {
-                const token = localStorage.getItem('JWT_TOKEN');
-                if (!token) return 'No token found';
                 const response = await fetch('https://localhost:5001/api/backend/Accounts/ChangeRoleUser', {
                     method: 'PUT',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({ userId: userId, roleName: 'Admin', isSelected: true })
                 });
