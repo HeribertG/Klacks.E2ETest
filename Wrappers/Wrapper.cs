@@ -1340,6 +1340,15 @@ public sealed class Wrapper
     }
 
     /// <summary>
+    /// Deletes every cookie of the browser context (e.g. the HttpOnly refresh-token cookie, which page scripts
+    /// cannot reach) to simulate a session whose refresh credential is gone.
+    /// </summary>
+    public async Task ClearCookies()
+    {
+        await _page.Context.ClearCookiesAsync();
+    }
+
+    /// <summary>
     /// Removes a key from the browser's sessionStorage (e.g. to re-arm one-per-session
     /// features like the Klacksy onboarding offer). Does not reload the page — call
     /// Reload() afterward if the app only reads the key at bootstrap.

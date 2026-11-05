@@ -18,6 +18,8 @@ namespace Klacks.E2ETest.Shifts;
 public class SessionRecoveryAfterReloginTest : PlaywrightSetup
 {
     private const string NameInputId = "name";
+    private const string AccessTokenStorageKey = "JWT_TOKEN";
+    private const string InvalidToken = "invalid-expired-token";
     private const string ApiBaseUrl = "https://localhost:5001/api/backend/";
 
     private Listener _listener = null!;
@@ -89,10 +91,8 @@ public class SessionRecoveryAfterReloginTest : PlaywrightSetup
 
     private async Task InvalidateTokens()
     {
-        await Page.EvaluateAsync(@"() => {
-            localStorage.setItem('JWT_TOKEN', 'invalid-expired-token');
-            localStorage.setItem('JWT_REFRESH', 'invalid-expired-token');
-        }");
+        await Actions.SetLocalStorage(AccessTokenStorageKey, InvalidToken);
+        await Actions.ClearCookies();
     }
 
     private async Task<Microsoft.Playwright.IElementHandle?> WaitForVisibleById(string id, int attempts)
