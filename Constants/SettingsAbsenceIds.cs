@@ -8,7 +8,6 @@ public static class SettingsAbsenceIds
     public const string TableBody = "absence-table-body";
     public const string AddBtn = "absence-add-btn";
     public const string Pagination = "absence-pagination";
-    public const string ExportExcelBtn = "absence-export-excel-btn";
 
     public const string ModalHeader = "absence-modal-header";
     public const string ModalCloseBtn = "absence-modal-close-btn";
