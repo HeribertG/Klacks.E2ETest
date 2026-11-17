@@ -17,7 +17,7 @@ public class ChatbotWelcomeFocusTest : ChatbotTestBase
 {
     private const string CssReplyChipBtn = ".reply-chip-btn";
     private const string CssToastText = ".toast-text";
-    private const string NeutralPromptKeywordDe = "Was möchtest du tun";
+    private const string NeutralPromptKeywordDe = "Wie soll es weitergehen";
     private const string NeutralPromptKeywordEn = "What would you like to do";
     // The prompt text varies by display language: DE "Bestellungen", EN "orders".
     private const string SetupPromptKeywordDe = "Bestellung";

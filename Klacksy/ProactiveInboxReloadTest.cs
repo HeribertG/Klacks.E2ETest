@@ -8,7 +8,7 @@ using Microsoft.Playwright;
 namespace Klacks.E2ETest.Klacksy
 {
     /// <summary>
-    /// Investigates whether the "Während du weg warst..." proactive-inbox overlay card survives a
+    /// Investigates whether the "In der Zwischenzeit..." proactive-inbox overlay card survives a
     /// normal F5 reload and a cache-clearing hard reset. Seeds one unread agent_trigger_dispatches
     /// row directly in the dev DB (cleaned up in TearDown by its own dedup_key prefix) so the card
     /// has something to show, then opens the assistant aside before and after each reload kind.
@@ -19,7 +19,7 @@ namespace Klacks.E2ETest.Klacksy
     public class ProactiveInboxReloadTest : PlaywrightSetup
     {
         private const string AssistantToggleButtonId = "header-assistant-button";
-        private const string InboxHeadingAriaLabel = "Während du weg warst…";
+        private const string InboxHeadingAriaLabel = "In der Zwischenzeit…";
         private const string DedupKeyPrefix = "E2E_PROACTIVE_INBOX_RELOAD_TEST_";
 
         private string _userId = string.Empty;
