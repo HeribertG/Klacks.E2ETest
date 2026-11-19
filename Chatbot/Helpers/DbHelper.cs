@@ -6,7 +6,7 @@ namespace Klacks.E2ETest.Chatbot.Helpers;
 
 public static class DbHelper
 {
-    private const string PsqlPath = @"C:\Program Files\PostgreSQL\17\bin\psql.exe";
+    private const string PsqlPath = @"C:\PostgreSQL\19\bin\psql.exe";
     private const string Host = "localhost";
     private const string Port = "5434";
     private const string User = "postgres";

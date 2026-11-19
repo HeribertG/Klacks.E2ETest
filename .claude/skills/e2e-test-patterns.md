@@ -248,7 +248,7 @@ private static async Task<string> ExecuteSql(string sql)
     {
         var psi = new ProcessStartInfo
         {
-            FileName = @"C:\Program Files\PostgreSQL\17\bin\psql.exe",
+            FileName = @"C:\PostgreSQL\19\bin\psql.exe",
             Arguments = $"-h localhost -p 5434 -U postgres -d klacks -t -A -f \"{tempFile}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
