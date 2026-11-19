@@ -21,8 +21,7 @@ public static class SettingsUserAdministrationIds
     public const string RowContainerPrefix = "user-admin-row-container-";
     public const string RowNamePrefix = "user-admin-row-name-";
     public const string RowEmailPrefix = "user-admin-row-email-";
-    public const string RowAuthorisedPrefix = "user-admin-row-authorised-";
-    public const string RowAdminPrefix = "user-admin-row-admin-";
+    public const string RowRightsPrefix = "user-admin-row-rights-";
     public const string RowDeletePrefix = "user-admin-row-delete-";
     public const string RowSendToPrefix = "user-admin-row-sendto-";
 
